@@ -1,0 +1,24 @@
+{
+  "name": "@nivlak/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@nivlak/db": "workspace:*",
+    "@nivlak/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@nivlak/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

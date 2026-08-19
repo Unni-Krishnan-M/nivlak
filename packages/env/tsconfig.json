@@ -1,0 +1,3 @@
+{
+  "extends": "@nivlak/config/tsconfig.base.json"
+}

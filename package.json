@@ -1,0 +1,35 @@
+{
+  "name": "nivlak",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "turbo run dev -F web -F server",
+    "build": "turbo run build",
+    "check-types": "turbo run check-types",
+    "dev:web": "turbo run dev -F web --",
+    "dev:server": "turbo run dev -F server --",
+    "db:push": "turbo run db:push -F @nivlak/db --",
+    "db:studio": "turbo run db:studio -F @nivlak/db --",
+    "db:generate": "turbo run db:generate -F @nivlak/db --",
+    "db:migrate": "turbo run db:migrate -F @nivlak/db --",
+    "deploy": "turbo run deploy -F @nivlak/infra --",
+    "destroy": "turbo run destroy -F @nivlak/infra --"
+  },
+  "dependencies": {
+    "@nivlak/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@nivlak/config": "workspace:*",
+    "@types/node": "^22.20.1",
+    "turbo": "^2.10.7",
+    "typescript": "catalog:"
+  },
+  "packageManager": "pnpm@11.22.0"
+}

@@ -58,3 +58,6 @@ coverage
 tmp
 temp
 *.mp4
+
+# Local Netlify folder
+.netlify

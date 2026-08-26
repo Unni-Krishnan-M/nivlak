@@ -1,20 +1,71 @@
-// The six pages of the book, in the order they turn.
+// The pages of the book, in the order they turn.
 //
-// Split out from <BookPages> because this is the part that gets rewritten: the
-// component owns the turn, this owns the words. `body` is placeholder copy --
-// it is the right length and the right register for the layout, and nothing in
-// it is a claim anyone has checked. Replace it.
+// Split out from the components because this is the part that gets rewritten:
+// they own the turn, this owns the words.
+//
+// 01 Company is real copy. Everything from 02 on is placeholder -- the right
+// length and the right register for the layout, but nothing in it is a claim
+// anyone has checked. Replace it.
+
+/** One entry in a defined-terms list, e.g. the N/I/V of NIV. */
+export type PageTerm = {
+  /** The display letter, set large in the margin. */
+  letter: string;
+  term: string;
+  body: string;
+};
 
 export type BookPage = {
-  /** The numeral printed above the title, e.g. "02". The reveal is 01. */
+  /** The numeral printed above the title. */
   number: string;
   title: string;
-  body: string;
-  /** Short lines set under the body, as a list on the page. Optional. */
+  body?: string;
+  /** Short lines set under the body, as a list on the page. */
   points?: string[];
+  /**
+   * What is printed on the LEFT-hand page facing this one.
+   *
+   * Only the opening spread has this. Every later page leaves its left half to
+   * the back of the sheet that turned before it, which carries a running foot
+   * and nothing else -- that is how a book works, and it is also what stops two
+   * columns of type competing for the reader on every single spread.
+   */
+  facing?: {
+    headline: string;
+    subtitle: string;
+  };
+  /** A defined-terms list, set as the body of the right-hand page. */
+  termsTitle?: string;
+  terms?: PageTerm[];
 };
 
 export const BOOK_PAGES: BookPage[] = [
+  {
+    number: "01",
+    title: "Company",
+    facing: {
+      headline: "We Architect the Future.",
+      subtitle: "Building the Future with Intelligence.",
+    },
+    termsTitle: "NIV — The Meaning",
+    terms: [
+      {
+        letter: "N",
+        term: "Noble",
+        body: "We act with integrity and build with a purpose greater than business.",
+      },
+      {
+        letter: "I",
+        term: "Intelligent",
+        body: "We use technology with smart thinking to create real impact.",
+      },
+      {
+        letter: "V",
+        term: "Vision",
+        body: "We look ahead and build solutions that create long-term value.",
+      },
+    ],
+  },
   {
     number: "02",
     title: "Solutions",

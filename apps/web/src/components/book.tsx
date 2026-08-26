@@ -42,20 +42,21 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 // over them lives in book-camera.ts -- read that first, it is where the reveal
 // is actually designed. book-sheets.tsx owns the sheets' markup and geometry.
 
-// The two numbers worth turning. Each is how much wheel that phase gets, as a
-// multiple of viewport height, and the timeline below is built so both phases
-// really do scroll at the rate their percentage says.
+// The two numbers worth turning: how much wheel one timeline unit costs, and
+// how many units the book takes to open. Everything else is expressed in units,
+// so adding a page lengthens the scroll by exactly one page's worth and the
+// cadence of the rest never changes -- which is the whole reason the page count
+// is read off BOOK_PAGES rather than written down twice.
 //
 // The opening has come down twice. 800% gave each of the 91 frames about 78px
 // of scroll and took roughly six trackpad flicks; 400% halved that to three;
-// 250% is about two. At 250% on a 900px viewport the move is 2250px and a
-// frame gets ~25px, still inside the range where the cross-fade between
-// adjacent frames reads as motion blur rather than as a dissolve -- see the
-// note at the top of book-camera.ts, which puts that threshold at thirty
-// pixels. Much below this and the individual frames start to show.
+// 250% is about two. At 250% on a 900px viewport the move is 2250px and a frame
+// gets ~25px, still inside the range where the cross-fade between adjacent
+// frames reads as motion blur rather than as a dissolve -- see the note at the
+// top of book-camera.ts, which puts that threshold at thirty pixels. Much below
+// this and the individual frames start to show.
+const VH_PER_UNIT = 67;
 const OPEN_VH = 250;
-const PAGES_VH = 450;
-const SCROLL_LENGTH = `+=${OPEN_VH + PAGES_VH}%`;
 
 // The scrub's catch-up, in seconds. Short enough to stay attached to the
 // wheel, long enough that a wheel notch becomes a glide.
@@ -70,9 +71,8 @@ const LEAD_IN = 0.4;
 const TRAIL = 0.5;
 const PAGES_UNITS = LEAD_IN + (TURNS - 1) * (TURN + GAP) + TURN + TRAIL;
 
-// The opening expressed in the same units, so the split of the timeline
-// matches the split of the scroll length above.
-const OPEN = (PAGES_UNITS * OPEN_VH) / PAGES_VH;
+const OPEN = OPEN_VH / VH_PER_UNIT;
+const SCROLL_LENGTH = `+=${Math.round(OPEN_VH + PAGES_UNITS * VH_PER_UNIT)}%`;
 
 // Frames requested per batch after the first. Ninety-one at once is ninety-one
 // parallel requests fighting the document for the connection on a cold load; in
@@ -299,6 +299,11 @@ export function Book() {
       const sheets = [
         ...section.querySelectorAll<HTMLElement>("[data-sheet]"),
       ];
+      // The opening spread's left-hand page. It is not a sheet -- it never
+      // turns; sheet 0's back simply covers it -- but it has to be hidden and
+      // revealed on the same beat as the sheets, so it rides along with them.
+      const facing = section.querySelector<HTMLElement>("[data-left-page]");
+      const curtain = facing ? [...sheets, facing] : sheets;
       const paint = () =>
         paintSheets(sheets, (sheet) =>
           Number(gsap.getProperty(sheet, "rotationY")),
@@ -315,6 +320,11 @@ export function Book() {
           anticipatePin: 1,
         },
       });
+
+      // The one moment the whole timeline hangs off: the book is open and the
+      // pages take over. Named rather than repeated as a number, so moving it
+      // means changing OPEN and nothing else.
+      tl.addLabel("pages", OPEN);
 
       // --- the book opens -------------------------------------------------
       //
@@ -352,16 +362,24 @@ export function Book() {
       // dissolve -- and an opacity between 0 and 1 is a grouping value that
       // forces transform-style:flat, which would drop the sheets out of the 3D
       // context at exactly the wrong moment.
-      gsap.set(sheets, { autoAlpha: 0 });
-      tl.set(sheets, { autoAlpha: 1 }, OPEN);
+      gsap.set(curtain, { autoAlpha: 0 });
+      tl.set(curtain, { autoAlpha: 1 }, "pages");
       paint();
 
       // Only the ink arrives. The first page's type fades up over the paper
       // that was already there, on a face that its own overflow clip has
       // already flattened, so opacity costs nothing in 3D terms here.
-      const ink = sheets[0]?.querySelectorAll<HTMLElement>("[data-ink]");
-      if (ink?.length) {
-        tl.fromTo(ink, { autoAlpha: 0 }, { autoAlpha: 1, duration: LEAD_IN }, OPEN);
+      const ink = [
+        ...(sheets[0]?.querySelectorAll<HTMLElement>("[data-ink]") ?? []),
+        ...(facing?.querySelectorAll<HTMLElement>("[data-ink]") ?? []),
+      ];
+      if (ink.length) {
+        tl.fromTo(
+          ink,
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: LEAD_IN },
+          "pages",
+        );
       }
 
       // One staggered tween, not five hand-positioned ones. Same animation on
@@ -384,7 +402,7 @@ export function Book() {
           stagger: TURN + GAP,
           onUpdate: paint,
         },
-        OPEN + LEAD_IN,
+        `pages+=${LEAD_IN}`,
       );
 
       // Hold on the last page before the pin releases, so it is readable

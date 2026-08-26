@@ -8,18 +8,33 @@ import {
   finalFrameRect,
   spreadAt,
 } from "@/components/book-camera";
-import { BOOK_PAGES } from "@/components/book-pages.content";
+import { BOOK_PAGES, type BookPage } from "@/components/book-pages.content";
 
-// The six sheets that turn over the open book, and the arithmetic that puts
-// them on it. No animation and no ScrollTrigger live here -- <Book> owns the
-// single pinned timeline that drives both the opening and these turns, because
+// The sheets that turn over the open book, and the arithmetic that puts them
+// on it. No animation and no ScrollTrigger live here -- <Book> owns the single
+// pinned timeline that drives both the opening and these turns, because
 // splitting them across two pinned sections is what used to put a seam and a
 // duplicate book in the handover between them.
 //
 // The parent finds these elements by data attribute inside its own GSAP scope
 // rather than by ref, so nothing has to be plumbed back up.
+//
+// HOW A SPREAD IS MADE OF SHEETS
+//
+// The sheets sit on the book's RIGHT-hand page and hinge at the spine, which
+// is what a page actually is. So the spread you are looking at is never one
+// element:
+//
+//     spread 0:  [ the book's own left page ] | [ sheet 0 front ]
+//     spread k:  [ sheet k-1 BACK           ] | [ sheet k front ]
+//
+// That is why only the opening spread can carry copy on both halves without an
+// extra turn to get there: every later left-hand page is the back of a sheet
+// the reader has already turned past. <FacingPage> is that opening left page --
+// a layer under the whole stack, which sheet 0's back covers the moment it
+// turns, exactly as paper would.
 
-/** How many turns six pages need. Page one is already face up. */
+/** How many turns the pages need. The first page is already face up. */
 export const TURNS = BOOK_PAGES.length - 1;
 
 /**
@@ -38,7 +53,7 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
   if (!width || !height) return;
 
   const frame = finalFrameRect(width, height);
-  const { right } = spreadAt(width, height);
+  const { left, right } = spreadAt(width, height);
 
   // How much of the book's right-hand page is actually on screen. On any
   // landscape viewport the answer is "most of it" and the sheet can sit
@@ -84,6 +99,29 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
     });
   }
 
+  // The opening spread's left-hand page. It has no sheet of its own -- it is
+  // the book's own left page with type over it -- so it is laid onto the left
+  // rect from the same camera and left there. A full-bleed sheet covers the
+  // whole window, so on a portrait phone there is no left page to print on and
+  // the copy moves inline instead; the two are mutually exclusive.
+  const facingPage = stage.querySelector<HTMLElement>("[data-left-page]");
+  if (facingPage) {
+    facingPage.style.display = fullBleed ? "none" : "";
+    if (!fullBleed) {
+      Object.assign(facingPage.style, {
+        left: `${left.x}px`,
+        top: `${left.y}px`,
+        width: `${left.width}px`,
+        height: `${left.height}px`,
+      });
+    }
+  }
+  for (const inline of stage.querySelectorAll<HTMLElement>(
+    "[data-facing-inline]",
+  )) {
+    inline.style.display = fullBleed ? "" : "none";
+  }
+
   // The pages ARE the photograph. Each face shows the region of frame-091 that
   // lies underneath it, so a sheet resting flat on the book is pixel for pixel
   // the page it is resting on -- the gutter shadow, the lit outer edge and the
@@ -91,9 +129,8 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
   // guessing at them. Turning a sheet then perspective-projects real paper
   // instead of a drawn rectangle.
   //
-  // Every sheet shares one rect, so these live on the stage and the twelve
-  // faces inherit them; that is one style write per refresh rather than
-  // twenty-four.
+  // Every sheet shares one rect, so these live on the stage and the faces
+  // inherit them; that is one style write per refresh rather than one per face.
   //
   // background-position is the image's top-left relative to the face's own
   // box. The front face sits at sheetRect, so the frame's corner is at
@@ -117,11 +154,16 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
     "--page-back-pos",
     `${frame.x - (spine - sheetRect.width)}px ${frame.y - sheetRect.y}px`,
   );
-  // How far the page runs past the right of the window, so the type can be
-  // pulled back inside it without moving the paper.
+  // How far each page runs past its side of the window, so the type can be
+  // pulled back inside without moving the paper. The right page overhangs to
+  // the right; the left page starts off the left edge.
   stage.style.setProperty(
     "--page-text-inset-end",
     `${Math.max(0, sheetRect.x + sheetRect.width - width)}px`,
+  );
+  stage.style.setProperty(
+    "--facing-inset-start",
+    `${Math.max(0, -left.x)}px`,
   );
 }
 
@@ -132,7 +174,8 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
  * Stacking is two bands that never meet: face-up sheets are on the right and
  * the earliest is on top; turned sheets are on the left and the latest is on
  * top, the way a read pile actually accumulates. The sheet mid-turn spans both
- * halves, so it goes above everything.
+ * halves, so it goes above everything. All of these sit above the facing page,
+ * which is why turning sheet 0 buries the opening left-hand page.
  *
  * Shading is a sine of the angle rather than a tween of its own -- a page is
  * darkest side-on and clean when flat, and that is one line of arithmetic
@@ -157,12 +200,31 @@ export function paintSheets(
 
 /** The turnable sheets, stacked on the book's right-hand page. */
 export function BookSheets() {
+  // Index 0 by definition: only the first page can have a facing page, because
+  // every later left-hand page is the back of an already-turned sheet.
+  const opening = BOOK_PAGES[0];
+
   return (
     <div
       data-stage
       className="absolute inset-0"
       style={{ perspective: "2200px" }}
     >
+      {opening?.facing ? (
+        <div
+          data-left-page
+          className="absolute z-[5]"
+          style={{ display: "none" }}
+        >
+          <div
+            data-ink
+            className="flex h-full w-full flex-col justify-center py-[8%] pe-[12%] ps-[calc(10%+var(--facing-inset-start,0px))] text-slate-200"
+          >
+            <FacingCopy page={opening} />
+          </div>
+        </div>
+      ) : null}
+
       {BOOK_PAGES.map((page) => (
         <div
           key={page.number}
@@ -195,8 +257,9 @@ export function BookSheets() {
 }
 
 /**
- * What reduced motion gets instead: the same six sections as a plain column
- * under the open book. No pin, no 3D, no scrubbing.
+ * What reduced motion gets instead: the same pages as a plain column under the
+ * open book. No pin, no 3D, no scrubbing -- and no spread either, so the
+ * facing copy is simply set above the page it faces.
  */
 export function BookPageColumn() {
   return (
@@ -210,6 +273,11 @@ export function BookPageColumn() {
           key={page.number}
           className="mx-auto max-w-2xl px-6 py-24 text-slate-200"
         >
+          {page.facing ? (
+            <div className="mb-10">
+              <FacingCopy page={page} />
+            </div>
+          ) : null}
           <PageBody page={page} />
         </article>
       ))}
@@ -259,7 +327,66 @@ function PageFace({
   );
 }
 
-function PageFoot({ page }: { page: (typeof BOOK_PAGES)[number] }) {
+/** The opening left-hand page: the statement, before the page that explains it. */
+function FacingCopy({ page }: { page: BookPage }) {
+  if (!page.facing) return null;
+  return (
+    <>
+      <p className="mb-4 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
+        {page.number} &mdash; {page.title.toUpperCase()}
+      </p>
+      <h2 className="text-[clamp(1.7rem,3.5vw,3.4rem)] leading-[1.04] font-light text-balance text-white">
+        {page.facing.headline}
+      </h2>
+      <span
+        aria-hidden
+        className="my-[1em] block h-px w-[38%] bg-white/20"
+      />
+      <p className="max-w-[30ch] text-[clamp(0.82rem,1.18vw,1.05rem)] leading-relaxed text-balance text-slate-300/85">
+        {page.facing.subtitle}
+      </p>
+    </>
+  );
+}
+
+/** A defined-terms list -- the letters of NIV, set against their meanings. */
+function Terms({ page }: { page: BookPage }) {
+  if (!page.terms) return null;
+  return (
+    <>
+      {page.termsTitle ? (
+        <p className="mb-[1.3em] text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80">
+          {page.termsTitle.toUpperCase()}
+        </p>
+      ) : null}
+      <dl className="flex flex-col">
+        {page.terms.map((term) => (
+          <div
+            key={term.letter}
+            className="grid grid-cols-[1.4em_1fr] gap-x-[0.8em] border-t border-white/10 py-[0.9em]"
+          >
+            {/* The letter is the artwork on this page -- same silver as the
+                lit page edge in the frame, so it reads as pressed into the
+                paper rather than typed onto it. */}
+            <dt className="text-[clamp(1.35rem,2.5vw,2.3rem)] leading-none font-light text-[#dce7f7]">
+              {term.letter}
+            </dt>
+            <dd>
+              <p className="mb-[0.4em] text-[clamp(0.85rem,1.25vw,1.1rem)] leading-none text-white">
+                {term.term}
+              </p>
+              <p className="max-w-[32ch] text-[clamp(0.72rem,1vw,0.92rem)] leading-relaxed text-slate-300/85">
+                {term.body}
+              </p>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </>
+  );
+}
+
+function PageFoot({ page }: { page: BookPage }) {
   return (
     <div
       data-ink
@@ -272,30 +399,52 @@ function PageFoot({ page }: { page: (typeof BOOK_PAGES)[number] }) {
   );
 }
 
-function PageBody({ page }: { page: (typeof BOOK_PAGES)[number] }) {
+function PageBody({ page }: { page: BookPage }) {
   return (
     <div
       data-ink
       className="flex h-full w-full flex-col justify-center py-[8%] ps-[10%] pe-[calc(10%+var(--page-text-inset-end,0px))] text-slate-200"
     >
-      <p className="mb-3 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
-        {page.number} &mdash; {page.title.toUpperCase()}
-      </p>
-      <h2 className="mb-[0.4em] text-[clamp(1.6rem,3.4vw,3.25rem)] leading-[1.05] font-light text-white">
-        {page.title}
-      </h2>
-      <p className="max-w-[34ch] text-[clamp(0.8rem,1.15vw,1.05rem)] leading-relaxed text-slate-300/90">
-        {page.body}
-      </p>
-      {page.points ? (
-        <ul className="mt-[1.2em] space-y-[0.5em] text-[clamp(0.7rem,1vw,0.9rem)] text-slate-400">
-          {page.points.map((point) => (
-            <li key={point} className="border-t border-white/10 pt-[0.5em]">
-              {point}
-            </li>
-          ))}
-        </ul>
+      {/* Portrait fallback. A full-bleed sheet is the whole window, so there is
+          no facing page to print on and its copy is set above this page's own.
+          layoutSheets decides which of the two is showing; they are never both
+          on screen. */}
+      {page.facing ? (
+        <div
+          data-facing-inline
+          className="mb-[1.8em]"
+          style={{ display: "none" }}
+        >
+          <FacingCopy page={page} />
+        </div>
       ) : null}
+
+      {page.terms ? (
+        <Terms page={page} />
+      ) : (
+        <>
+          <p className="mb-3 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
+            {page.number} &mdash; {page.title.toUpperCase()}
+          </p>
+          <h2 className="mb-[0.4em] text-[clamp(1.6rem,3.4vw,3.25rem)] leading-[1.05] font-light text-white">
+            {page.title}
+          </h2>
+          {page.body ? (
+            <p className="max-w-[34ch] text-[clamp(0.8rem,1.15vw,1.05rem)] leading-relaxed text-slate-300/90">
+              {page.body}
+            </p>
+          ) : null}
+          {page.points ? (
+            <ul className="mt-[1.2em] space-y-[0.5em] text-[clamp(0.7rem,1vw,0.9rem)] text-slate-400">
+              {page.points.map((point) => (
+                <li key={point} className="border-t border-white/10 pt-[0.5em]">
+                  {point}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

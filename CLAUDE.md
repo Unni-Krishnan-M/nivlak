@@ -55,10 +55,15 @@ production. Changing `next.config.ts` or the output mode affects both.
 no footer, no panels.
 
 ```
-<Book />   one section, one pin, one timeline   +=700%
+<Book />   one section, one pin, one timeline   +=779%
              0%..250%   the book opens (91-frame canvas scrub)
-           250%..700%   six sheets turn over the frame it lands on
+           250%..779%   seven sheets turn over the frame it lands on
 ```
+
+The scroll length is derived, not written down: `VH_PER_UNIT` (67% of viewport
+per timeline unit) times the units the pages need, which come from
+`BOOK_PAGES.length`. Add a page and the scroll grows by exactly one page's
+worth with the cadence unchanged — never hardcode the total.
 
 **It is one section on purpose.** It used to be two — a reveal and a pages
 section — and two stacked full-height pins cannot be joined without a seam: the
@@ -109,6 +114,13 @@ over the first while the book was still opening. Do not split it again.
 - **Redraw on ScrollTrigger's `refresh`, not on `resize`.** While pinned, GSAP
   writes explicit pixel dimensions onto the section, so a resize handler reads
   the stale pinned size.
+- **A spread is never one element.** Sheets hinge at the spine and cover only
+  the right-hand page, so what you look at is
+  `[sheet k-1 back] | [sheet k front]`. Only the *opening* spread can carry copy
+  on both halves without an extra turn, because every later left page is the
+  back of a sheet already turned past — that is what `[data-left-page]` is, a
+  layer under the stack that sheet 0's back buries when it turns. Do not try to
+  give a later page a facing page without adding a sheet for it.
 - **The sheets are hidden until the book has finished opening**, and switched
   on with `gsap.set`, not a fade. Their paper is the same photograph the canvas
   is showing by then, at the same rect, so there is nothing to dissolve — and a

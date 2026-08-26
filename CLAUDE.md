@@ -97,6 +97,25 @@ no footer, no panels.
 - **Redraw on ScrollTrigger's `refresh`, not on `resize`.** While pinned, GSAP
   writes explicit pixel dimensions onto the section, so a resize handler reads
   the stale pinned size.
+- **Never put `opacity`, `overflow`, or `filter` on a sheet.** Per CSS
+  Transforms 2, those are grouping values: any of them forces
+  `transform-style: flat` on the element, dropping it out of the 3D context so
+  its faces stop being separate planes. Fade the ink inside a face (already
+  flattened by its own clip), never the sheet. Same reason the sheets carry no
+  `overflow: hidden` — only the faces do.
+- **Every pinned section needs a plain `<div>` wrapper, and it is not
+  decoration.** `pin: true` builds a `div.pin-spacer`, inserts it where the
+  section was, and moves the section inside it (`ScrollTrigger.js:668`). React
+  is never told, so it still believes the section is a direct child of the body
+  container; the next time it places or removes a sibling there it throws
+  `NotFoundError: The node before which the new node is to be inserted is not a
+  child of this node`. The wrapper gives React a reference node GSAP never
+  reparents. Deleting it reintroduces a runtime crash that no build catches.
+- **The pages are the photograph, not a drawing of it.** Each face shows the
+  region of frame-091 it covers, via `--page-image`/`--page-front-pos`/
+  `--page-back-pos` set on the stage by `layout()`. Do not add a gutter shadow,
+  vignette, or edge highlight — the frame has real ones, and a second set
+  drifts out of agreement with them on resize.
 - **Portrait phones take a different path.** The 16:9 frame crops to a tall
   band and the spine lands two thirds across, leaving the right-hand page mostly
   off-screen. `layout()` falls back to a full-bleed sheet hinged at the

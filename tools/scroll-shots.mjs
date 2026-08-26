@@ -129,11 +129,33 @@ await new Promise((resolve, reject) => {
 
 let nextId = 0;
 const pending = new Map();
+// A page can throw on every render and still screenshot perfectly, which is
+// how a React/ScrollTrigger NotFoundError went unnoticed through a full
+// four-viewport pass. Runtime errors are collected and reported at the end,
+// and they set the exit code, so a green run means green.
+const runtimeErrors = [];
 ws.onmessage = (event) => {
   const message = JSON.parse(event.data);
   if (message.id && pending.has(message.id)) {
     pending.get(message.id)(message.result);
     pending.delete(message.id);
+    return;
+  }
+  if (message.method === "Runtime.exceptionThrown") {
+    const d = message.params?.exceptionDetails;
+    runtimeErrors.push(
+      d?.exception?.description || d?.text || "unknown exception",
+    );
+  }
+  if (
+    message.method === "Runtime.consoleAPICalled" &&
+    message.params?.type === "error"
+  ) {
+    runtimeErrors.push(
+      (message.params.args || [])
+        .map((a) => a.description ?? a.value ?? a.type)
+        .join(" "),
+    );
   }
 };
 const send = (method, params = {}) =>
@@ -212,8 +234,24 @@ for (let i = 0; i < SHOTS; i++) {
 }
 
 ws.close();
+
+if (runtimeErrors.length) {
+  // De-duplicated: one bad render usually throws the identical error on every
+  // scroll stop, and sixteen copies of it buries everything else.
+  const seen = new Map();
+  for (const e of runtimeErrors) {
+    const key = e.split("\n")[0];
+    seen.set(key, (seen.get(key) || 0) + 1);
+  }
+  console.error(`\n${runtimeErrors.length} runtime error(s) on the page:`);
+  for (const [message, count] of seen) {
+    console.error(`  x${count}  ${message}`);
+  }
+  process.exitCode = 1;
+}
+
 if (!PROBE) {
   console.log(`\n${SHOTS} frames -> ${OUT}`);
   console.log(`contact sheet:\n  magick montage ${OUT}/*.png -tile 4x4 -geometry 360x225+3+3 -background '#111' ${OUT}/sheet.png`);
 }
-process.exit(0);
+process.exit(process.exitCode ?? 0);

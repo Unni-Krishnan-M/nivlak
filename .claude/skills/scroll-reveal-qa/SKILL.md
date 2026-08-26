@@ -129,6 +129,40 @@ covers the spacing but never the inline styles.
 
 Both were invisible in a build log and obvious in a contact sheet.
 
+## Runtime errors are now part of the pass
+
+`tools/scroll-shots.mjs` collects `Runtime.exceptionThrown` and console errors
+and exits non-zero if any fired. This was added after a React/ScrollTrigger
+`NotFoundError` reached the browser having survived a full four-viewport
+screenshot pass, a typecheck and a build — the page throws and screenshots
+perfectly. **Check the exit code, not just the pictures.**
+
+To confirm the pin/React invariant directly, probe who owns the sections:
+
+```js
+[...document.querySelectorAll('.pin-spacer')].map(s => s.parentNode.tagName)
+```
+
+Every spacer's parent must be one of the plain wrapper `<div>`s. If a spacer's
+parent is the body container, a section has been reparented out from under
+React and an insertBefore crash is waiting to happen.
+
+## Checking the pages still sit on the photograph
+
+The sheets show frame-091 cropped to the region each face covers, so a sheet
+lying flat must be **pixel-continuous** with the background image behind it. A
+wrong `background-position` shows up as a seam at the spine, which is easy to
+mistake for something in the photo. Measure instead of squinting — scan a band
+of rows for an abrupt horizontal change:
+
+```bash
+magick shot.png -crop 1440x160+0+600 +repage -colorspace gray -resize 1440x1! -depth 8 txt: \
+  | awk -F'[(,]' 'NR>1{print NR-2, $2}' \
+  | awk 'NR>1{d=$2-p; if(d<0)d=-d; if(d>2) printf "  x=%d jump %.0f\n", $1, d} {p=$2}'
+```
+
+Silence means continuous. Run the same scan rotated 90° for horizontal seams.
+
 ## Geometry is not CSS's job
 
 Anything that has to sit *on* the book asks the camera where the book is:

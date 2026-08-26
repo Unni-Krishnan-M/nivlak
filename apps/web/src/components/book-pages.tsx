@@ -53,9 +53,16 @@ export function BookPages() {
   // reveal above has already fetched this exact file, so it is a cache hit.
   const [tier, setTier] = useState<ReturnType<typeof pickTier> | null>(null);
   const [reduced, setReduced] = useState(false);
+  // Same value as `tier`, mirrored into a ref because layout() is captured by
+  // the ResizeObserver and the refresh listener at setup time. If layout()
+  // closed over the state it would keep reading `null` on every later resize
+  // and blank the pages' background image.
+  const tierRef = useRef<ReturnType<typeof pickTier> | null>(null);
 
   useEffect(() => {
-    setTier(pickTier(window.innerWidth));
+    const resolved = pickTier(window.innerWidth);
+    tierRef.current = resolved;
+    setTier(resolved);
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => setReduced(query.matches);
     sync();
@@ -106,9 +113,14 @@ export function BookPages() {
     // whole layout to full bleed.
     const visible = width - right.x;
     const fullBleed = visible < right.width * 0.6 || visible < 320;
-    const sheetRect = fullBleed
-      ? { x: 0, y: 0, width, height }
-      : { ...right, width: Math.min(right.width, visible) };
+    // The paper is the paper: the sheet keeps the page's true width even where
+    // that runs off the right of the window. It used to be clamped to the
+    // visible part, which was fine while the sheets were flat CSS but is wrong
+    // now that they carry the photograph -- a clamped sheet sweeps a narrower
+    // arc than the page underneath it, and its back lands short of covering
+    // the left page. What actually needed clamping was the type, and that is
+    // what --page-text-inset-end below does.
+    const sheetRect = fullBleed ? { x: 0, y: 0, width, height } : right;
 
     // Look at the book from the spine, not from the middle of the window: a
     // perspective origin off to the side skews the turning page into a wedge.
@@ -123,6 +135,46 @@ export function BookPages() {
         height: `${sheetRect.height}px`,
       });
     }
+
+    // The pages ARE the photograph. Each face shows the region of frame-091
+    // that lies underneath it, so a sheet resting flat on the book is pixel
+    // for pixel the page it is resting on -- the gutter shadow, the lit outer
+    // edge and the fall-off top and bottom are the ones the camera recorded,
+    // not a gradient guessing at them. Turning a sheet then perspective-
+    // projects real paper instead of a drawn rectangle.
+    //
+    // Every sheet shares one rect, so these live on the stage and the twelve
+    // faces inherit them; that is one style write per refresh rather than
+    // twenty-four.
+    //
+    // background-position is the image's top-left relative to the face's own
+    // box. The front face sits at sheetRect, so the frame's corner is at
+    // (frame - sheetRect). The back face is the same box reflected through the
+    // spine -- it comes to rest spanning [spine - w, spine] -- so its origin
+    // is one sheet-width further left.
+    const spine = sheetRect.x;
+    stage.style.setProperty(
+      "--page-image",
+      tierRef.current ? `url("${FRAME_SRC(FRAME_COUNT, tierRef.current)}")` : "none",
+    );
+    stage.style.setProperty(
+      "--page-image-size",
+      `${frame.width}px ${frame.height}px`,
+    );
+    stage.style.setProperty(
+      "--page-front-pos",
+      `${frame.x - sheetRect.x}px ${frame.y - sheetRect.y}px`,
+    );
+    stage.style.setProperty(
+      "--page-back-pos",
+      `${frame.x - (spine - sheetRect.width)}px ${frame.y - sheetRect.y}px`,
+    );
+    // How far the page runs past the right of the window, so the type can be
+    // pulled back inside it without moving the paper.
+    stage.style.setProperty(
+      "--page-text-inset-end",
+      `${Math.max(0, sheetRect.x + sheetRect.width - width)}px`,
+    );
   }, []);
 
   useGSAP(
@@ -205,21 +257,28 @@ export function BookPages() {
         },
       });
 
-      // The join with the reveal. The reveal hands over on the photographed
-      // spread and the first sheet is lying on its right-hand page, so without
-      // this the pin boundary is a cut: the page under your eye swaps for a
-      // drawn one between two frames. Fading the whole sheet up over the lead-
-      // in makes it a dissolve from the photographed page to the printed one,
-      // which is not a thing books do but is invisible, which is the point.
+      // The join with the reveal, and it is now only the type that moves.
       //
-      // Every sheet starts hidden, not just the first: a half-transparent
-      // sheet one shows sheet two's heading straight through it, so the
-      // dissolve was reading as two titles printed on top of each other. The
-      // rest are switched on the instant the fade is done, underneath a sheet
-      // that is opaque again by then.
-      gsap.set(sheets, { autoAlpha: 0 });
-      tl.to(sheets[0], { autoAlpha: 1, duration: LEAD_IN, ease: "none" }, 0);
-      if (sheets.length > 1) tl.set(sheets.slice(1), { autoAlpha: 1 }, LEAD_IN);
+      // The reveal hands over on the photographed spread with the first sheet
+      // already lying on its right-hand page -- and because that sheet carries
+      // the same photograph, the paper half of the handover is already
+      // seamless. All that is left to bring in is the ink.
+      //
+      // This used to fade the whole sheet with autoAlpha, which worked but was
+      // quietly fighting the 3D: per CSS Transforms 2, opacity below 1 is a
+      // grouping value and forces `transform-style: flat` on the element it is
+      // applied to, so a mid-fade sheet drops out of the 3D context and its
+      // faces stop being separate planes. Harmless here only because the fade
+      // finishes before the first turn. Fading the ink instead keeps opacity
+      // on a face that is already flattened by its own overflow clip, and the
+      // sheet's preserve-3d is never disturbed.
+      const ink = sheets[0].querySelectorAll<HTMLElement>("[data-ink]");
+      tl.fromTo(
+        ink,
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: LEAD_IN, ease: "none" },
+        0,
+      );
 
       // One staggered tween, not five hand-positioned ones. Same animation on
       // every sheet at a fixed offset is exactly what stagger is for, and it
@@ -286,135 +345,123 @@ export function BookPages() {
 
   if (reduced) {
     return (
-      <section
-        className="w-full"
-        style={{ backgroundColor: LETTERBOX }}
-        aria-label="Nivlak sections"
-      >
-        {BOOK_PAGES.map((page) => (
-          <article
-            key={page.number}
-            className="mx-auto max-w-2xl px-6 py-24 text-slate-200"
-          >
-            <PageBody page={page} />
-          </article>
-        ))}
-      </section>
+      <div>
+        <section
+          className="w-full"
+          style={{ backgroundColor: LETTERBOX }}
+          aria-label="Nivlak sections"
+        >
+          {BOOK_PAGES.map((page) => (
+            <article
+              key={page.number}
+              className="mx-auto max-w-2xl px-6 py-24 text-slate-200"
+            >
+              <PageBody page={page} />
+            </article>
+          ))}
+        </section>
+      </div>
     );
   }
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative h-svh w-full overflow-hidden"
-      style={{ backgroundColor: LETTERBOX }}
-    >
-      {tier ? (
-        <img
-          ref={frameRef}
-          src={FRAME_SRC(FRAME_COUNT, tier)}
-          alt=""
-          aria-hidden
-          draggable={false}
-          className="pointer-events-none absolute max-w-none select-none"
-        />
-      ) : null}
-
-      <div
-        ref={stageRef}
-        className="absolute inset-0"
-        style={{ perspective: "2200px" }}
+    <div>
+      {/* Wrapper for ScrollTrigger's pin -- see the note in
+          <BookScrollReveal>. pin:true moves this section inside a
+          div.pin-spacer it builds, which invalidates React's idea of where the
+          section lives; the div keeps React holding a reference GSAP never
+          reparents. Both branches of this component return a <div> root for
+          the same reason: React then reconciles inside one stable element
+          instead of swapping the node the container points at. */}
+      <section
+        ref={sectionRef}
+        className="relative h-svh w-full overflow-hidden"
+        style={{ backgroundColor: LETTERBOX }}
       >
-        {BOOK_PAGES.map((page, index) => (
-          <div
-            key={page.number}
-            ref={(el) => {
-              sheetRefs.current[index] = el;
-            }}
-            className="absolute origin-left [transform-style:preserve-3d] [will-change:transform]"
-          >
-            {/* Front: the page you are reading. */}
-            <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]">
-              <PageFace>
-                <PageBody page={page} />
-              </PageFace>
-            </div>
+        {tier ? (
+          <img
+            ref={frameRef}
+            src={FRAME_SRC(FRAME_COUNT, tier)}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="pointer-events-none absolute max-w-none select-none"
+          />
+        ) : null}
 
-            {/* Back: what lands on the left half once this sheet has turned.
-                Blank on purpose -- the eye follows the new right-hand page,
-                and a second column of type there would compete with it. */}
+        <div
+          ref={stageRef}
+          className="absolute inset-0"
+          style={{ perspective: "2200px" }}
+        >
+          {BOOK_PAGES.map((page, index) => (
             <div
-              className="absolute inset-0 overflow-hidden [backface-visibility:hidden]"
-              style={{ transform: "rotateY(180deg)" }}
+              key={page.number}
+              ref={(el) => {
+                sheetRefs.current[index] = el;
+              }}
+              className="absolute origin-left [transform-style:preserve-3d] [will-change:transform]"
             >
-              <PageFace mirrored>
-                <PageFoot page={page} />
-              </PageFace>
+              {/* Front: the page you are reading. */}
+              <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]">
+                <PageFace side="front">
+                  <PageBody page={page} />
+                </PageFace>
+              </div>
+
+              {/* Back: what lands on the left half once this sheet has turned.
+                  Blank on purpose -- the eye follows the new right-hand page,
+                  and a second column of type there would compete with it. */}
+              <div
+                className="absolute inset-0 overflow-hidden [backface-visibility:hidden]"
+                style={{ transform: "rotateY(180deg)" }}
+              >
+                <PageFace side="back">
+                  <PageFoot page={page} />
+                </PageFace>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </section>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }
 
-// The paper. Colours are sampled from the spread in frame-091 rather than
-// picked, so a sheet lying flat on the book is the same navy as the page under
-// it and the turn is the only thing that gives it away.
+// The paper: a window onto frame-091, positioned so the face shows exactly the
+// part of the spread it is covering.
 //
-// The lighting matters as much as the colour. A flat rectangle of the right hue
-// still reads as a div: once two sheets had turned, the left half of the screen
-// was one dead panel and the photograph might as well not have been there. So
-// each face carries what the camera actually put on that paper -- the shadow
-// curving into the gutter, a lit edge on the outside, and a vignette top and
-// bottom.
+// There used to be four hand-built layers here -- a navy gradient sampled off
+// the frame, a vignette, a gutter shadow and a lit outer edge -- every one of
+// them a guess at something the photograph already contains, and every one of
+// them a thing that could drift out of agreement with it. They are all gone.
+// The only overlay left is the one the picture genuinely cannot supply: a
+// sheet standing up out of the page catches less light, and no still frame
+// knows that a page is being lifted.
 function PageFace({
-  mirrored = false,
+  side,
   children,
 }: {
-  mirrored?: boolean;
+  side: "front" | "back";
   children?: React.ReactNode;
 }) {
-  const outer = mirrored ? "left" : "right";
-  const gutter = mirrored ? "right" : "left";
-
   return (
     <div
-      className="relative h-full w-full"
+      className="relative h-full w-full bg-no-repeat"
       style={{
-        background: mirrored
-          ? "linear-gradient(270deg, #10233c 0%, #172d4a 20%, #1d3352 62%, #22395a 100%)"
-          : "linear-gradient(90deg, #10233c 0%, #1b3251 20%, #21365a 62%, #263d60 100%)",
+        // Under the image, not instead of it: the book's own edge colour shows
+        // wherever a face reaches past the frame, so the seam reads as part of
+        // the picture rather than as a hole.
+        backgroundColor: LETTERBOX,
+        backgroundImage: "var(--page-image, none)",
+        backgroundSize: "var(--page-image-size, cover)",
+        backgroundPosition:
+          side === "front"
+            ? "var(--page-front-pos, center)"
+            : "var(--page-back-pos, center)",
       }}
     >
-      {/* Vignette: the clip is lit from above and the paper falls off top and
-          bottom. Without this the sheet is brighter at its corners than the
-          page it is lying on. */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0) 22%, rgba(0,0,0,0) 72%, rgba(0,0,0,0.4))",
-        }}
-      />
-
       {children}
-
-      {/* Paper curving into the spine. */}
-      <div
-        className="pointer-events-none absolute inset-y-0 w-[9%]"
-        style={{
-          [gutter]: 0,
-          background: `linear-gradient(${mirrored ? 270 : 90}deg, rgba(0,0,0,0.45), rgba(0,0,0,0))`,
-        }}
-      />
-      {/* The lit outside edge, which is the brightest thing in the frame. */}
-      <div
-        className="pointer-events-none absolute inset-y-0 w-[2px]"
-        style={{ [outer]: 0, background: "rgba(197,214,238,0.35)" }}
-      />
-
-      {/* Driven from the turn tween: a sheet edge-on catches no light. */}
       <div
         data-shade
         className="pointer-events-none absolute inset-0 bg-black opacity-0"
@@ -429,7 +476,10 @@ function PageFace({
 // of the screen reads as a mistake.
 function PageFoot({ page }: { page: (typeof BOOK_PAGES)[number] }) {
   return (
-    <div className="absolute inset-x-0 bottom-[8%] flex justify-start ps-[12%]">
+    <div
+      data-ink
+      className="absolute inset-x-0 bottom-[8%] flex justify-start ps-[12%]"
+    >
       <p className="text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/45 tabular-nums">
         {page.number} &mdash; {page.title.toUpperCase()}
       </p>
@@ -439,7 +489,10 @@ function PageFoot({ page }: { page: (typeof BOOK_PAGES)[number] }) {
 
 function PageBody({ page }: { page: (typeof BOOK_PAGES)[number] }) {
   return (
-    <div className="flex h-full w-full flex-col justify-center px-[10%] py-[8%] text-slate-200">
+    <div
+      data-ink
+      className="flex h-full w-full flex-col justify-center py-[8%] ps-[10%] pe-[calc(10%+var(--page-text-inset-end,0px))] text-slate-200"
+    >
       <p className="mb-3 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
         {page.number} &mdash; {page.title.toUpperCase()}
       </p>

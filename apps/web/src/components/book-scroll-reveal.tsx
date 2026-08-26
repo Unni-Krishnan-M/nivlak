@@ -46,7 +46,6 @@ export function BookScrollReveal() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const kickerRef = useRef<HTMLParagraphElement>(null);
-  const scrollCueRef = useRef<HTMLDivElement>(null);
 
   const imagesRef = useRef<(HTMLImageElement | null)[]>([]);
   // Highest frame index that is decoded and safe to draw. The playhead is
@@ -242,7 +241,6 @@ export function BookScrollReveal() {
             scroll.u = 1;
             draw();
             gsap.set(kickerRef.current, { autoAlpha: 1, y: 0 });
-            gsap.set(scrollCueRef.current, { autoAlpha: 0 });
             return;
           }
 
@@ -282,9 +280,6 @@ export function BookScrollReveal() {
             );
           }
 
-          if (scrollCueRef.current) {
-            tl.to(scrollCueRef.current, { autoAlpha: 0, duration: 0.05 }, 0.02);
-          }
 
           return () => {
             tl.scrollTrigger?.kill();
@@ -306,45 +301,51 @@ export function BookScrollReveal() {
   );
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative h-svh w-full overflow-hidden"
-      /* Colour comes from the frames themselves rather than a matching
-         literal, so a rebuilt set cannot leave the section a different colour
-         to the canvas sitting on it. */
-      style={{ backgroundColor: LETTERBOX }}
-    >
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 h-full w-full"
-        role="img"
-        aria-label="A navy book embossed with the Nivlak logo opening on a slate plinth until its spread fills the frame"
-      />
-
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent via-45% to-black/35" />
-
-      {/* The book stands in the right half of the frame with the whole left
-          side empty, so on landscape the copy goes in that gap rather than
-          across the cover. A portrait viewport letterboxes the 3:2 frame into a
-          band, so there the copy sits under the band instead. */}
-      <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-6 portrait:items-center portrait:justify-end portrait:pb-[16vh] portrait:text-center landscape:items-start landscape:ps-[7vw] landscape:text-left">
-        <p
-          ref={kickerRef}
-          className="mb-3 -me-[0.3em] text-xs tracking-[0.3em] text-slate-300/80 uppercase"
-        >
-          Nivlak Technologies
-        </p>
-      </div>
-
-      <div
-        ref={scrollCueRef}
-        className="pointer-events-none absolute inset-x-0 bottom-8 flex flex-col items-center gap-2 text-slate-300/70 portrait:mx-auto portrait:w-fit landscape:items-start landscape:ps-[7vw]"
+    <div>
+      {/* This wrapper exists for ScrollTrigger, and removing it breaks the
+          page at runtime. pin:true does not style the section in place -- it
+          builds a div.pin-spacer, inserts it where the section was, and moves
+          the section inside it (ScrollTrigger.js: `pin.parentNode.insertBefore
+          (spacer, pin); spacer.appendChild(pin)`). React is not told, so it
+          goes on believing the section is still a direct child of the body
+          container, and the next time it places or removes a sibling there it
+          calls insertBefore against a node that has been reparented and throws
+          "NotFoundError: The node before which the new node is to be inserted
+          is not a child of this node".
+          With this div in the way, the thing React holds a reference to is the
+          div -- which GSAP never touches -- and the spacer is built inside it
+          instead. */}
+      <section
+        ref={sectionRef}
+        className="relative h-svh w-full overflow-hidden"
+        /* Colour comes from the frames themselves rather than a matching
+           literal, so a rebuilt set cannot leave the section a different colour
+           to the canvas sitting on it. */
+        style={{ backgroundColor: LETTERBOX }}
       >
-        <span className="-me-[0.25em] text-[10px] tracking-[0.25em] uppercase">
-          Scroll
-        </span>
-        <span className="h-8 w-px animate-pulse bg-slate-300/50" />
-      </div>
-    </section>
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full"
+          role="img"
+          aria-label="A navy book embossed with the Nivlak logo opening on a slate plinth until its spread fills the frame"
+        />
+
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent via-45% to-black/35" />
+
+        {/* The book stands in the right half of the frame with the whole left
+            side empty, so on landscape the copy goes in that gap rather than
+            across the cover. A portrait viewport letterboxes the 3:2 frame into a
+            band, so there the copy sits under the band instead. */}
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-6 portrait:items-center portrait:justify-end portrait:pb-[16vh] portrait:text-center landscape:items-start landscape:ps-[7vw] landscape:text-left">
+          <p
+            ref={kickerRef}
+            className="mb-3 -me-[0.3em] text-xs tracking-[0.3em] text-slate-300/80 uppercase"
+          >
+            Nivlak Technologies
+          </p>
+        </div>
+
+      </section>
+    </div>
   );
 }

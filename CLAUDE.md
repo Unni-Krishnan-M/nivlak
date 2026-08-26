@@ -121,6 +121,10 @@ over the first while the book was still opening. Do not split it again.
   back of a sheet already turned past — that is what `[data-left-page]` is, a
   layer under the stack that sheet 0's back buries when it turns. Do not try to
   give a later page a facing page without adding a sheet for it.
+- **Chapter-opener conventions belong to 01 Company and nowhere else.** The
+  sinkage, drop cap, small-caps lead-in and drop folios on that spread are
+  opener-only devices in real book setting — repeating them on 02–07 would be
+  the mistake, not the inconsistency. `PageBody` switches on `page.facing`.
 - **The sheets are hidden until the book has finished opening**, and switched
   on with `gsap.set`, not a fade. Their paper is the same photograph the canvas
   is showing by then, at the same rect, so there is nothing to dissolve — and a

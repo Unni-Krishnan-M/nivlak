@@ -33,10 +33,35 @@ export type BookPage = {
   facing?: {
     headline: string;
     subtitle: string;
+    /**
+     * The opening paragraph of the chapter. `lead` is set in small capitals
+     * behind a drop cap -- the standard bridge from a big initial back down to
+     * body text -- so it should be a short first sentence, three to six words
+     * plus a full stop. `body` runs on from it in plain text.
+     */
+    intro?: { lead: string; body: string };
+    /** A short line set under the chapter title, the way a book sets a quote. */
+    epigraph?: string;
+    /**
+     * A footnote, keyed to a superscript at the end of the intro's lead
+     * sentence and set above the folio behind a short rule -- the standard
+     * place a book puts an aside it does not want inside the paragraph.
+     */
+    note?: string;
+    /**
+     * A figure. Books carry diagrams with a numbered caption, and a freelance
+     * engagement is a short enough thing to draw: four nodes on one trace.
+     */
+    figure?: {
+      caption: string;
+      steps: { label: string; note: string }[];
+    };
   };
   /** A defined-terms list, set as the body of the right-hand page. */
   termsTitle?: string;
   terms?: PageTerm[];
+  /** A closing line under the terms. */
+  termsFoot?: string;
 };
 
 export const BOOK_PAGES: BookPage[] = [
@@ -46,25 +71,41 @@ export const BOOK_PAGES: BookPage[] = [
     facing: {
       headline: "We Architect the Future.",
       subtitle: "Building the Future with Intelligence.",
+      epigraph: "The person who plans it is the person who builds it.",
+      note: "Freelance means you hire people, not a pipeline. The same hands scope the work, write the code, and hand it over.",
+      figure: {
+        caption: "Fig. 1 — How the work runs",
+        steps: [
+          { label: "Talk", note: "free" },
+          { label: "Scope", note: "fixed" },
+          { label: "Build", note: "weekly" },
+          { label: "Ship", note: "yours" },
+        ],
+      },
+      intro: {
+        lead: "Nivlak is a freelance studio.",
+        body: "You work straight with the people who write your code. There are no account managers in the middle, no handover to a team you have not met, and no guessing what happens next.",
+      },
     },
     termsTitle: "NIV — The Meaning",
     terms: [
       {
         letter: "N",
         term: "Noble",
-        body: "We act with integrity and build with a purpose greater than business.",
+        body: "We keep our word, and we build for a reason bigger than money.",
       },
       {
         letter: "I",
         term: "Intelligent",
-        body: "We use technology with smart thinking to create real impact.",
+        body: "We use technology to solve real problems, not to look clever.",
       },
       {
         letter: "V",
         term: "Vision",
-        body: "We look ahead and build solutions that create long-term value.",
+        body: "We think ahead, so what we build still works years from now.",
       },
     ],
+    termsFoot: "Three letters. One way of working.",
   },
   {
     number: "02",

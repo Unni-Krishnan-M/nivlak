@@ -216,12 +216,39 @@ export function BookSheets() {
           className="absolute z-[5]"
           style={{ display: "none" }}
         >
-          <div
-            data-ink
-            className="flex h-full w-full flex-col justify-center py-[8%] pe-[12%] ps-[calc(10%+var(--facing-inset-start,0px))] text-slate-200"
-          >
+          <div className="flex h-full w-full flex-col justify-start pt-[18%] pb-[8%] pe-[12%] ps-[calc(10%+var(--facing-inset-start,0px))] text-slate-200">
             <FacingCopy page={opening} />
+
+            {/* Footnote. Behind a short rule at the foot of the page, which is
+                where a book puts an aside it does not want interrupting the
+                paragraph. mt-auto drops it there however long the text above
+                turns out to be. */}
+            {opening.facing?.note ? (
+              <div data-ink className="mt-auto mb-[9%] max-w-[42ch]">
+                <span
+                  aria-hidden
+                  className="mb-[0.9em] block h-px w-[26%] bg-white/15"
+                />
+                <p className="text-[clamp(0.62rem,0.84vw,0.76rem)] leading-relaxed text-slate-400/65">
+                  <sup className="me-[0.4em] align-super text-[0.7em] tabular-nums">
+                    1
+                  </sup>
+                  {opening.facing.note}
+                </p>
+              </div>
+            ) : null}
           </div>
+          {/* On a chapter opener the folio drops to the foot, flush with the
+              OUTSIDE margin -- which on a left-hand page is the left. The verso
+              carries the book's name and the recto the number, so the two
+              corners of the spread say different things instead of printing
+              the same value twice. */}
+          <p
+            data-ink
+            className="absolute bottom-[7%] start-[calc(10%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40"
+          >
+            NIVLAK
+          </p>
         </div>
       ) : null}
 
@@ -327,24 +354,164 @@ function PageFace({
   );
 }
 
-/** The opening left-hand page: the statement, before the page that explains it. */
+/**
+ * A printer's ornament, drawn from the company's own mark.
+ *
+ * Books break their text with these rather than with more text: a headpiece in
+ * the blank space at the start of a chapter, a tailpiece at the end of one.
+ * The classic form is a floral fleuron, which would be a lie on a technology
+ * studio's page -- so this is the circuit motif out of the N, reduced to a
+ * rule that breaks for three nodes. Same idea, same job, our alphabet.
+ */
+function Ornament({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 160 10"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+      fill="none"
+    >
+      <path
+        d="M0 5h50M110 5h50"
+        stroke="currentColor"
+        strokeWidth="1"
+        opacity="0.3"
+      />
+      <path
+        d="M64 5h6M90 5h6"
+        stroke="currentColor"
+        strokeWidth="1"
+        opacity="0.45"
+      />
+      <circle cx="58" cy="5" r="1.9" fill="currentColor" opacity="0.5" />
+      <circle cx="80" cy="5" r="3.1" fill="currentColor" opacity="0.75" />
+      <circle cx="102" cy="5" r="1.9" fill="currentColor" opacity="0.5" />
+    </svg>
+  );
+}
+
+/**
+ * A figure: one trace, four nodes, a label under each.
+ *
+ * Drawn rather than written because a page of nothing but paragraphs is what
+ * this spread kept turning back into. The nodes sit at the centres of four
+ * equal columns and the labels below use the same four-column grid, so the
+ * drawing and the type line up at any width without a magic number.
+ */
+function Figure({
+  figure,
+}: {
+  figure: NonNullable<NonNullable<BookPage["facing"]>["figure"]>;
+}) {
+  const columns = figure.steps.length;
+  const span = 320 / columns;
+  return (
+    <figure data-ink className="mt-[2.2em] max-w-[42ch]">
+      <svg
+        viewBox="0 0 320 30"
+        aria-hidden="true"
+        focusable="false"
+        className="w-full text-slate-300"
+        fill="none"
+      >
+        <path d="M8 11h304" stroke="currentColor" strokeWidth="1" opacity="0.26" />
+        {figure.steps.map((step, i) => {
+          const x = span * (i + 0.5);
+          return (
+            <g key={step.label}>
+              <path
+                d={`M${x} 11v13`}
+                stroke="currentColor"
+                strokeWidth="1"
+                opacity="0.26"
+              />
+              <circle cx={x} cy="11" r="3.3" fill="currentColor" opacity="0.75" />
+            </g>
+          );
+        })}
+      </svg>
+      <div
+        className="grid"
+        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+      >
+        {figure.steps.map((step) => (
+          <div key={step.label} className="text-center">
+            <p className="text-[clamp(0.66rem,0.9vw,0.82rem)] leading-none text-slate-200">
+              {step.label}
+            </p>
+            <p className="mt-[0.45em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.16em] text-slate-400/55">
+              {step.note}
+            </p>
+          </div>
+        ))}
+      </div>
+      <figcaption className="mt-[1.3em] text-[clamp(0.52rem,0.74vw,0.64rem)] tracking-[0.26em] text-slate-400/45">
+        {figure.caption.toUpperCase()}
+      </figcaption>
+    </figure>
+  );
+}
+
+/**
+ * The opening left-hand page.
+ *
+ * Laid out as a book chapter opener, which is a specific thing and not just a
+ * big heading: sinkage (the text starts low, not centred), a drop cap on the
+ * first paragraph, and the first sentence in small capitals to carry the eye
+ * from that oversized initial back down to body size. Those conventions belong
+ * to openers only, which is exactly why they appear on this page and on no
+ * other -- consistency here means NOT repeating them.
+ */
 function FacingCopy({ page }: { page: BookPage }) {
   if (!page.facing) return null;
+  const { headline, subtitle, intro, epigraph, note, figure } = page.facing;
   return (
     <>
-      <p className="mb-4 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
-        {page.number} &mdash; {page.title.toUpperCase()}
+      <div data-ink>
+        {/* Headpiece: the ornament that fills the blank at a chapter's head. */}
+        <Ornament className="mb-[1.4em] w-[42%] text-slate-300" />
+        <p className="mb-4 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
+          {page.number} &mdash; {page.title.toUpperCase()}
+        </p>
+        <h2 className="text-[clamp(1.7rem,3.5vw,3.4rem)] leading-[1.04] font-light text-balance text-white">
+          {headline}
+        </h2>
+        {/* Epigraph: the line a book sets under a chapter title, held off the
+            margin by a rule so it reads as quoted rather than as body text. */}
+        {epigraph ? (
+          <p className="mt-[1.1em] border-s border-white/15 ps-[1em] text-[clamp(0.74rem,1vw,0.92rem)] leading-relaxed text-slate-300/70 italic">
+            {epigraph}
+          </p>
+        ) : null}
+        <span aria-hidden className="mt-[1.1em] block h-px w-[38%] bg-white/20" />
+      </div>
+
+      <p
+        data-ink
+        className="mt-[1em] max-w-[30ch] text-[clamp(0.82rem,1.18vw,1.05rem)] leading-relaxed text-balance text-slate-300/85"
+      >
+        {subtitle}
       </p>
-      <h2 className="text-[clamp(1.7rem,3.5vw,3.4rem)] leading-[1.04] font-light text-balance text-white">
-        {page.facing.headline}
-      </h2>
-      <span
-        aria-hidden
-        className="my-[1em] block h-px w-[38%] bg-white/20"
-      />
-      <p className="max-w-[30ch] text-[clamp(0.82rem,1.18vw,1.05rem)] leading-relaxed text-balance text-slate-300/85">
-        {page.facing.subtitle}
-      </p>
+
+      {intro ? (
+        <p
+          data-ink
+          className="mt-[1.6em] max-w-[44ch] text-[clamp(0.76rem,1.02vw,0.94rem)] leading-relaxed text-slate-300/75 first-letter:float-left first-letter:me-[0.08em] first-letter:mt-[0.04em] first-letter:text-[3.4em] first-letter:leading-[0.82] first-letter:font-light first-letter:text-[#dce7f7]"
+        >
+          <span className="[font-variant-caps:small-caps] tracking-[0.06em] text-slate-200">
+            {intro.lead}
+          </span>
+          {note ? (
+            <sup className="ms-[0.15em] text-[0.62em] align-super text-slate-400/70 tabular-nums">
+              1
+            </sup>
+          ) : null}{" "}
+          {intro.body}
+        </p>
+      ) : null}
+
+      {figure ? <Figure figure={figure} /> : null}
     </>
   );
 }
@@ -355,7 +522,7 @@ function Terms({ page }: { page: BookPage }) {
   return (
     <>
       {page.termsTitle ? (
-        <p className="mb-[1.3em] text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80">
+        <p data-ink className="mb-[1.3em] text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80">
           {page.termsTitle.toUpperCase()}
         </p>
       ) : null}
@@ -363,6 +530,7 @@ function Terms({ page }: { page: BookPage }) {
         {page.terms.map((term) => (
           <div
             key={term.letter}
+            data-ink
             className="grid grid-cols-[1.4em_1fr] gap-x-[0.8em] border-t border-white/10 py-[0.9em]"
           >
             {/* The letter is the artwork on this page -- same silver as the
@@ -382,6 +550,50 @@ function Terms({ page }: { page: BookPage }) {
           </div>
         ))}
       </dl>
+      {page.termsFoot ? (
+        <p
+          data-ink
+          className="mt-[1.4em] border-t border-white/10 pt-[1.1em] text-[clamp(0.7rem,0.95vw,0.88rem)] tracking-[0.02em] text-slate-400/75"
+        >
+          {page.termsFoot}
+        </p>
+      ) : null}
+      {page.terms ? (
+        <div data-ink className="mt-[1.8em]">
+          {/* Tailpiece: the ornament that closes a chapter's text. */}
+          <Ornament className="w-[30%] text-slate-300" />
+        </div>
+      ) : null}
+
+      {/* The plate. A chapter's blank lower half is where a book puts a
+          picture, and the recto has the most of it. The same mark that is
+          embossed on the cover in the reveal, cut out of its photographic card
+          so the page shows through the circuit grooves -- inlaid in the paper
+          rather than pasted onto it. It sits on this page rather than the
+          verso for two reasons: the space is here, and this page is also the
+          full-bleed sheet a portrait phone gets, so the plate survives there
+          instead of disappearing with the left-hand page. */}
+      {page.terms ? (
+        <figure
+          data-ink
+          className="mt-auto mb-[9%] flex items-center gap-[1.1em] pt-[2em]"
+        >
+          <img
+            src="/logo-mark.webp"
+            alt=""
+            aria-hidden="true"
+            width={192}
+            height={192}
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            className="h-auto w-[clamp(74px,9.5vw,128px)] opacity-90 select-none"
+          />
+          <figcaption className="text-[clamp(0.5rem,0.72vw,0.62rem)] tracking-[0.32em] text-slate-400/45">
+            THE MARK
+          </figcaption>
+        </figure>
+      ) : null}
     </>
   );
 }
@@ -402,8 +614,12 @@ function PageFoot({ page }: { page: BookPage }) {
 function PageBody({ page }: { page: BookPage }) {
   return (
     <div
-      data-ink
-      className="flex h-full w-full flex-col justify-center py-[8%] ps-[10%] pe-[calc(10%+var(--page-text-inset-end,0px))] text-slate-200"
+      className={`flex h-full w-full flex-col ps-[10%] pe-[calc(10%+var(--page-text-inset-end,0px))] text-slate-200 ${
+        // Sinkage: a chapter opener starts low on the page rather than centred,
+        // and both halves of this spread take the same drop so their first
+        // lines sit on one line across the gutter.
+        page.facing ? "justify-start pt-[18%] pb-[8%]" : "justify-center py-[8%]"
+      }`}
     >
       {/* Portrait fallback. A full-bleed sheet is the whole window, so there is
           no facing page to print on and its copy is set above this page's own.
@@ -412,7 +628,7 @@ function PageBody({ page }: { page: BookPage }) {
       {page.facing ? (
         <div
           data-facing-inline
-          className="mb-[1.8em]"
+          className="mb-[1.6em]"
           style={{ display: "none" }}
         >
           <FacingCopy page={page} />
@@ -422,7 +638,7 @@ function PageBody({ page }: { page: BookPage }) {
       {page.terms ? (
         <Terms page={page} />
       ) : (
-        <>
+        <div data-ink>
           <p className="mb-3 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
             {page.number} &mdash; {page.title.toUpperCase()}
           </p>
@@ -443,8 +659,18 @@ function PageBody({ page }: { page: BookPage }) {
               ))}
             </ul>
           ) : null}
-        </>
+        </div>
       )}
+
+      {/* Drop folio, flush with this page's outside margin -- the right. */}
+      {page.facing ? (
+        <p
+          data-ink
+          className="absolute bottom-[7%] end-[calc(10%+var(--page-text-inset-end,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
+        >
+          {page.number}
+        </p>
+      ) : null}
     </div>
   );
 }

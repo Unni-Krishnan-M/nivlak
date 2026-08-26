@@ -369,15 +369,28 @@ export function Book() {
       // Only the ink arrives. The first page's type fades up over the paper
       // that was already there, on a face that its own overflow clip has
       // already flattened, so opacity costs nothing in 3D terms here.
+      //
+      // Left page first, then the right: the order this array is built in is
+      // the order the stagger below plays, so it has to be reading order.
       const ink = [
-        ...(sheets[0]?.querySelectorAll<HTMLElement>("[data-ink]") ?? []),
         ...(facing?.querySelectorAll<HTMLElement>("[data-ink]") ?? []),
+        ...(sheets[0]?.querySelectorAll<HTMLElement>("[data-ink]") ?? []),
       ];
       if (ink.length) {
         tl.fromTo(
           ink,
           { autoAlpha: 0 },
-          { autoAlpha: 1, duration: LEAD_IN },
+          {
+            autoAlpha: 1,
+            // Split the lead-in between how long one block takes and how far
+            // apart the blocks are, so the whole spread still finishes landing
+            // exactly on LEAD_IN however many blocks the opener happens to
+            // have. A stagger rather than one fade because the spread then
+            // arrives the way a reader takes it in -- title, then the line
+            // under it, then the paragraph -- instead of all at once.
+            duration: LEAD_IN * 0.55,
+            stagger: (LEAD_IN * 0.45) / Math.max(1, ink.length - 1),
+          },
           "pages",
         );
       }

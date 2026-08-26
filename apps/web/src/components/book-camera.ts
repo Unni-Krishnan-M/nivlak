@@ -204,3 +204,61 @@ export function planAt(
   // there are no camera cuts in this source, so nothing ever dips.
   return { playhead, base, mix, dip: 0, layers };
 }
+
+// ---------------------------------------------------------------------------
+// Where the open spread lands, for anything that has to sit ON the book rather
+// than be painted into it.
+//
+// <BookPages> stacks six turnable sheets over the final frame, and they only
+// read as pages of *this* book if their spine sits exactly on the gutter in the
+// footage and their edges on the paper's edges. So the geometry comes from the
+// same camera the painter uses, not from a guess in CSS.
+//
+// The three constants are measured off frame-091 (the last frame of the clip),
+// in the 1920x1080 source space: the darkest column across the middle of the
+// spread is the gutter, and the paper runs from just inside the left edge to
+// just inside the right one, full bleed top to bottom.
+const GUTTER_X = 975;
+const PAPER_LEFT_X = 20;
+const PAPER_RIGHT_X = 1902;
+
+export type Rect = { x: number; y: number; width: number; height: number };
+
+/**
+ * The two halves of the open spread, in CSS pixels on a `width` x `height`
+ * canvas, as the reveal leaves them at u = 1.
+ */
+export function spreadAt(width: number, height: number): {
+  left: Rect;
+  right: Rect;
+} {
+  const plan = planAt(1, width, height);
+  // The last layer is the final frame; at u = 1 the blend has fully arrived
+  // there, and its placement is the one the eye is left looking at.
+  const frame = plan.layers[plan.layers.length - 1];
+  const sx = frame.width / FRAME_W;
+  const sy = frame.height / FRAME_H;
+  const at = (source: number) => frame.x + source * sx;
+
+  return {
+    left: {
+      x: at(PAPER_LEFT_X),
+      y: frame.y,
+      width: (GUTTER_X - PAPER_LEFT_X) * sx,
+      height: FRAME_H * sy,
+    },
+    right: {
+      x: at(GUTTER_X),
+      y: frame.y,
+      width: (PAPER_RIGHT_X - GUTTER_X) * sx,
+      height: FRAME_H * sy,
+    },
+  };
+}
+
+/** Where the whole final frame is drawn, for pinning an <img> of it in place. */
+export function finalFrameRect(width: number, height: number): Rect {
+  const plan = planAt(1, width, height);
+  const frame = plan.layers[plan.layers.length - 1];
+  return { x: frame.x, y: frame.y, width: frame.width, height: frame.height };
+}

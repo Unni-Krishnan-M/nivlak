@@ -24,16 +24,16 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 // How much scroll the reveal is stretched over, as a multiple of viewport
 // height, and how much catch-up the scrub has.
 //
-// 380% was too quick, and that was measured rather than guessed: on a 900px
-// viewport it is 2877px of scroll for the whole eight-second move, which a
-// trackpad crosses in one or two flicks. At 800% each of the 91 frames gets
-// about 78px of scroll, so the book opens at a deliberate pace instead of
-// snapping through.
+// 800% was the deliberate-pace setting: every one of the 91 frames got about
+// 78px of scroll, which took roughly six wheel gestures to cross. That is more
+// patience than the reveal is worth, so it is halved. At 400% on a 900px
+// viewport the whole move is 3600px -- about three flicks of a trackpad -- and
+// each frame still gets ~40px, enough that the scrub reads as a glide rather
+// than a jump between frames.
 //
-// The scrub goes back up with it. Over the short length a long catch-up made the
-// book feel detached from the wheel; over this distance the lag is what turns a
-// wheel notch into a glide.
-const SCROLL_LENGTH = "+=800%";
+// The scrub stays where it is: the catch-up is what turns a wheel notch into a
+// glide, and it is short enough not to feel detached over this distance.
+const SCROLL_LENGTH = "+=400%";
 const SCRUB = 1.0;
 
 // Frames requested per batch after the first. Ninety-one at once is ninety-one
@@ -46,10 +46,7 @@ export function BookScrollReveal() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const kickerRef = useRef<HTMLParagraphElement>(null);
-  const headlineRef = useRef<HTMLHeadingElement>(null);
-  const taglineRef = useRef<HTMLParagraphElement>(null);
   const scrollCueRef = useRef<HTMLDivElement>(null);
-  const closingRef = useRef<HTMLDivElement>(null);
 
   const imagesRef = useRef<(HTMLImageElement | null)[]>([]);
   // Highest frame index that is decoded and safe to draw. The playhead is
@@ -244,18 +241,8 @@ export function BookScrollReveal() {
           if (reduced) {
             scroll.u = 1;
             draw();
-            gsap.set(
-              [
-                kickerRef.current,
-                headlineRef.current,
-                taglineRef.current,
-              ].filter(Boolean),
-              { autoAlpha: 1, y: 0 },
-            );
+            gsap.set(kickerRef.current, { autoAlpha: 1, y: 0 });
             gsap.set(scrollCueRef.current, { autoAlpha: 0 });
-            // The closing line is a bookend to the headline, and with no scroll
-            // to separate them it would just be the headline printed twice.
-            gsap.set(closingRef.current, { autoAlpha: 0 });
             return;
           }
 
@@ -268,6 +255,14 @@ export function BookScrollReveal() {
               scrub: SCRUB,
               pin: true,
               anticipatePin: 1,
+              // No refreshPriority here on purpose. ScrollTrigger's refresh
+              // comparator sorts on `-1e6 * refreshPriority + _sortY`, and _sortY is
+              // the trigger's position on the page -- so page order is already the
+              // default and these two refresh in the right order for free. Setting
+              // it also inverts easily: HIGHER priority refreshes first, so the
+              // intuitive "first section gets 0, second gets 1" refreshes the second
+              // section's pin before the one its start is measured against, and the
+              // reveal loses most of its scroll length.
             },
             onUpdate: draw,
           });
@@ -277,44 +272,18 @@ export function BookScrollReveal() {
           // -- a relative tween would then be a no-op.
           tl.fromTo(scroll, { u: 0 }, { u: 1, duration: 1 }, 0);
 
-          // Title is visible on load; fade it out before the book visibly
+          // Wordmark is visible on load; fade it out before the book visibly
           // starts opening so the reveal gets a clean, text-free stage.
-          if (kickerRef.current && headlineRef.current) {
+          if (kickerRef.current) {
             tl.to(
-              [kickerRef.current, headlineRef.current],
+              kickerRef.current,
               { autoAlpha: 0, y: -16, duration: 0.1 },
               0.05,
             );
           }
 
-          if (taglineRef.current) {
-            tl.fromTo(
-              taglineRef.current,
-              { autoAlpha: 0, y: 16 },
-              { autoAlpha: 1, y: 0, duration: 0.08 },
-              0.18,
-            ).to(
-              taglineRef.current,
-              { autoAlpha: 0, y: -16, duration: 0.08 },
-              0.34,
-            );
-          }
-
           if (scrollCueRef.current) {
             tl.to(scrollCueRef.current, { autoAlpha: 0, duration: 0.05 }, 0.02);
-          }
-
-          // The last third of the scroll is two frames of the same flat navy
-          // spread: the push-in keeps it moving, but nothing in the picture is
-          // happening. So the spread is treated as what it is -- a blank page
-          // -- and the line the reveal opened on is set down on it.
-          if (closingRef.current) {
-            tl.fromTo(
-              closingRef.current,
-              { autoAlpha: 0, y: 28 },
-              { autoAlpha: 1, y: 0, duration: 0.16 },
-              0.72,
-            );
           }
 
           return () => {
@@ -364,30 +333,6 @@ export function BookScrollReveal() {
           className="mb-3 -me-[0.3em] text-xs tracking-[0.3em] text-slate-300/80 uppercase"
         >
           Nivlak Technologies
-        </p>
-        <h1
-          ref={headlineRef}
-          className="text-3xl font-semibold text-white sm:text-5xl portrait:max-w-2xl landscape:max-w-[40vw]"
-        >
-          Every page, engineered.
-        </h1>
-        <p
-          ref={taglineRef}
-          className="invisible mt-4 text-sm text-slate-300/80 sm:text-base portrait:max-w-md landscape:max-w-[34vw]"
-        >
-          Scroll to open the story.
-        </p>
-      </div>
-
-      <div
-        ref={closingRef}
-        className="pointer-events-none invisible absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
-      >
-        <p className="mb-4 -me-[0.3em] text-[10px] tracking-[0.4em] text-slate-300/60 uppercase">
-          Nivlak Technologies
-        </p>
-        <p className="max-w-xl text-2xl font-semibold text-white/90 sm:text-4xl">
-          Every page, engineered.
         </p>
       </div>
 

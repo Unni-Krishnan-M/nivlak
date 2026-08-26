@@ -2,6 +2,7 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -13,6 +14,8 @@ import {
   pickTier,
   planAt,
 } from "@/components/book-camera";
+import { BookIndex, BookNav } from "@/components/book-nav";
+import { BOOK_PAGES } from "@/components/book-pages.content";
 import {
   BookPageColumn,
   BookSheets,
@@ -21,7 +24,7 @@ import {
   paintSheets,
 } from "@/components/book-sheets";
 
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, useGSAP);
 
 // The whole landing page: a book that opens, then turns six pages.
 //
@@ -172,7 +175,7 @@ export function Book() {
   }, [load, settleCeiling]);
 
   useGSAP(
-    () => {
+    (_context, contextSafe) => {
       // Deliberately not gated on the first frame having loaded: the pin
       // spacer has to exist before the visitor scrolls, and draw() copes with
       // an empty cache by painting the letterbox colour and returning.
@@ -288,12 +291,48 @@ export function Book() {
         redrawRef.current = () => {};
       };
 
+      // The running head. Its buttons carry an index and nothing else; what
+      // that index means in scroll terms is worked out here, differently for
+      // each branch, because with the pin there is no element to scroll to --
+      // a section is a time on the playhead.
+      const navItems = [
+        ...section.querySelectorAll<HTMLElement>("[data-nav-item]"),
+      ];
+      const headNav = section.querySelector<HTMLElement>("[data-book-nav]");
+      const thumbIndex = section.querySelector<HTMLElement>("[data-book-index]");
+      let goTo = (_index: number) => {};
+      const onNavClick = (event: Event) => {
+        const el = (event.currentTarget ?? event.target) as HTMLElement;
+        goTo(Number(el.dataset.index));
+      };
+      for (const el of navItems) el.addEventListener("click", onNavClick);
+      const dropNav = () => {
+        for (const el of navItems) el.removeEventListener("click", onNavClick);
+      };
+
       if (reduced) {
         // Park the book open and let <BookPageColumn> below carry the copy.
         scroll.u = 1;
         draw();
         gsap.set(kickerRef.current, { autoAlpha: 1, y: 0 });
-        return teardown;
+        // Reduced motion has no spread and no fore-edge -- it is an ordinary
+        // scrolling column -- so the head bar stays and the thumb index, which
+        // only makes sense on an open book, is not shown at all.
+        gsap.set(thumbIndex, { autoAlpha: 0 });
+        // No timeline to seek, and no business animating a scroll for someone
+        // who asked for less motion: jump.
+        goTo = (index) => {
+          const target =
+            index < 0
+              ? null
+              : document.getElementById(`section-${BOOK_PAGES[index]?.number}`);
+          if (target) target.scrollIntoView();
+          else window.scrollTo(0, 0);
+        };
+        return () => {
+          dropNav();
+          teardown();
+        };
       }
 
       const sheets = [
@@ -422,7 +461,89 @@ export function Book() {
       // rather than a thing you scroll past.
       tl.to({}, { duration: TRAIL });
 
-      return teardown;
+      // --- the head bar hands over to the fore-edge -------------------------
+      //
+      // The bar is right for a closed book and wrong for an open one: its rule
+      // spans the window and cuts across the gutter. So it leaves just before
+      // the spread arrives and the thumb index takes over, which is a device
+      // that lives in the outer margin and never crosses the gutter at all.
+      // Both are on the timeline rather than on a scroll listener so scrubbing
+      // backwards puts the bar back.
+      gsap.set(thumbIndex, { autoAlpha: 0 });
+      if (headNav) {
+        tl.to(
+          headNav,
+          { autoAlpha: 0, duration: LEAD_IN * 0.7 },
+          `pages-=${LEAD_IN * 0.7}`,
+        );
+      }
+      if (thumbIndex) {
+        tl.fromTo(
+          thumbIndex,
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: LEAD_IN * 0.8 },
+          "pages",
+        );
+      }
+
+      // --- the running head ------------------------------------------------
+      //
+      // Where each page sits on the playhead. Page 0 is face up once its ink
+      // has landed; page k once sheet k-1 has finished turning, plus half a
+      // gap so it is settled rather than only just arrived.
+      const timeOf = (index: number) =>
+        index <= 0
+          ? OPEN + LEAD_IN
+          : OPEN + LEAD_IN + (index - 1) * (TURN + GAP) + TURN + GAP * 0.5;
+
+      // contextSafe because this runs from a click long after useGSAP has
+      // finished: without it the tween is created outside the context and
+      // never gets reverted.
+      const seek = (index: number) => {
+        const trigger = tl.scrollTrigger;
+        if (!trigger) return;
+        const y =
+          index < 0
+            ? 0
+            : trigger.start +
+              (timeOf(index) / tl.duration()) * (trigger.end - trigger.start);
+        gsap.to(window, {
+          // autoKill so a flick of the wheel takes the scroll back off the
+          // tween rather than fighting it.
+          scrollTo: { y, autoKill: true },
+          duration: 0.9,
+          ease: "power2.inOut",
+          overwrite: true,
+        });
+      };
+      // contextSafe is optional in the hook's types, so fall back to the bare
+      // function rather than asserting it is there.
+      goTo = contextSafe ? contextSafe(seek) : seek;
+
+      // Which page is face up. This runs on every scrubbed frame, so it only
+      // writes to the DOM when the answer actually changes.
+      let lastCurrent = Number.NaN;
+      const syncNav = () => {
+        const t = tl.time();
+        let current = t >= OPEN + LEAD_IN * 0.5 ? 0 : -1;
+        for (let i = 0; i < TURNS; i++) {
+          const midTurn = OPEN + LEAD_IN + i * (TURN + GAP) + TURN * 0.5;
+          if (t >= midTurn) current = i + 1;
+        }
+        if (current === lastCurrent) return;
+        lastCurrent = current;
+        for (const el of navItems) {
+          const index = Number(el.dataset.index);
+          if (index >= 0) el.dataset.current = String(index === current);
+        }
+      };
+      tl.eventCallback("onUpdate", syncNav);
+      syncNav();
+
+      return () => {
+        dropNav();
+        teardown();
+      };
     },
     {
       dependencies: [reduced],
@@ -483,6 +604,9 @@ export function Book() {
         </div>
 
         {reduced ? null : <BookSheets />}
+
+        <BookNav />
+        <BookIndex />
       </section>
 
       {/* Appended after the section rather than swapped into it, so React only

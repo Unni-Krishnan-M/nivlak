@@ -298,7 +298,8 @@ export function BookPageColumn() {
       {BOOK_PAGES.map((page) => (
         <article
           key={page.number}
-          className="mx-auto max-w-2xl px-6 py-24 text-slate-200"
+          id={`section-${page.number}`}
+          className="mx-auto max-w-2xl scroll-mt-16 px-6 py-24 text-slate-200"
         >
           {page.facing ? (
             <div className="mb-10">

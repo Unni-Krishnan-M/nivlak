@@ -42,13 +42,18 @@ looks wrong — the montage is for finding the suspect frame, not for judging it
 
 ## What to check, every time
 
-1. **Document height.** The tool prints it. It should be
-   `(1 + reveal%) + (1 + pages%)` viewports — currently `5 + 5.5 = 10.5`.
-   Anything larger means pin spacing is being left behind by a killed trigger.
+1. **Document height.** The tool prints it. One section, one pin, so it is
+   `1 + 700% = 8.0` viewports (4.7 under reduced motion, which does not pin).
+   Larger means pin spacing is being left behind by a killed trigger. Two
+   pinned sections would mean someone has split `<Book>` again — don't.
 2. **No black stretch.** A run of near-empty dark frames means sheets are
    mispositioned, turned away, or hidden — not that the design is dark.
-3. **The join.** The handover from reveal to pages must be a dissolve from the
-   photographed right-hand page to the drawn one, with no doubled type.
+3. **The switch at 250%.** Where the book stops opening and the sheets appear,
+   nothing should change but the type fading in. A visible step in the picture
+   means the sheets' background has drifted from the canvas's final frame.
+   There is no longer any section handover to check — if you see a hard
+   horizontal line with the book above and below it, the single section has
+   been split back into two.
 4. **Every heading appears**, in order, once.
 5. **The turn reads as a page.** Sample one turn densely and confirm you get
    foreshortening and shading, not a fade.

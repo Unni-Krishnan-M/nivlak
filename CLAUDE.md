@@ -51,16 +51,27 @@ production. Changing `next.config.ts` or the output mode affects both.
 
 ## The landing page
 
-`apps/web/src/app/page.tsx` is two pinned sections and nothing else. No header,
+`apps/web/src/app/page.tsx` is one pinned section and nothing else. No header,
 no footer, no panels.
 
 ```
-<BookScrollReveal />   01  navy book opens, 91-frame canvas scrub   +=400%
-<BookPages />          02-07  six sheets turn over the open spread  +=450%
+<Book />   one section, one pin, one timeline   +=700%
+             0%..250%   the book opens (91-frame canvas scrub)
+           250%..700%   six sheets turn over the frame it lands on
 ```
+
+**It is one section on purpose.** It used to be two — a reveal and a pages
+section — and two stacked full-height pins cannot be joined without a seam: the
+first has to travel its own height before the second reaches the top of the
+window, so for a full viewport of scroll you saw the finished book slide up
+while an identical copy slid in underneath, split by a hard horizontal line.
+Pulling the second up to close the gap only moved the problem — it then crept
+over the first while the book was still opening. Do not split it again.
 
 ### Files, in the order to read them
 
+0. **`book.tsx`** — the section, the pin, the single timeline, the canvas and
+   the frame cache. Start here for anything about timing.
 1. **`book-camera.ts`** — pure arithmetic, no DOM. This is where the reveal is
    *designed*; everything else paints what it returns. Read it first.
    - `planAt(u, w, h)` → what to draw at scroll progress `u`.
@@ -69,10 +80,11 @@ no footer, no panels.
 2. **`book-frames.generated.ts`** — generated, never hand-edit. Frame count,
    dimensions, letterbox colour, and a measured per-frame bounding box of the
    book so the pan follows the real footage instead of a guess.
-3. **`book-scroll-reveal.tsx`** — owns the canvas, the frame cache and the
-   first ScrollTrigger.
-4. **`book-pages.tsx`** — owns the six turning sheets and the second one.
-5. **`book-pages.content.ts`** — the six sections' copy. Currently placeholder.
+3. **`book-sheets.tsx`** — the sheets' markup and geometry, and nothing that
+   animates. `layoutSheets()` puts them on the book; `paintSheets()` derives
+   z-order and shading from their angles. `<Book>` finds them by data attribute
+   inside its own GSAP scope, so no refs are plumbed across.
+4. **`book-pages.content.ts`** — the six sections' copy. Currently placeholder.
 
 ### Rules that are not obvious from the code
 
@@ -97,6 +109,11 @@ no footer, no panels.
 - **Redraw on ScrollTrigger's `refresh`, not on `resize`.** While pinned, GSAP
   writes explicit pixel dimensions onto the section, so a resize handler reads
   the stale pinned size.
+- **The sheets are hidden until the book has finished opening**, and switched
+  on with `gsap.set`, not a fade. Their paper is the same photograph the canvas
+  is showing by then, at the same rect, so there is nothing to dissolve — and a
+  fractional opacity would flatten their 3D at exactly the wrong moment (see
+  below). Only the first page's ink fades.
 - **Never put `opacity`, `overflow`, or `filter` on a sheet.** Per CSS
   Transforms 2, those are grouping values: any of them forces
   `transform-style: flat` on the element, dropping it out of the 3D context so

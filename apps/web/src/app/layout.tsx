@@ -50,6 +50,22 @@ export default function RootLayout({
           media="(min-width: 900px)"
           fetchPriority="high"
         />
+
+        {/* Netlify injects its HUD badge script at the end of every HTML
+            response served from *.netlify.app on the free plan -- it is not in
+            this markup and there is no site setting to turn it off. The script
+            reads its own per-site dismissal key before it renders anything, so
+            pre-setting that key keeps the badge off; the observer is the
+            belt-and-braces half, for the case where the tag lands before this
+            runs or the key write throws (private mode, storage blocked). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{try{for(const v of["public","owner-private"])localStorage.setItem("nl-hud:"+v+":v1","hidden")}catch(e){}
+const kill=()=>{for(const el of document.querySelectorAll("script[data-nf-variant],#nl-hud-frame,#nl-badge-frame"))el.remove()};
+kill();new MutationObserver(kill).observe(document.documentElement,{childList:true,subtree:true});
+document.addEventListener("DOMContentLoaded",kill)})()`,
+          }}
+        />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/* No chrome here on purpose: the landing page is the book reveal

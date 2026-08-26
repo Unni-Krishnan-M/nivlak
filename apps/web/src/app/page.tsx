@@ -1,14 +1,9 @@
-import { BookPages } from "@/components/book-pages";
-import { BookScrollReveal } from "@/components/book-scroll-reveal";
+import { Book } from "@/components/book";
 
-// The landing page is the book and nothing else -- no header, no panels. The
-// reveal pins itself while the book opens; <BookPages> pins itself straight
-// after, holding the open spread still while six content pages turn over it.
+// The landing page is the book and nothing else -- no header, no panels. One
+// pinned section carries the whole thing: the book opens, then six pages turn
+// over the frame it lands on. See book.tsx for why that is one section and not
+// two.
 export default function Home() {
-  return (
-    <>
-      <BookScrollReveal />
-      <BookPages />
-    </>
-  );
+  return <Book />;
 }

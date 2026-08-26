@@ -3,7 +3,7 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   FRAME_COUNT,
@@ -13,28 +13,66 @@ import {
   pickTier,
   planAt,
 } from "@/components/book-camera";
+import {
+  BookPageColumn,
+  BookSheets,
+  TURNS,
+  layoutSheets,
+  paintSheets,
+} from "@/components/book-sheets";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
+// The whole landing page: a book that opens, then turns six pages.
+//
+// ONE section, ONE pin, ONE timeline, and that is the point of this file. It
+// used to be two pinned sections -- a reveal and a pages section -- and they
+// could not be joined without a seam. Two stacked full-height pins mean the
+// first has to travel its own height before the second reaches the top of the
+// window, so for a full viewport of scroll you saw the finished book slide up
+// while an identical copy of it slid in underneath, split by a hard horizontal
+// line. Pulling the second section up to close the gap only moved the problem:
+// it then crept over the first while the book was still opening.
+//
+// There is no handover here to get wrong. The canvas draws the opening, the
+// sheets turn over the frame it lands on, and both are children of the same
+// pinned element driven by the same playhead.
+//
 // The frames are built by tools/build-book-frames.sh and the camera that moves
 // over them lives in book-camera.ts -- read that first, it is where the reveal
-// is actually designed. This component only owns the canvas, the frame cache
-// and the ScrollTrigger.
+// is actually designed. book-sheets.tsx owns the sheets' markup and geometry.
 
-// How much scroll the reveal is stretched over, as a multiple of viewport
-// height, and how much catch-up the scrub has.
+// The two numbers worth turning. Each is how much wheel that phase gets, as a
+// multiple of viewport height, and the timeline below is built so both phases
+// really do scroll at the rate their percentage says.
 //
-// 800% was the deliberate-pace setting: every one of the 91 frames got about
-// 78px of scroll, which took roughly six wheel gestures to cross. That is more
-// patience than the reveal is worth, so it is halved. At 400% on a 900px
-// viewport the whole move is 3600px -- about three flicks of a trackpad -- and
-// each frame still gets ~40px, enough that the scrub reads as a glide rather
-// than a jump between frames.
-//
-// The scrub stays where it is: the catch-up is what turns a wheel notch into a
-// glide, and it is short enough not to feel detached over this distance.
-const SCROLL_LENGTH = "+=400%";
+// The opening has come down twice. 800% gave each of the 91 frames about 78px
+// of scroll and took roughly six trackpad flicks; 400% halved that to three;
+// 250% is about two. At 250% on a 900px viewport the move is 2250px and a
+// frame gets ~25px, still inside the range where the cross-fade between
+// adjacent frames reads as motion blur rather than as a dissolve -- see the
+// note at the top of book-camera.ts, which puts that threshold at thirty
+// pixels. Much below this and the individual frames start to show.
+const OPEN_VH = 250;
+const PAGES_VH = 450;
+const SCROLL_LENGTH = `+=${OPEN_VH + PAGES_VH}%`;
+
+// The scrub's catch-up, in seconds. Short enough to stay attached to the
+// wheel, long enough that a wheel notch becomes a glide.
 const SCRUB = 1.0;
+
+// Timeline units for the page phase. One unit is a turn; the gap after it is
+// the rest of the bar, because without it the pages run into each other and
+// there is never a moment where a page is simply open and readable.
+const TURN = 1;
+const GAP = 0.2;
+const LEAD_IN = 0.4;
+const TRAIL = 0.5;
+const PAGES_UNITS = LEAD_IN + (TURNS - 1) * (TURN + GAP) + TURN + TRAIL;
+
+// The opening expressed in the same units, so the split of the timeline
+// matches the split of the scroll length above.
+const OPEN = (PAGES_UNITS * OPEN_VH) / PAGES_VH;
 
 // Frames requested per batch after the first. Ninety-one at once is ninety-one
 // parallel requests fighting the document for the connection on a cold load; in
@@ -42,7 +80,7 @@ const SCRUB = 1.0;
 // instead of every frame arriving at the end.
 const BATCH = 8;
 
-export function BookScrollReveal() {
+export function Book() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const kickerRef = useRef<HTMLParagraphElement>(null);
@@ -62,6 +100,15 @@ export function BookScrollReveal() {
   if (tierRef.current === null && typeof window !== "undefined") {
     tierRef.current = pickTier(window.innerWidth);
   }
+
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
 
   // Highest contiguous index present in imagesRef. Derived, never reset: the
   // ref survives a remount (and StrictMode's double invoke), so resetting would
@@ -129,9 +176,10 @@ export function BookScrollReveal() {
       // Deliberately not gated on the first frame having loaded: the pin
       // spacer has to exist before the visitor scrolls, and draw() copes with
       // an empty cache by painting the letterbox colour and returning.
+      const section = sectionRef.current;
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d", { alpha: false });
-      if (!canvas || !ctx) return;
+      if (!section || !canvas || !ctx) return;
 
       // Nearest frame at or before `index` that actually decoded, so a single
       // failed request degrades to a held frame instead of a blank one.
@@ -201,24 +249,29 @@ export function BookScrollReveal() {
         ctx.globalAlpha = 1;
       };
 
-      redrawRef.current = draw;
-      draw();
+      const relayout = () => {
+        draw();
+        layoutSheets(section, tierRef.current);
+      };
 
-      // The canvas has to be redrawn on ScrollTrigger's refresh, not on raw
-      // resize: while pinned, GSAP writes explicit pixel dimensions onto the
-      // section, so a resize handler reads the stale pinned size and the fresh
-      // one only lands on the next refresh.
+      redrawRef.current = draw;
+      relayout();
+
+      // Redraw on ScrollTrigger's refresh, not on raw resize: while pinned,
+      // GSAP writes explicit pixel dimensions onto the section, so a resize
+      // handler reads the stale pinned size and the fresh one only lands on
+      // the next refresh.
       let disposed = false;
       let rafId = 0;
-      const onRefresh = () => draw();
+      const onRefresh = () => relayout();
       ScrollTrigger.addEventListener("refresh", onRefresh);
       const observer = new ResizeObserver(() => {
         cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(() => {
-          if (!disposed) draw();
+          if (!disposed) relayout();
         });
       });
-      observer.observe(canvas);
+      observer.observe(section);
       if (document.fonts?.ready) {
         document.fonts.ready.then(() => {
           // A stray global refresh landing inside the next mount's setup is
@@ -227,77 +280,130 @@ export function BookScrollReveal() {
         });
       }
 
-      const mm = gsap.matchMedia();
-
-      mm.add(
-        {
-          reduced: "(prefers-reduced-motion: reduce)",
-          full: "(prefers-reduced-motion: no-preference)",
-        },
-        (context) => {
-          const { reduced } = context.conditions as { reduced: boolean };
-
-          if (reduced) {
-            scroll.u = 1;
-            draw();
-            gsap.set(kickerRef.current, { autoAlpha: 1, y: 0 });
-            return;
-          }
-
-          const tl = gsap.timeline({
-            defaults: { ease: "none" },
-            scrollTrigger: {
-              trigger: sectionRef.current,
-              start: "top top",
-              end: SCROLL_LENGTH,
-              scrub: SCRUB,
-              pin: true,
-              anticipatePin: 1,
-              // No refreshPriority here on purpose. ScrollTrigger's refresh
-              // comparator sorts on `-1e6 * refreshPriority + _sortY`, and _sortY is
-              // the trigger's position on the page -- so page order is already the
-              // default and these two refresh in the right order for free. Setting
-              // it also inverts easily: HIGHER priority refreshes first, so the
-              // intuitive "first section gets 0, second gets 1" refreshes the second
-              // section's pin before the one its start is measured against, and the
-              // reveal loses most of its scroll length.
-            },
-            onUpdate: draw,
-          });
-
-          // fromTo, not to: the reduced-motion branch parks the scroll at the
-          // end, and gsap.matchMedia re-runs this callback when the query flips
-          // -- a relative tween would then be a no-op.
-          tl.fromTo(scroll, { u: 0 }, { u: 1, duration: 1 }, 0);
-
-          // Wordmark is visible on load; fade it out before the book visibly
-          // starts opening so the reveal gets a clean, text-free stage.
-          if (kickerRef.current) {
-            tl.to(
-              kickerRef.current,
-              { autoAlpha: 0, y: -16, duration: 0.1 },
-              0.05,
-            );
-          }
-
-
-          return () => {
-            tl.scrollTrigger?.kill();
-            tl.kill();
-          };
-        },
-      );
-
-      return () => {
+      const teardown = () => {
         disposed = true;
         cancelAnimationFrame(rafId);
         ScrollTrigger.removeEventListener("refresh", onRefresh);
         observer.disconnect();
         redrawRef.current = () => {};
-        mm.revert();
       };
+
+      if (reduced) {
+        // Park the book open and let <BookPageColumn> below carry the copy.
+        scroll.u = 1;
+        draw();
+        gsap.set(kickerRef.current, { autoAlpha: 1, y: 0 });
+        return teardown;
+      }
+
+      const sheets = [
+        ...section.querySelectorAll<HTMLElement>("[data-sheet]"),
+      ];
+      const paint = () =>
+        paintSheets(sheets, (sheet) =>
+          Number(gsap.getProperty(sheet, "rotationY")),
+        );
+
+      const tl = gsap.timeline({
+        defaults: { ease: "none" },
+        scrollTrigger: {
+          trigger: section,
+          start: "top top",
+          end: SCROLL_LENGTH,
+          scrub: SCRUB,
+          pin: true,
+          anticipatePin: 1,
+        },
+      });
+
+      // --- the book opens -------------------------------------------------
+      //
+      // fromTo, not to: the reduced-motion branch parks the scroll at the end,
+      // and this callback re-runs when the query flips -- a relative tween
+      // would then be a no-op.
+      //
+      // onUpdate lives on this tween rather than on the timeline so the canvas
+      // is only repainted while the opening is actually moving. On the
+      // timeline it would redraw 91 frames' worth of compositing under every
+      // page turn, for a picture that cannot change.
+      tl.fromTo(
+        scroll,
+        { u: 0 },
+        { u: 1, duration: OPEN, onUpdate: draw },
+        0,
+      );
+
+      // Wordmark is visible on load; fade it out before the book visibly
+      // starts opening so the reveal gets a clean, text-free stage.
+      if (kickerRef.current) {
+        tl.to(
+          kickerRef.current,
+          { autoAlpha: 0, y: -16, duration: 0.1 * OPEN },
+          0.05 * OPEN,
+        );
+      }
+
+      // --- the pages turn --------------------------------------------------
+      //
+      // The sheets are hidden until the book has finished opening, or their
+      // opaque frame-091 paper would cover the opening book. They are switched
+      // on with a set rather than faded: the paper is the same photograph the
+      // canvas is showing by then, at the same rect, so there is nothing to
+      // dissolve -- and an opacity between 0 and 1 is a grouping value that
+      // forces transform-style:flat, which would drop the sheets out of the 3D
+      // context at exactly the wrong moment.
+      gsap.set(sheets, { autoAlpha: 0 });
+      tl.set(sheets, { autoAlpha: 1 }, OPEN);
+      paint();
+
+      // Only the ink arrives. The first page's type fades up over the paper
+      // that was already there, on a face that its own overflow clip has
+      // already flattened, so opacity costs nothing in 3D terms here.
+      const ink = sheets[0]?.querySelectorAll<HTMLElement>("[data-ink]");
+      if (ink?.length) {
+        tl.fromTo(ink, { autoAlpha: 0 }, { autoAlpha: 1, duration: LEAD_IN }, OPEN);
+      }
+
+      // One staggered tween, not five hand-positioned ones. Same animation on
+      // every sheet at a fixed offset is exactly what stagger is for, and it
+      // collapses five tweens and five onUpdate callbacks into one of each --
+      // the callback can then paint the whole stack in a single pass instead
+      // of each sheet racing to set its own z-index.
+      //
+      // Linear, and linear for a reason that only shows up under a scrub: an
+      // eased turn spends most of its angle in the middle of the tween, so the
+      // part of the flip worth looking at goes past in a couple of hundred
+      // pixels of scroll and the rest is a page lying still. Linear spreads the
+      // rotation evenly over the wheel, and the scrub's own catch-up supplies
+      // the weight the ease was there for.
+      tl.to(
+        sheets.slice(0, TURNS),
+        {
+          rotationY: -180,
+          duration: TURN,
+          stagger: TURN + GAP,
+          onUpdate: paint,
+        },
+        OPEN + LEAD_IN,
+      );
+
+      // Hold on the last page before the pin releases, so it is readable
+      // rather than a thing you scroll past.
+      tl.to({}, { duration: TRAIL });
+
+      return teardown;
     },
-    { dependencies: [], scope: sectionRef },
+    {
+      dependencies: [reduced],
+      scope: sectionRef,
+      // Without this, useGSAP runs the cleanup above on a dependency change
+      // but does NOT revert the context -- so the old timeline's pinned
+      // ScrollTrigger keeps its pin spacing and the inline styles written by
+      // gsap.set stay on the DOM. Reverting is also what kills a pinned
+      // trigger properly; doing it by hand with kill(true) covers the spacing
+      // but never the styles.
+      revertOnUpdate: true,
+    },
   );
 
   return (
@@ -334,8 +440,8 @@ export function BookScrollReveal() {
 
         {/* The book stands in the right half of the frame with the whole left
             side empty, so on landscape the copy goes in that gap rather than
-            across the cover. A portrait viewport letterboxes the 3:2 frame into a
-            band, so there the copy sits under the band instead. */}
+            across the cover. A portrait viewport letterboxes the 3:2 frame into
+            a band, so there the copy sits under the band instead. */}
         <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-6 portrait:items-center portrait:justify-end portrait:pb-[16vh] portrait:text-center landscape:items-start landscape:ps-[7vw] landscape:text-left">
           <p
             ref={kickerRef}
@@ -345,7 +451,14 @@ export function BookScrollReveal() {
           </p>
         </div>
 
+        {reduced ? null : <BookSheets />}
       </section>
+
+      {/* Appended after the section rather than swapped into it, so React only
+          ever adds a child at the end of this wrapper -- an append needs no
+          reference node, which is the one DOM operation that cannot trip over
+          a reparented pin. */}
+      {reduced ? <BookPageColumn /> : null}
     </div>
   );
 }

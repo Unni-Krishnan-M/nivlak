@@ -143,7 +143,7 @@ over the first while the book was still opening. Do not split it again.
 `tools/build-book-frames.sh` decodes `nivlak-book-opening.mp4` (not in the repo)
 into two tiers plus the measured camera track. `tools/stamp-book-logo.py`
 replaces the approximated logo on the cover in the encoded webps; it is not
-idempotent — `git checkout apps/web/public/frames/v4` before a second run. Both
+idempotent — `git checkout apps/web/public/frames/v5` before a second run. Both
 scripts carry long headers explaining the decisions and the measurements behind
 them. Read those before changing either.
 

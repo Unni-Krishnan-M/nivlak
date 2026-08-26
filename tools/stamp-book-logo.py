@@ -7,7 +7,7 @@ circuit-tree in the counter, but not our tree -- the branches wander, the nodes
 are the wrong size, and it is not the mark in logo.jpeg. This script replaces
 that painted-on mark, frame by frame, with the real one.
 
-It runs on the ENCODED webps in public/frames/v4, not on the mp4, because the
+It runs on the ENCODED webps in public/frames/v5, not on the mp4, because the
 mp4 is not in the repo. That means one extra lossy generation on the frames it
 touches; measured PSNR against its own render is ~50 dB, well clear of the 38 dB
 floor build-book-frames.sh holds itself to, and the re-encode comes out slightly
@@ -15,7 +15,7 @@ SMALLER than the original frame because the cover it paints is smoother than the
 one it painted over. Re-running the script is safe but not idempotent-free: each
 run re-encodes, so restore from git before a second run.
 
-    git checkout apps/web/public/frames/v4 && tools/stamp-book-logo.py
+    git checkout apps/web/public/frames/v5 && tools/stamp-book-logo.py
 
 Needs numpy and opencv (pip install numpy opencv-python-headless) and ImageMagick
 for the encode, so that the webp settings are literally the ones in
@@ -71,8 +71,8 @@ import numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOGO = os.path.join(ROOT, "logo.jpeg")
 TIERS = {
-    "hd": os.path.join(ROOT, "apps/web/public/frames/v4/hd"),
-    "sd": os.path.join(ROOT, "apps/web/public/frames/v4/sd"),
+    "hd": os.path.join(ROOT, "apps/web/public/frames/v5/hd"),
+    "sd": os.path.join(ROOT, "apps/web/public/frames/v5/sd"),
 }
 
 # Correlation floors. ECC_OK is where the silhouette fit stops being trusted and

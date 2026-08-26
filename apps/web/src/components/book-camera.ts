@@ -51,7 +51,7 @@ export const FRAMES = GENERATED_FRAMES;
 // visitor who has been here before keeps the *old* book until 2027. The version
 // is part of the URL rather than a query string because the cache in front of
 // this is not guaranteed to key on one.
-export const FRAME_SET = "v4";
+export const FRAME_SET = "v5";
 
 // Two resolution tiers of the same 16:9 framing. Ninety-six frames of 1920x1080
 // is around eight megabytes of decoded bitmap each: a desktop browser can hold

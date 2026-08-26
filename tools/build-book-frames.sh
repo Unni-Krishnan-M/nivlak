@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Rebuild apps/web/public/frames/v4 from the original book-opening clip, in two
+# Rebuild apps/web/public/frames/v5 from the original book-opening clip, in two
 # resolution tiers, and emit the measured camera track that goes with it.
 #
 # The source changed shape completely. It is no longer eight independently
@@ -111,8 +111,8 @@ MP4="$ROOT/nivlak-book-opening.mp4"
 # year and a rebuild reuses the same filenames, so a new set written over the old
 # directory is invisible to anyone who has loaded the site before. v2 was the
 # eight-stills set; this source is a different shot, so it gets v3.
-OUT_HD="$ROOT/apps/web/public/frames/v4/hd"
-OUT_SD="$ROOT/apps/web/public/frames/v4/sd"
+OUT_HD="$ROOT/apps/web/public/frames/v5/hd"
+OUT_SD="$ROOT/apps/web/public/frames/v5/sd"
 TS="$ROOT/apps/web/src/components/book-frames.generated.ts"
 TMP="$(mktemp -d)"
 # KEEP_TMP=1 leaves the intermediate PNGs in place for inspection / encoder tuning
@@ -698,14 +698,14 @@ awk -v a="$thd" -v b="$tsd" 'BEGIN{ if (a > 4096 || b > 2560) { print "    ERROR
 
 # --------------------------------------------------------------------------
 # Pass 7: the generated TS. Everything in it was measured above, off the encoded
-# frames, so it cannot drift from what is in public/frames/v4.
+# frames, so it cannot drift from what is in public/frames/v5.
 # --------------------------------------------------------------------------
 echo "==> writing $(basename "$TS")"
 {
   echo "// GENERATED FILE -- do not hand-edit."
   echo "//"
   echo "// Written by tools/build-book-frames.sh from nivlak-book-opening.mp4. Every"
-  echo "// number here was measured off the encoded frames in public/frames/v4/hd, so"
+  echo "// number here was measured off the encoded frames in public/frames/v5/hd, so"
   echo "// editing this file by hand only makes it disagree with the images. Re-run the"
   echo "// script instead."
   echo "//"

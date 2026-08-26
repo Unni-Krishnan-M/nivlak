@@ -1,7 +1,7 @@
 // GENERATED FILE -- do not hand-edit.
 //
 // Written by tools/build-book-frames.sh from nivlak-book-opening.mp4. Every
-// number here was measured off the encoded frames in public/frames/v4/hd, so
+// number here was measured off the encoded frames in public/frames/v5/hd, so
 // editing this file by hand only makes it disagree with the images. Re-run the
 // script instead.
 //

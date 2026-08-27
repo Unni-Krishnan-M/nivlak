@@ -46,7 +46,7 @@ export function BookNav() {
             draggable={false}
             className="h-auto w-[clamp(17px,1.5vw,22px)] opacity-85 select-none"
           />
-          <span className="-me-[0.3em] text-[clamp(0.56rem,0.72vw,0.68rem)] tracking-[0.38em]">
+          <span className="-me-[0.3em] text-[clamp(0.58rem,0.75vw,0.7rem)] tracking-[0.4em]">
             NIVLAK
           </span>
         </button>

@@ -1,18 +1,36 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Literata } from "next/font/google";
 
 import "../index.css";
 import { FRAME_SET } from "@/components/book-camera";
 import Providers from "@/components/providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// The book is set the way books are set: an old-style pair, not a UI face.
+//
+// Garalde serifs have held printed text for four centuries, and the reason to
+// use two of them is that one face cannot do both jobs well here. Cormorant
+// Garamond is a display cut -- high contrast, fine hairlines, gorgeous at
+// 50px and unreadable at 12 -- so it takes the headlines and nothing else.
+// Literata carries everything that has to be READ: it was drawn for Google
+// Play Books, and its sturdier strokes are what keep light type from
+// shimmering on a dark ground, which is exactly the failure mode a delicate
+// Garamond has when you reverse it out.
+const display = Cormorant_Garamond({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const text = Literata({
+  variable: "--font-text",
   subsets: ["latin"],
+  // Literata ships true italics and a real small-caps-friendly roman, which
+  // the chapter opener's lead-in needs -- it was faking small caps on a face
+  // that has none.
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -67,7 +85,7 @@ document.addEventListener("DOMContentLoaded",kill)})()`,
           }}
         />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${display.variable} ${text.variable} font-[family-name:var(--font-text)] antialiased`}>
         {/* No chrome here on purpose: the landing page is the book reveal
             alone, full bleed. The routes that need navigation bring their own
             header in app/(chrome)/layout.tsx. */}

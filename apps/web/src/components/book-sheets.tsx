@@ -13,6 +13,7 @@ import {
   BOOK_PAGES,
   type BookPage,
   type PageService,
+  type PageStep,
 } from "@/components/book-pages.content";
 
 // The sheets that turn over the open book, and the arithmetic that puts them
@@ -492,13 +493,13 @@ function FacingCopy({ page }: { page: BookPage }) {
         <p className="mb-4 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
           {page.number} &mdash; {page.title.toUpperCase()}
         </p>
-        <h2 className="text-[clamp(1.7rem,3.5vw,3.4rem)] leading-[1.04] font-light text-balance text-white">
+        <h2 className="font-[family-name:var(--font-display)] text-[clamp(2rem,4.2vw,4.2rem)] leading-[1.02] font-light text-balance text-white">
           {headline}
         </h2>
         {/* Epigraph: the line a book sets under a chapter title, held off the
             margin by a rule so it reads as quoted rather than as body text. */}
         {epigraph ? (
-          <p className="mt-[1.1em] border-s border-white/15 ps-[1em] text-[clamp(0.74rem,1vw,0.92rem)] leading-relaxed text-slate-300/70 italic">
+          <p className="mt-[1.1em] border-s border-white/15 ps-[1em] font-[family-name:var(--font-display)] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed text-slate-300/75 italic">
             {epigraph}
           </p>
         ) : null}
@@ -517,7 +518,7 @@ function FacingCopy({ page }: { page: BookPage }) {
           data-ink
           className="mt-[1.6em] max-w-[44ch] text-[clamp(0.76rem,1.02vw,0.94rem)] leading-relaxed text-slate-300/75 first-letter:float-left first-letter:me-[0.08em] first-letter:mt-[0.04em] first-letter:text-[3.4em] first-letter:leading-[0.82] first-letter:font-light first-letter:text-[#dce7f7]"
         >
-          <span className="[font-variant-caps:small-caps] tracking-[0.06em] text-slate-200">
+          <span className="[font-variant-caps:all-small-caps] tracking-[0.08em] text-slate-200">
             {intro.lead}
           </span>
           {note ? (
@@ -532,7 +533,27 @@ function FacingCopy({ page }: { page: BookPage }) {
       {figure ? <Figure figure={figure} /> : null}
 
       {page.facing.services?.[0] ? (
-        <LeadService service={page.facing.services[0]} />
+        <div className="mt-[1.4em] lg:mt-auto lg:mb-[7%]">
+          <LeadService service={page.facing.services[0]} />
+          {page.facing.services.length > 1 ? (
+            <SecondaryServices
+              services={page.facing.services.slice(1)}
+              from={1}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      {page.facing.steps?.length ? (
+        <div className="mt-[1.4em]">
+          <StepList steps={page.facing.steps} from={0} />
+        </div>
+      ) : null}
+
+      {page.facing.plate ? <EngravedPlate plate={page.facing.plate} /> : null}
+      {page.founder ? <Portrait founder={page.founder} /> : null}
+      {page.contact && !page.facing.plate ? (
+        <MarkPlate caption="NIVLAK TECHNOLOGIES" />
       ) : null}
     </>
   );
@@ -556,10 +577,7 @@ function LeadService({ service }: { service: PageService }) {
     // mt-auto: the heading holds the top of the page and the lead plate holds
     // the foot, with the air between them doing the work. Stacked together
     // under the heading they left a third of the page trailing off.
-    <div
-      data-ink
-      className="mt-[1.4em] border-t border-white/12 pt-[1.5em] lg:mt-auto lg:mb-[7%]"
-    >
+    <div data-ink className="border-t border-white/12 pt-[1.5em]">
       <div className="flex items-start gap-[1.3em]">
         <Emblem
           name={service.emblem}
@@ -569,7 +587,7 @@ function LeadService({ service }: { service: PageService }) {
           <p className="mb-[0.55em] text-[clamp(0.5rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-400/55">
             PLATE {ROMAN[0]}
           </p>
-          <p className="text-[clamp(0.92rem,1.45vw,1.3rem)] leading-tight font-light text-white">
+          <p className="font-[family-name:var(--font-display)] text-[clamp(1.1rem,1.75vw,1.6rem)] leading-tight font-light text-white">
             {service.title}
           </p>
           <p className="mt-[0.5em] max-w-[30ch] text-[clamp(0.7rem,0.96vw,0.88rem)] leading-relaxed text-slate-300/75">
@@ -645,6 +663,329 @@ function ServicesPage({ page }: { page: BookPage }) {
   );
 }
 
+/**
+ * Any facing entries after the lead, set compactly beneath it. Without this a
+ * verso authored with two entries silently printed only the first.
+ */
+function SecondaryServices({
+  services,
+  from,
+}: {
+  services: PageService[];
+  from: number;
+}) {
+  return (
+    <ul className="mt-[1em] flex flex-col">
+      {services.map((service, i) => (
+        <li
+          key={service.title}
+          data-ink
+          className="flex items-center gap-[1em] border-t border-white/10 py-[0.85em]"
+        >
+          <Emblem
+            name={service.emblem}
+            className="w-[clamp(26px,3.1vw,40px)] shrink-0 text-slate-300"
+          />
+          <div>
+            <p className="mb-[0.3em] text-[clamp(0.46rem,0.62vw,0.55rem)] tracking-[0.32em] text-slate-400/60">
+              {ROMAN[from + i]}
+            </p>
+            <p className="text-[clamp(0.72rem,1vw,0.9rem)] leading-tight text-white">
+              {service.title}
+            </p>
+            {service.body ? (
+              <p className="mt-[0.3em] max-w-[32ch] text-[clamp(0.62rem,0.84vw,0.76rem)] leading-relaxed text-slate-300/70">
+                {service.body}
+              </p>
+            ) : null}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The mark, struck at the foot of a page that would otherwise trail off. */
+function MarkPlate({ caption = "THE MARK" }: { caption?: string }) {
+  return (
+    <figure
+      data-ink
+      className="mt-auto mb-[8%] flex items-center gap-[1.1em]"
+    >
+      <img
+        src="/logo-mark.webp"
+        alt=""
+        aria-hidden="true"
+        width={192}
+        height={192}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        className="h-auto w-[clamp(56px,7vw,96px)] opacity-90 select-none"
+      />
+      <figcaption className="text-[clamp(0.5rem,0.72vw,0.62rem)] tracking-[0.32em] text-slate-400/45">
+        {caption}
+      </figcaption>
+    </figure>
+  );
+}
+
+/**
+ * An engraved plate.
+ *
+ * The file is a greyscale mask of the engraving's line work, so this paints
+ * the colour and lets the mask cut it. That is why it is a div and not an img:
+ * an <img> would put a grey rectangle on a navy page, whereas a masked block
+ * puts silver line on the paper and nothing else -- the plate reads as struck
+ * into the page rather than pasted onto it. It also ships a third of the
+ * bytes, because a flat colour does not need three channels to describe it.
+ */
+function EngravedPlate({
+  plate,
+}: {
+  plate: NonNullable<NonNullable<BookPage["facing"]>["plate"]>;
+}) {
+  return (
+    <figure data-ink className="mt-auto mb-[7%] w-[clamp(150px,20vw,290px)]">
+      <div
+        role="img"
+        aria-label={plate.caption}
+        className="w-full opacity-80"
+        style={{
+          aspectRatio: plate.ratio,
+          backgroundColor: "#dce7f7",
+          maskImage: `url("${plate.src}")`,
+          WebkitMaskImage: `url("${plate.src}")`,
+          maskSize: "contain",
+          WebkitMaskSize: "contain",
+          maskRepeat: "no-repeat",
+          WebkitMaskRepeat: "no-repeat",
+          maskPosition: "center",
+          WebkitMaskPosition: "center",
+          // The file is opaque greyscale with no alpha channel, and CSS
+          // masking defaults to alpha -- under which every pixel is fully
+          // opaque and the mask passes the whole rectangle. Reading it by
+          // LUMINANCE is what makes the white line work show and the black
+          // paper drop out. Without this the page gets a pale slab.
+          maskMode: "luminance",
+          WebkitMaskSourceType: "luminance",
+        } as React.CSSProperties}
+      />
+      <figcaption className="mt-[0.9em]">
+        <p className="text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.28em] text-slate-400/55">
+          {plate.caption.toUpperCase()}
+        </p>
+        <p className="mt-[0.45em] text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.06em] text-slate-400/35 italic">
+          {plate.credit}
+        </p>
+      </figcaption>
+    </figure>
+  );
+}
+
+/**
+ * The founder's plate.
+ *
+ * A book prints a portrait as a plate with a keyline and the sitter's name
+ * under it, so that is the frame. There is no photograph in the repo yet:
+ * until `founder.portrait` points at one under public/, the keyline holds an
+ * empty ground with the mark in it, which is a plate awaiting its cut rather
+ * than a broken image.
+ */
+function Portrait({
+  founder,
+}: {
+  founder: NonNullable<BookPage["founder"]>;
+}) {
+  return (
+    <figure data-ink className="mt-auto mb-[6%] lg:mt-auto">
+      <div className="relative w-[clamp(120px,15vw,200px)] border border-white/15 p-[6px]">
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-white/[0.03]">
+          {founder.portrait ? (
+            <img
+              src={founder.portrait}
+              alt={`${founder.name}, ${founder.role}`}
+              draggable={false}
+              className="h-full w-full object-cover select-none"
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center">
+              <img
+                src="/logo-mark.webp"
+                alt=""
+                aria-hidden="true"
+                width={192}
+                height={192}
+                draggable={false}
+                className="h-auto w-[42%] opacity-25 select-none"
+              />
+            </span>
+          )}
+        </div>
+      </div>
+      <figcaption className="mt-[0.9em]">
+        <p className="font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.55vw,1.45rem)] leading-tight font-light text-white">
+          {founder.name}
+        </p>
+        <p className="mt-[0.35em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.32em] text-slate-400/70">
+          {founder.role.toUpperCase()}
+        </p>
+      </figcaption>
+    </figure>
+  );
+}
+
+/**
+ * A numbered procedure, run down the page as a ruled sequence.
+ *
+ * sample.jpeg draws this as six circles on one horizontal line, which is a
+ * banner and not a page. A book sets a procedure as numbered steps down the
+ * measure -- three on the verso and three on the recto, the numbering carrying
+ * across the gutter, each step a circled plate against its own rule.
+ */
+function StepList({ steps, from }: { steps: PageStep[]; from: number }) {
+  return (
+    <ol className="flex flex-col">
+      {steps.map((step, i) => (
+        <li
+          key={step.title}
+          data-ink
+          className="flex items-start gap-[1.1em] border-t border-white/12 py-[1.1em] lg:py-[1.5em]"
+        >
+          <span className="relative flex aspect-square w-[clamp(34px,4.2vw,52px)] shrink-0 items-center justify-center rounded-full border border-white/15">
+            <Emblem name={step.emblem} className="w-[58%] text-slate-200" />
+          </span>
+          <div className="pt-[0.15em]">
+            <p className="mb-[0.35em] text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/60 tabular-nums">
+              {String(from + i + 1).padStart(2, "0")}
+            </p>
+            <p className="text-[clamp(0.78rem,1.08vw,0.98rem)] leading-tight text-white">
+              {step.title}
+            </p>
+            <p className="mt-[0.4em] max-w-[34ch] text-[clamp(0.64rem,0.88vw,0.8rem)] leading-relaxed text-slate-300/75">
+              {step.body}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/**
+ * The founder spread's right-hand page: the bio, then the principles.
+ *
+ * The portrait belongs on the verso beside the heading, so this page is prose
+ * against a ruled list. The principles are numbered and ruled rather than
+ * bulleted, because a book does not use bullets.
+ */
+function FounderPage({ page }: { page: BookPage }) {
+  const founder = page.founder;
+  if (!founder) return null;
+  return (
+    <>
+      {founder.bio.map((paragraph, i) => (
+        <p
+          key={paragraph.slice(0, 24)}
+          data-ink
+          className={`max-w-[36ch] text-[clamp(0.7rem,0.98vw,0.9rem)] leading-relaxed text-slate-300/80 ${
+            i ? "mt-[1em]" : ""
+          }`}
+        >
+          {paragraph}
+        </p>
+      ))}
+      <p
+        data-ink
+        className="mt-[1.8em] mb-[0.5em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.34em] text-slate-400/70"
+      >
+        {founder.principlesTitle.toUpperCase()}
+      </p>
+      <ul className="flex flex-col">
+        {founder.principles.map((principle, i) => (
+          <li
+            key={principle}
+            data-ink
+            className="flex items-baseline gap-[0.9em] border-t border-white/10 py-[0.62em]"
+          >
+            <span className="text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.2em] text-slate-400/50">
+              {ROMAN[i]}
+            </span>
+            <span className="text-[clamp(0.72rem,1vw,0.9rem)] text-slate-200">
+              {principle}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/** The contact spread's right-hand page: the details, then the invitation. */
+function ContactPage({ page }: { page: BookPage }) {
+  const contact = page.contact;
+  if (!contact) return null;
+  const mail = contact.rows.find((r) => r.href?.startsWith("mailto:"))?.href;
+  return (
+    <>
+      <ul className="flex flex-col">
+        {contact.rows.map((row) => {
+          const line = (
+            <>
+              <Emblem
+                name={row.emblem}
+                className="w-[clamp(16px,1.8vw,22px)] shrink-0 text-slate-300"
+              />
+              <span className="text-[clamp(0.72rem,1vw,0.92rem)] text-slate-200">
+                {row.value}
+              </span>
+            </>
+          );
+          return (
+            <li
+              key={row.value}
+              data-ink
+              className="border-t border-white/10 py-[0.85em]"
+            >
+              {row.href ? (
+                <a
+                  href={row.href}
+                  className="flex items-center gap-[0.9em] transition-colors duration-300 hover:text-white"
+                >
+                  {line}
+                </a>
+              ) : (
+                <span className="flex items-center gap-[0.9em]">{line}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      <div data-ink className="mt-[2em] border-t border-white/12 pt-[1.3em]">
+        <p className="mb-[0.5em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.34em] text-slate-400/70">
+          {contact.enquiryTitle.toUpperCase()}
+        </p>
+        <p className="max-w-[32ch] text-[clamp(0.72rem,1vw,0.92rem)] leading-relaxed text-slate-300/80">
+          {contact.enquiryBody}
+        </p>
+        <a
+          href={mail ?? "#"}
+          className="group mt-[1.2em] inline-flex items-center gap-[0.8em] border-b border-white/25 pb-[0.4em] text-[clamp(0.6rem,0.82vw,0.74rem)] tracking-[0.26em] text-white transition-colors duration-300 hover:border-white/60"
+        >
+          {contact.cta.toUpperCase()}
+          <span
+            aria-hidden
+            className="transition-transform duration-300 group-hover:translate-x-[0.25em]"
+          >
+            &rarr;
+          </span>
+        </a>
+      </div>
+    </>
+  );
+}
+
 function VersoPage({ page }: { page: BookPage }) {
   return (
     <div className="relative flex h-full w-full flex-col justify-start pt-[18%] pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200">
@@ -676,7 +1017,7 @@ function Terms({ page }: { page: BookPage }) {
             {/* The letter is the artwork on this page -- same silver as the
                 lit page edge in the frame, so it reads as pressed into the
                 paper rather than typed onto it. */}
-            <dt className="text-[clamp(1.35rem,2.5vw,2.3rem)] leading-none font-light text-[#dce7f7]">
+            <dt className="font-[family-name:var(--font-display)] text-[clamp(1.6rem,3vw,2.8rem)] leading-none font-light text-[#dce7f7]">
               {term.letter}
             </dt>
             <dd>
@@ -777,6 +1118,15 @@ function PageBody({ page }: { page: BookPage }) {
 
       {page.services?.length ? (
         <ServicesPage page={page} />
+      ) : page.steps?.length ? (
+        <StepList
+          steps={page.steps}
+          from={page.facing?.steps?.length ?? 0}
+        />
+      ) : page.founder ? (
+        <FounderPage page={page} />
+      ) : page.contact ? (
+        <ContactPage page={page} />
       ) : page.terms ? (
         <Terms page={page} />
       ) : (
@@ -784,7 +1134,7 @@ function PageBody({ page }: { page: BookPage }) {
           <p className="mb-3 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
             {page.number} &mdash; {page.title.toUpperCase()}
           </p>
-          <h2 className="mb-[0.4em] text-[clamp(1.6rem,3.4vw,3.25rem)] leading-[1.05] font-light text-white">
+          <h2 className="mb-[0.4em] font-[family-name:var(--font-display)] text-[clamp(1.9rem,4vw,3.9rem)] leading-[1.03] font-light text-white">
             {page.title}
           </h2>
           {page.body ? (

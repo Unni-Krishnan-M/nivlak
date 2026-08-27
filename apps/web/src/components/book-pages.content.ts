@@ -7,6 +7,13 @@
 // length and the right register for the layout, but nothing in it is a claim
 // anyone has checked. Replace it.
 
+/** One entry in an illustrated catalogue: a plate and what it is. */
+export type PageService = {
+  emblem: "web" | "saas" | "ai" | "mobile" | "brand";
+  title: string;
+  body: string;
+};
+
 /** One entry in a defined-terms list, e.g. the N/I/V of NIV. */
 export type PageTerm = {
   /** The display letter, set large in the margin. */
@@ -25,10 +32,15 @@ export type BookPage = {
   /**
    * What is printed on the LEFT-hand page facing this one.
    *
-   * Only the opening spread has this. Every later page leaves its left half to
-   * the back of the sheet that turned before it, which carries a running foot
-   * and nothing else -- that is how a book works, and it is also what stops two
-   * columns of type competing for the reader on every single spread.
+   * A left-hand page is the BACK of the sheet that turned before it, so this
+   * copy is printed there -- page k's facing lands on sheet k-1's back. The
+   * one exception is the opening spread, which has no preceding sheet: page 0's
+   * facing goes on a layer under the stack instead, and sheet 0's back buries
+   * it when it turns.
+   *
+   * A page without this leaves its left half to a running foot and nothing
+   * else, which is what stops every single spread having two columns of type
+   * competing for the reader.
    */
   facing?: {
     headline: string;
@@ -56,7 +68,15 @@ export type BookPage = {
       caption: string;
       steps: { label: string; note: string }[];
     };
+    /**
+     * The LEAD entry, set large on the left-hand page. One dominant item and
+     * a set of smaller ones is what gives a catalogue spread its hierarchy;
+     * five entries at the same size is a list, whatever the plates look like.
+     */
+    services?: PageService[];
   };
+  /** The supporting entries, set as a modular grid on the right-hand page. */
+  services?: PageService[];
   /** A defined-terms list, set as the body of the right-hand page. */
   termsTitle?: string;
   terms?: PageTerm[];
@@ -110,8 +130,39 @@ export const BOOK_PAGES: BookPage[] = [
   {
     number: "02",
     title: "Solutions",
-    body: "What we build, and who it is built for. Systems that hold up under real load and real people, delivered end to end rather than handed over as a diagram.",
-    points: ["Product engineering", "Platform and infrastructure", "Applied AI"],
+    facing: {
+      headline: "What We Build.",
+      subtitle: "Five ways in, all of them built by the people you meet.",
+      services: [
+        {
+          emblem: "web",
+          title: "Web Application Development",
+          body: "Build fast, secure, and scalable web platforms tailored to your business.",
+        },
+      ],
+    },
+    services: [
+      {
+        emblem: "saas",
+        title: "SaaS Product Development",
+        body: "Design and engineer cloud-native software products for sustainable growth.",
+      },
+      {
+        emblem: "ai",
+        title: "AI Automation Solutions",
+        body: "Automate workflows and unlock intelligent business operations.",
+      },
+      {
+        emblem: "mobile",
+        title: "Mobile Application Development",
+        body: "Create premium Android and iOS experiences that users love.",
+      },
+      {
+        emblem: "brand",
+        title: "Branding & Digital Marketing",
+        body: "Build memorable brands with strategy, design, and digital growth.",
+      },
+    ],
   },
   {
     number: "03",

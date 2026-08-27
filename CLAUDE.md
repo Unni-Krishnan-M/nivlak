@@ -116,15 +116,19 @@ over the first while the book was still opening. Do not split it again.
   the stale pinned size.
 - **A spread is never one element.** Sheets hinge at the spine and cover only
   the right-hand page, so what you look at is
-  `[sheet k-1 back] | [sheet k front]`. Only the *opening* spread can carry copy
-  on both halves without an extra turn, because every later left page is the
-  back of a sheet already turned past — that is what `[data-left-page]` is, a
-  layer under the stack that sheet 0's back buries when it turns. Do not try to
-  give a later page a facing page without adding a sheet for it.
-- **Chapter-opener conventions belong to 01 Company and nowhere else.** The
-  sinkage, drop cap, small-caps lead-in and drop folios on that spread are
-  opener-only devices in real book setting — repeating them on 02–07 would be
-  the mistake, not the inconsistency. `PageBody` switches on `page.facing`.
+  `[sheet k-1 back] | [sheet k front]`. A page's `facing` copy is therefore
+  printed on the **back of the sheet before it** — page k's verso lives on
+  sheet k−1. The opening spread is the exception, having no preceding sheet:
+  page 0's verso is `[data-left-page]`, a layer under the stack that sheet 0's
+  back buries when it turns. Give any page a `facing` and it becomes a spread;
+  no extra sheet is needed.
+- **Chapter-opener conventions key off `page.facing`, not off page 01.** A page
+  with a facing verso is a chapter opening and gets the opener devices —
+  headpiece, sinkage, drop folios. The ones that need their own data appear
+  only where that data exists: the drop cap and small-caps lead-in need
+  `facing.intro`, so 01 has them and 02 does not. Pages without `facing` stay
+  centred with no opener furniture at all, which is correct: they are
+  continuation pages.
 - **The sheets are hidden until the book has finished opening**, and switched
   on with `gsap.set`, not a fade. Their paper is the same photograph the canvas
   is showing by then, at the same rect, so there is nothing to dissolve — and a

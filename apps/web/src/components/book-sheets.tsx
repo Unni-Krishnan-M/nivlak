@@ -8,7 +8,12 @@ import {
   finalFrameRect,
   spreadAt,
 } from "@/components/book-camera";
-import { BOOK_PAGES, type BookPage } from "@/components/book-pages.content";
+import { Emblem } from "@/components/book-emblems";
+import {
+  BOOK_PAGES,
+  type BookPage,
+  type PageService,
+} from "@/components/book-pages.content";
 
 // The sheets that turn over the open book, and the arithmetic that puts them
 // on it. No animation and no ScrollTrigger live here -- <Book> owns the single
@@ -165,6 +170,14 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
     "--facing-inset-start",
     `${Math.max(0, -left.x)}px`,
   );
+  // The same clamp for a verso printed on a sheet's back. That page is the
+  // sheet's own box reflected through the spine, so it begins at
+  // (spine - width) rather than at the photographed paper's left edge, and it
+  // needs its own number.
+  stage.style.setProperty(
+    "--verso-inset-start",
+    `${Math.max(0, sheetRect.width - spine)}px`,
+  );
 }
 
 /**
@@ -252,7 +265,7 @@ export function BookSheets() {
         </div>
       ) : null}
 
-      {BOOK_PAGES.map((page) => (
+      {BOOK_PAGES.map((page, index) => (
         <div
           key={page.number}
           data-sheet
@@ -265,16 +278,20 @@ export function BookSheets() {
             </PageFace>
           </div>
 
-          {/* Back: what lands on the left half once this sheet has turned. A
-              running foot and nothing else -- the eye follows the new
-              right-hand page, and a second column of type there would compete
-              with it, but a blank half of the screen reads as a mistake. */}
+          {/* Back: the left half of the spread this sheet turns you into. */}
           <div
             className="absolute inset-0 overflow-hidden [backface-visibility:hidden]"
             style={{ transform: "rotateY(180deg)" }}
           >
             <PageFace side="back">
-              <PageFoot page={page} />
+              {/* This face IS the left-hand page of the next spread, so it
+                  carries that page's verso if it has one. Where it does not,
+                  it stays what it was: a running foot on bare paper. */}
+              {BOOK_PAGES[index + 1]?.facing ? (
+                <VersoPage page={BOOK_PAGES[index + 1]} />
+              ) : (
+                <PageFoot page={page} />
+              )}
             </PageFace>
           </div>
         </div>
@@ -513,7 +530,129 @@ function FacingCopy({ page }: { page: BookPage }) {
       ) : null}
 
       {figure ? <Figure figure={figure} /> : null}
+
+      {page.facing.services?.[0] ? (
+        <LeadService service={page.facing.services[0]} />
+      ) : null}
     </>
+  );
+}
+
+// Plates are numbered in roman, the way a book numbers its illustrations --
+// which also keeps them from being confused with the 01-07 of the sections.
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+
+/**
+ * The lead entry: one plate set large enough to be the thing you see first.
+ *
+ * Editorial layout gets its hierarchy from scale and dominance -- one
+ * dominant image with the supporting ones smaller. The previous version of
+ * this spread gave all five entries the same plate, the same type size and
+ * the same rule, which is a list with pictures however the pictures are
+ * arranged. This one is roughly twice the size of a grid cell.
+ */
+function LeadService({ service }: { service: PageService }) {
+  return (
+    // mt-auto: the heading holds the top of the page and the lead plate holds
+    // the foot, with the air between them doing the work. Stacked together
+    // under the heading they left a third of the page trailing off.
+    <div
+      data-ink
+      className="mt-[1.4em] border-t border-white/12 pt-[1.5em] lg:mt-auto lg:mb-[7%]"
+    >
+      <div className="flex items-start gap-[1.3em]">
+        <Emblem
+          name={service.emblem}
+          className="w-[clamp(70px,8.8vw,126px)] shrink-0 text-slate-200"
+        />
+        <div className="pt-[0.2em]">
+          <p className="mb-[0.55em] text-[clamp(0.5rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-400/55">
+            PLATE {ROMAN[0]}
+          </p>
+          <p className="text-[clamp(0.92rem,1.45vw,1.3rem)] leading-tight font-light text-white">
+            {service.title}
+          </p>
+          <p className="mt-[0.5em] max-w-[30ch] text-[clamp(0.7rem,0.96vw,0.88rem)] leading-relaxed text-slate-300/75">
+            {service.body}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The supporting entries, as a modular grid -- the grid a catalogue uses, as
+ * against the single manuscript column the prose pages are set in. The cell
+ * rules are the grid made visible, which is what stops four equal things
+ * reading as an unordered heap.
+ */
+function ServiceGrid({
+  services,
+  from,
+}: {
+  services: PageService[];
+  from: number;
+}) {
+  return (
+    <div className="grid grid-cols-2">
+      {services.map((service, i) => (
+        <div
+          key={service.title}
+          data-ink
+          className={`flex flex-col border-t border-white/12 py-[1.15em] lg:py-[2.3em] ${
+            i % 2 === 0 ? "pe-[1.4em]" : "border-s ps-[1.4em]"
+          }`}
+        >
+          <Emblem
+            name={service.emblem}
+            className="mb-[1.1em] w-[clamp(38px,4.9vw,68px)] text-slate-300"
+          />
+          <p className="mb-[0.55em] text-[clamp(0.52rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-400/70">
+            {ROMAN[from + i]}
+          </p>
+          <p className="text-[clamp(0.72rem,1.02vw,0.92rem)] leading-tight text-white">
+            {service.title}
+          </p>
+          <p className="mt-[0.45em] text-[clamp(0.62rem,0.86vw,0.78rem)] leading-relaxed text-slate-300/70">
+            {service.body}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The right-hand page of a catalogue spread. It carries no title of its own --
+ * the verso facing it has already said what this is -- so it is simply the run
+ * of entries continuing, picking the alternation up from however many sat on
+ * the left-hand page.
+ */
+function ServicesPage({ page }: { page: BookPage }) {
+  if (!page.services?.length) return null;
+  return (
+    <>
+      <ServiceGrid
+        services={page.services}
+        from={page.facing?.services?.length ?? 0}
+      />
+      <div data-ink className="mt-[2em]">
+        {/* Tailpiece, closing the catalogue the way 01 closes its text. */}
+        <Ornament className="w-[30%] text-slate-300" />
+      </div>
+    </>
+  );
+}
+
+function VersoPage({ page }: { page: BookPage }) {
+  return (
+    <div className="relative flex h-full w-full flex-col justify-start pt-[18%] pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200">
+      <FacingCopy page={page} />
+      <p className="absolute bottom-[7%] start-[calc(10%+var(--verso-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums">
+        {page.number} &mdash; {page.title.toUpperCase()}
+      </p>
+    </div>
   );
 }
 
@@ -636,7 +775,9 @@ function PageBody({ page }: { page: BookPage }) {
         </div>
       ) : null}
 
-      {page.terms ? (
+      {page.services?.length ? (
+        <ServicesPage page={page} />
+      ) : page.terms ? (
         <Terms page={page} />
       ) : (
         <div data-ink>

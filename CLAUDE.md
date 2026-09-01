@@ -89,7 +89,38 @@ over the first while the book was still opening. Do not split it again.
    animates. `layoutSheets()` puts them on the book; `paintSheets()` derives
    z-order and shading from their angles. `<Book>` finds them by data attribute
    inside its own GSAP scope, so no refs are plumbed across.
-4. **`book-pages.content.ts`** — the six sections' copy. Currently placeholder.
+4. **`book-pages.content.ts`** — the sections' copy, and the pagination that
+   turns it into spreads. See "Chapters and spreads" below.
+
+### Chapters and spreads are not the same thing
+
+`BOOK_PAGES` is what you **write**: one entry per chapter. `BOOK_SPREADS` is
+what the book **prints**: one entry per turnable sheet. They are usually the
+same list, and deliberately not always.
+
+An illustrated chapter — one whose `services` carry an `image` — holds its
+entries as a single undivided run, and `book-pages.content.ts` decides how much
+of that run lands on each page from the slot counts at the bottom of the file.
+Add a service and the spread rebalances; add enough and the chapter opens a
+second spread on its own. **Nothing in the content says which page an entry is
+on**, which is the whole point: adding one is a one-line change.
+
+What follows from that:
+
+- **Anything that lays out or animates reads `BOOK_SPREADS`.** `TURNS` counts
+  sheets, and a chapter running to two spreads is two sheets.
+- **Only the navigation reads `BOOK_PAGES`.** A chapter keeps one tab in the
+  thumb index however many spreads it runs to, so the tabs carry a *chapter*
+  index: `<Book>` maps it through `FIRST_SPREAD_OF_CHAPTER` to seek, and
+  through `CHAPTER_OF_SPREAD` to light the active one. Give a tab a spread
+  index again and the index goes dark on every continuation.
+- **`continued` and `lastOfChapter` are both needed and are not each other's
+  negation.** A chapter of one spread is the first *and* the last. `continued`
+  suppresses the opener devices; `lastOfChapter` is what the tailpiece keys off.
+- **The engraved chapters (04, 05) do not paginate.** Their two halves — a lead
+  plate on the verso, a modular grid on the recto — were composed by hand, and
+  re-cutting them on a slot count would throw away a layout that was designed
+  rather than computed. `expandChapter` opts them out by looking for an `image`.
 
 ### Rules that are not obvious from the code
 
@@ -148,6 +179,20 @@ over the first while the book was still opening. Do not split it again.
   `NotFoundError: The node before which the new node is to be inserted is not a
   child of this node`. The wrapper gives React a reference node GSAP never
   reparents. Deleting it reintroduces a runtime crash that no build catches.
+- **The thumb index floats over the recto and nothing used to reserve it.**
+  `<BookIndex>` is pinned to the *window's* right edge, not the paper's, and
+  for a long time every spread cleared it by luck — whatever sat at its height
+  happened to be short. `layoutSheets` now measures it and publishes
+  `--page-index-inset`, which the recto adds to its own margin. Measure against
+  the **widest** tab, not the current one: a tab shows its title when it is
+  current *or* hovered, so PERSPECTIVES is the constraint on every spread.
+- **A photographic plate is lifted to the paper, never darkened toward it.**
+  The page is a photograph of navy stock at about `rgb(20,41,68)` — not
+  `GENERATED_LETTERBOX`, which is the colour of the letterbox *around* the
+  book and is far darker. Toning a plate against the letterbox is how
+  `build-service-plates.sh` first produced plates darker than the page they sat
+  on, which read as holes punched in it. Proof against a crop of the real
+  spread.
 - **The pages are the photograph, not a drawing of it.** Each face shows the
   region of frame-091 it covers, via `--page-image`/`--page-front-pos`/
   `--page-back-pos` set on the stage by `layout()`. Do not add a gutter shadow,
@@ -159,6 +204,11 @@ over the first while the book was still opening. Do not split it again.
   viewport edge.
 
 ### Rebuilding the frames
+
+`tools/build-service-plates.sh` turns the service renders into the plates on
+spread 02. Like the frame sources, the renders it reads are **not in the repo**
+— it expects them at the repo root. Its header explains the keying, the seeds
+and the tone; read it before changing any of the three.
 
 `tools/build-book-frames.sh` decodes `nivlak-book-opening.mp4` (not in the repo)
 into two tiers plus the measured camera track. `tools/stamp-book-logo.py`

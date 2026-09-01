@@ -59,5 +59,11 @@ tmp
 temp
 *.mp4
 
+# Art sources for the two generated asset sets: the book footage that
+# build-book-frames.sh decodes, and the service renders that
+# build-service-plates.sh keys and tones. Their OUTPUT is committed
+# (public/frames, public/services), so a clone builds without them.
+/*.png
+
 # Local Netlify folder
 .netlify

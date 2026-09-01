@@ -11,7 +11,11 @@ import {
 import { Emblem } from "@/components/book-emblems";
 import {
   BOOK_PAGES,
+  BOOK_SPREADS,
   type BookPage,
+  type BookSpread,
+  type PageFigure,
+  type PagePlate,
   type PageService,
   type PageStep,
 } from "@/components/book-pages.content";
@@ -40,8 +44,13 @@ import {
 // a layer under the whole stack, which sheet 0's back covers the moment it
 // turns, exactly as paper would.
 
-/** How many turns the pages need. The first page is already face up. */
-export const TURNS = BOOK_PAGES.length - 1;
+/**
+ * How many turns the pages need. The first page is already face up.
+ *
+ * Counted off the SPREADS, not the chapters: an illustrated chapter can run to
+ * more than one spread, and every spread is a sheet that has to turn.
+ */
+export const TURNS = BOOK_SPREADS.length - 1;
 
 /**
  * Put the sheets on the book, and point each face at the part of the
@@ -171,6 +180,41 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
     "--facing-inset-start",
     `${Math.max(0, -left.x)}px`,
   );
+
+  // How far the thumb index intrudes on the recto's type.
+  //
+  // <BookIndex> is pinned to the WINDOW's right edge, not to the measured edge
+  // of the paper -- deliberately, because on a wide viewport the right-hand
+  // page bleeds off screen and the window edge IS the fore-edge. Nothing
+  // reserved space for it, so every spread cleared it by luck: whatever
+  // happened to sit at the index's height was short enough. The illustrated
+  // catalogue has no such luck. Its entries alternate, so a plate lands on the
+  // outer edge every other row, and its rows are even, so one of them is always
+  // at the index's height. Unreserved, entry IV's copy ran to x=1390 at
+  // 1440x900 and printed through the "SOLUTIONS 02" tab, 129px of overlap.
+  //
+  // Measured off the widest tab rather than the current one: a tab shows its
+  // title when it is current OR hovered, so PERSPECTIVES is the constraint even
+  // on the spread whose own tab reads SOLUTIONS.
+  //
+  // The arithmetic, in window coordinates. The type's right edge already lands
+  // at (pageRight - margin), where pageRight is the paper's right edge clamped
+  // to the window -- that clamp is what --page-text-inset-end does. It has to
+  // land at or left of (width - indexWidth - INDEX_GUTTER), so the extra inset
+  // is the difference, floored at zero: a page whose own margin already clears
+  // the index asks for nothing.
+  const indexEl = section.querySelector<HTMLElement>("[data-book-index]");
+  const indexWidth = indexEl
+    ? width - indexEl.getBoundingClientRect().left
+    : 0;
+  // Air between the last character and the notch. At 0 they touch and the type
+  // reads as running into the tabs even though it no longer overlaps them.
+  const INDEX_GUTTER = 18;
+  const pageRight = Math.min(width, sheetRect.x + sheetRect.width);
+  stage.style.setProperty(
+    "--page-index-inset",
+    `${Math.max(0, pageRight - sheetRect.width * 0.1 - (width - indexWidth - INDEX_GUTTER))}px`,
+  );
   // The same clamp for a verso printed on a sheet's back. That page is the
   // sheet's own box reflected through the spine, so it begins at
   // (spine - width) rather than at the photographed paper's left edge, and it
@@ -216,7 +260,7 @@ export function paintSheets(
 export function BookSheets() {
   // Index 0 by definition: only the first page can have a facing page, because
   // every later left-hand page is the back of an already-turned sheet.
-  const opening = BOOK_PAGES[0];
+  const opening = BOOK_SPREADS[0];
 
   return (
     <div
@@ -266,9 +310,9 @@ export function BookSheets() {
         </div>
       ) : null}
 
-      {BOOK_PAGES.map((page, index) => (
+      {BOOK_SPREADS.map((page, index) => (
         <div
-          key={page.number}
+          key={`${page.number}-${index}`}
           data-sheet
           className="absolute origin-left [transform-style:preserve-3d] [will-change:transform]"
         >
@@ -288,8 +332,8 @@ export function BookSheets() {
               {/* This face IS the left-hand page of the next spread, so it
                   carries that page's verso if it has one. Where it does not,
                   it stays what it was: a running foot on bare paper. */}
-              {BOOK_PAGES[index + 1]?.facing ? (
-                <VersoPage page={BOOK_PAGES[index + 1]} />
+              {BOOK_SPREADS[index + 1]?.facing ? (
+                <VersoPage page={BOOK_SPREADS[index + 1]} />
               ) : (
                 <PageFoot page={page} />
               )}
@@ -313,6 +357,11 @@ export function BookPageColumn() {
       style={{ backgroundColor: LETTERBOX }}
       aria-label="Nivlak sections"
     >
+      {/* CHAPTERS here, not spreads. Reduced motion is a plain column with no
+          pages to turn, so the reason a chapter is cut across spreads -- how
+          much fits on a sheet -- does not apply: 02 sets as one section with
+          its whole run under it, and the anchors stay one per chapter, which
+          is what the nav scrolls to. */}
       {BOOK_PAGES.map((page) => (
         <article
           key={page.number}
@@ -482,9 +531,20 @@ function Figure({
  * to openers only, which is exactly why they appear on this page and on no
  * other -- consistency here means NOT repeating them.
  */
-function FacingCopy({ page }: { page: BookPage }) {
+function FacingCopy({ page }: { page: BookPage | BookSpread }) {
   if (!page.facing) return null;
   const { headline, subtitle, intro, epigraph, note, figure } = page.facing;
+  const spread = page as Partial<BookSpread>;
+  const from = spread.servicesFrom ?? 0;
+
+  // A continuation spread's verso is more of the catalogue, not the start of
+  // anything, so it takes NONE of the opener devices -- no headpiece, no
+  // chapter title, no epigraph. Printing a chapter title again on the second
+  // spread of the same chapter is the thing a book never does.
+  if (spread.continued) {
+    return <ServiceEntries services={page.facing.services ?? []} from={from} />;
+  }
+
   return (
     <>
       <div data-ink>
@@ -506,12 +566,17 @@ function FacingCopy({ page }: { page: BookPage }) {
         <span aria-hidden className="mt-[1.1em] block h-px w-[38%] bg-white/20" />
       </div>
 
-      <p
-        data-ink
-        className="mt-[1em] max-w-[30ch] text-[clamp(0.82rem,1.18vw,1.05rem)] leading-relaxed text-balance text-slate-300/85"
-      >
-        {subtitle}
-      </p>
+      {/* Guarded: an opener set with an epigraph and no subtitle -- which is
+          what a chapter title page is -- otherwise printed an empty paragraph
+          and its margin, dropping everything below it by a line for nothing. */}
+      {subtitle ? (
+        <p
+          data-ink
+          className="mt-[1em] max-w-[30ch] text-[clamp(0.82rem,1.18vw,1.05rem)] leading-relaxed text-balance text-slate-300/85"
+        >
+          {subtitle}
+        </p>
+      ) : null}
 
       {intro ? (
         <p
@@ -532,7 +597,15 @@ function FacingCopy({ page }: { page: BookPage }) {
 
       {figure ? <Figure figure={figure} /> : null}
 
-      {page.facing.services?.[0] ? (
+      {/* An illustrated catalogue sets its entries full measure and starts
+          them straight under the subtitle; an engraved one hangs its lead
+          plate off the foot of the page. Both are catalogues, but only the
+          second has a blank lower half to hang anything in. */}
+      {isIllustrated(page.facing.services) ? (
+        <div className="mt-[clamp(1em,2vh,1.6em)] lg:mt-[clamp(1.8em,4vh,3.2em)]">
+          <ServiceEntries services={page.facing.services ?? []} from={from} />
+        </div>
+      ) : page.facing.services?.[0] ? (
         <div className="mt-[1.4em] lg:mt-auto lg:mb-[7%]">
           <LeadService service={page.facing.services[0]} />
           {page.facing.services.length > 1 ? (
@@ -561,7 +634,27 @@ function FacingCopy({ page }: { page: BookPage }) {
 
 // Plates are numbered in roman, the way a book numbers its illustrations --
 // which also keeps them from being confused with the 01-07 of the sections.
-const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+//
+// Computed rather than tabulated. The table this replaced ran to VIII, which
+// was one more than anything needed at the time and would have started
+// printing `undefined` the first time a chapter grew past it -- the exact
+// change this file is now built to make easy.
+const ROMAN_PARTS: [number, string][] = [
+  [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
+  [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
+  [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+];
+function roman(n: number) {
+  let rest = n;
+  let out = "";
+  for (const [value, numeral] of ROMAN_PARTS) {
+    while (rest >= value) {
+      out += numeral;
+      rest -= value;
+    }
+  }
+  return out;
+}
 
 /**
  * The lead entry: one plate set large enough to be the thing you see first.
@@ -579,13 +672,15 @@ function LeadService({ service }: { service: PageService }) {
     // under the heading they left a third of the page trailing off.
     <div data-ink className="border-t border-white/12 pt-[1.5em]">
       <div className="flex items-start gap-[1.3em]">
-        <Emblem
-          name={service.emblem}
-          className="w-[clamp(70px,8.8vw,126px)] shrink-0 text-slate-200"
-        />
+        {service.emblem ? (
+          <Emblem
+            name={service.emblem}
+            className="w-[clamp(70px,8.8vw,126px)] shrink-0 text-slate-200"
+          />
+        ) : null}
         <div className="pt-[0.2em]">
           <p className="mb-[0.55em] text-[clamp(0.5rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-400/55">
-            PLATE {ROMAN[0]}
+            PLATE {roman(1)}
           </p>
           <p className="font-[family-name:var(--font-display)] text-[clamp(1.1rem,1.75vw,1.6rem)] leading-tight font-light text-white">
             {service.title}
@@ -595,6 +690,131 @@ function LeadService({ service }: { service: PageService }) {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Is this run of entries illustrated with photographs rather than line cuts?
+ *
+ * Asked of the whole run, not of each entry, because the answer decides the
+ * SETTING: photographs get a full-measure row each, engravings get the two-up
+ * modular grid. Mixing the two down one page would be two catalogues stacked.
+ */
+function isIllustrated(services: PageService[] | undefined) {
+  return Boolean(services?.some((service) => service.image));
+}
+
+/**
+ * One catalogue entry: a plate and its copy, side by side.
+ *
+ * WHICH SIDE THE PLATE IS ON
+ *
+ * It alternates -- entry I has it left, II right, III left -- and the count
+ * that decides is the entry's position in the CHAPTER, not on the page. So the
+ * alternation carries over the gutter and over the break into a second spread,
+ * which is the only way it stays a rhythm rather than resetting to left every
+ * time a page happens to begin. That is why every one of these takes `index`
+ * rather than working it out from its position in the array it was mapped from.
+ *
+ * WHY THE ROWS HAVE NO RULES BETWEEN THEM
+ *
+ * They used to. A rule per entry made the run read as a table of contents --
+ * and a spread already carrying five photographs does not need ruling as well;
+ * the pictures are the strongest thing on the page and the lines were competing
+ * with them for the same job. The entries are separated by space instead, which
+ * is how a book separates things it does not want you to read as a list.
+ *
+ * WHY THE ROW HEIGHTS ARE NOT EQUALISED
+ *
+ * The plates were trimmed to their own artwork, so their ratios differ (1.80
+ * for Web down to 1.43 for Mobile). Forcing a common box would either letterbox
+ * the wide ones or crop the tall one, and neither is worth an alignment nobody
+ * can see once the rules are gone.
+ */
+function ServiceEntry({
+  service,
+  index,
+}: {
+  service: PageService;
+  index: number;
+}) {
+  const plateOnTheRight = index % 2 === 1;
+  return (
+    <div
+      data-ink
+      className={`flex items-center gap-[clamp(1em,2.4vw,2.4em)] ${
+        plateOnTheRight ? "flex-row-reverse" : ""
+      }`}
+    >
+      {service.image ? <ServicePlate image={service.image} /> : null}
+      <div className="min-w-0 flex-1">
+        <p className="mb-[0.5em] text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/60">
+          {roman(index + 1)}
+        </p>
+        <p className="font-[family-name:var(--font-display)] text-[clamp(0.9rem,1.32vw,1.22rem)] leading-tight font-light text-balance text-white">
+          {service.title}
+        </p>
+        {service.body ? (
+          <p className="mt-[0.5em] text-[clamp(0.64rem,0.88vw,0.8rem)] leading-relaxed text-slate-300/75">
+            {service.body}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The plate itself. No keyline and no caption, unlike EngravedPlate.
+ *
+ * It needs neither: tools/build-service-plates.sh keys the render off its
+ * ground and tones it into the page's own navy, so it is already a cut-out
+ * printed in the book's ink rather than a screenshot pasted on -- and the
+ * entry's title is directly beside it doing the work a caption would do
+ * underneath. A box around a cut-out only draws the box.
+ *
+ * `aspectRatio` comes from the content rather than from the file so the row
+ * reserves its height before the image decodes. The sheets are laid out by
+ * measurement, and a plate that resizes after paint drags the copy with it.
+ */
+function ServicePlate({ image }: { image: PageFigure }) {
+  return (
+    <img
+      src={image.src}
+      alt={image.alt}
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+      // Narrower below lg, and the point is the copy rather than the plate:
+      // on a portrait phone the whole spread collapses to one full-bleed page,
+      // so entries that share a 700px half on desktop share a 390px page here.
+      // At 42% the text column falls to ~180px and every body wraps to four
+      // lines; at 32% it gets ~215px and most wrap to three.
+      className="w-[32%] shrink-0 select-none lg:w-[42%]"
+      style={{ aspectRatio: image.ratio, objectFit: "contain" }}
+    />
+  );
+}
+
+/**
+ * An illustrated run of entries, continuing the numbering across the gutter.
+ */
+function ServiceEntries({
+  services,
+  from,
+}: {
+  services: PageService[];
+  from: number;
+}) {
+  return (
+    // The gap is what separates the entries now that the rules are gone, so it
+    // has to be big enough to do that job on its own -- at 1.15em, the padding
+    // the ruled version used, the run read as one block of alternating stripes.
+    <div className="flex flex-col gap-[clamp(0.9em,1.8vh,1.6em)] lg:gap-[clamp(1.6em,3.4vh,3em)]">
+      {services.map((service, i) => (
+        <ServiceEntry key={service.title} service={service} index={from + i} />
+      ))}
     </div>
   );
 }
@@ -622,12 +842,14 @@ function ServiceGrid({
             i % 2 === 0 ? "pe-[1.4em]" : "border-s ps-[1.4em]"
           }`}
         >
-          <Emblem
-            name={service.emblem}
-            className="mb-[1.1em] w-[clamp(38px,4.9vw,68px)] text-slate-300"
-          />
+          {service.emblem ? (
+            <Emblem
+              name={service.emblem}
+              className="mb-[1.1em] w-[clamp(38px,4.9vw,68px)] text-slate-300"
+            />
+          ) : null}
           <p className="mb-[0.55em] text-[clamp(0.52rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-400/70">
-            {ROMAN[from + i]}
+            {roman(from + i + 1)}
           </p>
           <p className="text-[clamp(0.72rem,1.02vw,0.92rem)] leading-tight text-white">
             {service.title}
@@ -647,18 +869,31 @@ function ServiceGrid({
  * of entries continuing, picking the alternation up from however many sat on
  * the left-hand page.
  */
-function ServicesPage({ page }: { page: BookPage }) {
+function ServicesPage({ page }: { page: BookPage | BookSpread }) {
   if (!page.services?.length) return null;
+  // Where this page's entries sit in the CHAPTER's run: what the spread starts
+  // at, plus whatever its own verso already used. On an engraved chapter there
+  // is no offset to carry and servicesFrom is 0, so this is the count it always
+  // was.
+  const spread = page as Partial<BookSpread>;
+  const from = (spread.servicesFrom ?? 0) + (page.facing?.services?.length ?? 0);
+  const illustrated = isIllustrated(page.services);
   return (
     <>
-      <ServiceGrid
-        services={page.services}
-        from={page.facing?.services?.length ?? 0}
-      />
-      <div data-ink className="mt-[2em]">
-        {/* Tailpiece, closing the catalogue the way 01 closes its text. */}
-        <Ornament className="w-[30%] text-slate-300" />
-      </div>
+      {illustrated ? (
+        <ServiceEntries services={page.services} from={from} />
+      ) : (
+        <ServiceGrid services={page.services} from={from} />
+      )}
+      {/* Tailpiece, closing the catalogue the way 01 closes its text -- but
+          only where the catalogue actually ends. On the first of two spreads
+          the run carries on over the page, and an ornament there would sign
+          off a chapter that has not finished. */}
+      {spread.lastOfChapter ?? true ? (
+        <div data-ink className="mt-[2em]">
+          <Ornament className="w-[30%] text-slate-300" />
+        </div>
+      ) : null}
     </>
   );
 }
@@ -682,13 +917,15 @@ function SecondaryServices({
           data-ink
           className="flex items-center gap-[1em] border-t border-white/10 py-[0.85em]"
         >
-          <Emblem
-            name={service.emblem}
-            className="w-[clamp(26px,3.1vw,40px)] shrink-0 text-slate-300"
-          />
+          {service.emblem ? (
+            <Emblem
+              name={service.emblem}
+              className="w-[clamp(26px,3.1vw,40px)] shrink-0 text-slate-300"
+            />
+          ) : null}
           <div>
             <p className="mb-[0.3em] text-[clamp(0.46rem,0.62vw,0.55rem)] tracking-[0.32em] text-slate-400/60">
-              {ROMAN[from + i]}
+              {roman(from + i + 1)}
             </p>
             <p className="text-[clamp(0.72rem,1vw,0.9rem)] leading-tight text-white">
               {service.title}
@@ -742,15 +979,39 @@ function MarkPlate({ caption = "THE MARK" }: { caption?: string }) {
  */
 function EngravedPlate({
   plate,
+  beside = false,
 }: {
-  plate: NonNullable<NonNullable<BookPage["facing"]>["plate"]>;
+  plate: PagePlate;
+  /**
+   * Set the caption alongside the plate rather than beneath it.
+   *
+   * A plate is sized by the space it has to fill, and the two halves of the
+   * book do not have the same shape of space. The verso plates drop into a
+   * wide gap under short copy, so the picture takes the width and the caption
+   * sits under it. The recto's gap is what is left below a list -- taller than
+   * it is wide -- and the tall plate that goes there (03's flow chart) would
+   * have to shrink to about 100px across to leave room for a caption beneath
+   * it, at which point the chart is a texture. Putting the caption beside it
+   * spends the recto's spare WIDTH, which nothing else on that page is using,
+   * and buys the plate back about 60% of its height.
+   */
+  beside?: boolean;
 }) {
   return (
-    <figure data-ink className="mt-auto mb-[7%] w-[clamp(150px,20vw,290px)]">
+    <figure
+      data-ink
+      className={
+        beside
+          ? "mt-auto mb-[9%] flex items-end gap-[1.4em] pt-[1.6em]"
+          : "mt-auto mb-[7%] w-[clamp(150px,20vw,290px)]"
+      }
+    >
       <div
         role="img"
         aria-label={plate.caption}
-        className="w-full opacity-80"
+        className={`opacity-80 ${
+          beside ? "w-[clamp(100px,12.3vw,176px)] shrink-0" : "w-full"
+        }`}
         style={{
           aspectRatio: plate.ratio,
           backgroundColor: "#dce7f7",
@@ -771,7 +1032,7 @@ function EngravedPlate({
           WebkitMaskSourceType: "luminance",
         } as React.CSSProperties}
       />
-      <figcaption className="mt-[0.9em]">
+      <figcaption className={beside ? "pb-[0.4em]" : "mt-[0.9em]"}>
         <p className="text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.28em] text-slate-400/55">
           {plate.caption.toUpperCase()}
         </p>
@@ -909,7 +1170,7 @@ function FounderPage({ page }: { page: BookPage }) {
             className="flex items-baseline gap-[0.9em] border-t border-white/10 py-[0.62em]"
           >
             <span className="text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.2em] text-slate-400/50">
-              {ROMAN[i]}
+              {roman(i + 1)}
             </span>
             <span className="text-[clamp(0.72rem,1vw,0.9rem)] text-slate-200">
               {principle}
@@ -986,9 +1247,18 @@ function ContactPage({ page }: { page: BookPage }) {
   );
 }
 
-function VersoPage({ page }: { page: BookPage }) {
+function VersoPage({ page }: { page: BookPage | BookSpread }) {
+  // Sinkage is an opener device: a chapter's first page starts low, and both
+  // halves of that spread take the same drop so their first lines sit on one
+  // line across the gutter. A continuation spread opens nothing, so it starts
+  // where any ordinary page does and gets the space back for entries.
+  const continued = (page as Partial<BookSpread>).continued === true;
   return (
-    <div className="relative flex h-full w-full flex-col justify-start pt-[18%] pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200">
+    <div
+      className={`relative flex h-full w-full flex-col justify-start pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200 ${
+        continued ? "pt-[7%] lg:pt-[11%]" : "pt-[8%] lg:pt-[18%]"
+      }`}
+    >
       <FacingCopy page={page} />
       <p className="absolute bottom-[7%] start-[calc(10%+var(--verso-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums">
         {page.number} &mdash; {page.title.toUpperCase()}
@@ -1092,14 +1362,23 @@ function PageFoot({ page }: { page: BookPage }) {
   );
 }
 
-function PageBody({ page }: { page: BookPage }) {
+function PageBody({ page }: { page: BookPage | BookSpread }) {
+  const continued = (page as Partial<BookSpread>).continued === true;
   return (
+    // --page-index-inset reserves the thumb index. It is measured rather than
+    // guessed, and it lives on the recto only, because <BookIndex> is pinned to
+    // the WINDOW's right edge -- the fore-edge -- and the recto is the page
+    // under it. See the note where layoutSheets computes it.
     <div
-      className={`flex h-full w-full flex-col ps-[10%] pe-[calc(10%+var(--page-text-inset-end,0px))] text-slate-200 ${
+      className={`flex h-full w-full flex-col ps-[10%] pe-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-slate-200 ${
         // Sinkage: a chapter opener starts low on the page rather than centred,
         // and both halves of this spread take the same drop so their first
         // lines sit on one line across the gutter.
-        page.facing ? "justify-start pt-[18%] pb-[8%]" : "justify-center py-[8%]"
+        page.facing
+          ? `justify-start pb-[8%] ${
+              continued ? "pt-[7%] lg:pt-[11%]" : "pt-[8%] lg:pt-[18%]"
+            }`
+          : "justify-center py-[8%]"
       }`}
     >
       {/* Portrait fallback. A full-bleed sheet is the whole window, so there is
@@ -1119,10 +1398,16 @@ function PageBody({ page }: { page: BookPage }) {
       {page.services?.length ? (
         <ServicesPage page={page} />
       ) : page.steps?.length ? (
-        <StepList
-          steps={page.steps}
-          from={page.facing?.steps?.length ?? 0}
-        />
+        <>
+          <StepList
+            steps={page.steps}
+            from={page.facing?.steps?.length ?? 0}
+          />
+          {/* The recto's plate. A procedure spread runs its list down the
+              verso and off the recto halfway, so the picture goes in what is
+              left rather than under copy that reaches the foot. */}
+          {page.plate ? <EngravedPlate plate={page.plate} beside /> : null}
+        </>
       ) : page.founder ? (
         <FounderPage page={page} />
       ) : page.contact ? (
@@ -1158,7 +1443,7 @@ function PageBody({ page }: { page: BookPage }) {
       {page.facing ? (
         <p
           data-ink
-          className="absolute bottom-[7%] end-[calc(10%+var(--page-text-inset-end,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
+          className="absolute bottom-[7%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
         >
           {page.number}
         </p>

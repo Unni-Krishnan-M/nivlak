@@ -15,7 +15,11 @@ import {
   planAt,
 } from "@/components/book-camera";
 import { BookIndex, BookNav } from "@/components/book-nav";
-import { BOOK_PAGES } from "@/components/book-pages.content";
+import {
+  BOOK_PAGES,
+  CHAPTER_OF_SPREAD,
+  FIRST_SPREAD_OF_CHAPTER,
+} from "@/components/book-pages.content";
 import {
   BookPageColumn,
   BookSheets,
@@ -499,9 +503,14 @@ export function Book() {
       // contextSafe because this runs from a click long after useGSAP has
       // finished: without it the tween is created outside the context and
       // never gets reverted.
-      const seek = (index: number) => {
+      // The nav's buttons carry a CHAPTER index -- one tab per chapter, however
+      // many spreads it runs to -- and the timeline is measured in spreads, so
+      // this is where the two meet: a click on a tab goes to where its chapter
+      // OPENS.
+      const seek = (chapter: number) => {
         const trigger = tl.scrollTrigger;
         if (!trigger) return;
+        const index = chapter < 0 ? -1 : (FIRST_SPREAD_OF_CHAPTER[chapter] ?? 0);
         const y =
           index < 0
             ? 0
@@ -532,9 +541,13 @@ export function Book() {
         }
         if (current === lastCurrent) return;
         lastCurrent = current;
+        // Report the chapter, not the spread. A chapter running to two spreads
+        // keeps ONE tab lit across both, instead of the index going dark on the
+        // continuation because no tab has that spread's number.
+        const chapter = current < 0 ? -1 : (CHAPTER_OF_SPREAD[current] ?? -1);
         for (const el of navItems) {
           const index = Number(el.dataset.index);
-          if (index >= 0) el.dataset.current = String(index === current);
+          if (index >= 0) el.dataset.current = String(index === chapter);
         }
       };
       tl.eventCallback("onUpdate", syncNav);

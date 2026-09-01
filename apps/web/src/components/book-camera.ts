@@ -275,6 +275,28 @@ const GUTTER_X = 975;
 const PAPER_LEFT_X = 20;
 const PAPER_RIGHT_X = 1902;
 
+/**
+ * How far each page rect over-reaches the paper you can actually see, in
+ * source px.
+ *
+ * PAPER_LEFT_X and PAPER_RIGHT_X bound the page BLOCK -- the stack of pages
+ * seen edge-on, which is the bright silver band down each side of the
+ * photograph -- and not the face of the paper. That distinction does not matter
+ * for placing a sheet, because a sheet is meant to cover the block. It matters
+ * a great deal for anything PRINTED on the page: a border inset from the rect
+ * lands in the silver band and disappears into it.
+ *
+ * Measured off frame-091, averaging rows 340-740 so the gutter shadow and the
+ * curve of the paper do not skew it:
+ *
+ *   left    block edge peaks grey 245 at x=86,   paper settles by x=98
+ *   right   block edge peaks grey 253 at x=1838, paper ends    by x=1825
+ *
+ * So the rect runs 78 source px past the paper on the left and 77 on the
+ * right. One constant covers both.
+ */
+export const PAPER_EDGE_BAND = 78;
+
 export type Rect = { x: number; y: number; width: number; height: number };
 
 /**

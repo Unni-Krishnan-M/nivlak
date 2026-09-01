@@ -12,6 +12,7 @@ import { Emblem } from "@/components/book-emblems";
 import {
   BOOK_PAGES,
   BOOK_SPREADS,
+  PAGE_SLOTS,
   type BookPage,
   type BookSpread,
   type PageFigure,
@@ -203,6 +204,16 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
   // land at or left of (width - indexWidth - INDEX_GUTTER), so the extra inset
   // is the difference, floored at zero: a page whose own margin already clears
   // the index asks for nothing.
+  // The printed border's inset from the page edge. In px off the page's WIDTH,
+  // not a percentage per side: a percentage resolves against a different axis
+  // top-to-bottom than left-to-right, so on a 674x762 page a flat "5.5%" would
+  // sit 37px in at the sides and 42px in at head and foot, and a rule box that
+  // is not an even distance from the edge all the way round reads as crooked.
+  stage.style.setProperty(
+    "--page-rule-inset",
+    `${Math.round(sheetRect.width * 0.055)}px`,
+  );
+
   const indexEl = section.querySelector<HTMLElement>("[data-book-index]");
   const indexWidth = indexEl
     ? width - indexEl.getBoundingClientRect().left
@@ -271,10 +282,19 @@ export function BookSheets() {
       {opening?.facing ? (
         <div
           data-left-page
-          className="absolute z-[5]"
+          className="absolute z-[5] overflow-hidden"
           style={{ display: "none" }}
         >
-          <div className="flex h-full w-full flex-col justify-start pt-[18%] pb-[8%] pe-[12%] ps-[calc(10%+var(--facing-inset-start,0px))] text-slate-200">
+          {/* overflow-hidden is safe HERE and nowhere else in this file: this
+              page never turns and carries no 3D transform, so clipping it does
+              not flatten anything. The sheets must never have it -- see the
+              note in CLAUDE.md about grouping properties.
+
+              It is also load-bearing rather than tidy. Once the camera settles,
+              the page is 762px tall instead of 900, and 01's footnote ran off
+              the bottom and printed on the bare ground under the book. */}
+          <PageRule />
+          <div className="flex h-full w-full flex-col justify-start pt-[7%] pb-[7%] pe-[12%] lg:pt-[11%] ps-[calc(10%+var(--facing-inset-start,0px))] text-slate-200">
             <FacingCopy page={opening} />
 
             {/* Footnote. Behind a short rule at the foot of the page, which is
@@ -303,7 +323,8 @@ export function BookSheets() {
               the same value twice. */}
           <p
             data-ink
-            className="absolute bottom-[7%] start-[calc(10%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40"
+            style={{ bottom: "calc(var(--page-rule-inset, 5.5%) + 1.9em)" }}
+            className="absolute start-[calc(10%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40"
           >
             NIVLAK
           </p>
@@ -390,6 +411,30 @@ export function BookPageColumn() {
 // The only overlay left is the one the picture genuinely cannot supply: a
 // sheet standing up out of the page catches less light, and no still frame
 // knows that a page is being lifted.
+/**
+ * The printed border: one hairline box on every page.
+ *
+ * A ruled border is INK -- the thing a printer put on the paper -- which is why
+ * it is allowed here when a drawn gutter shadow or edge highlight is not. Those
+ * would be a second copy of something the photograph already has, and would
+ * drift out of agreement with it on resize. This has no counterpart in the
+ * frame at all.
+ *
+ * It is drawn on the face rather than around the text so that both halves of a
+ * spread carry the same box whatever is printed inside them -- including the
+ * pages that are nearly empty, where the border is most of what says the page
+ * is a page.
+ */
+function PageRule() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute border border-white/25"
+      style={{ inset: "var(--page-rule-inset, 5.5%)" }}
+    />
+  );
+}
+
 function PageFace({
   side,
   children,
@@ -413,6 +458,7 @@ function PageFace({
             : "var(--page-back-pos, center)",
       }}
     >
+      <PageRule />
       {children}
       <div
         data-shade
@@ -522,6 +568,65 @@ function Figure({
 }
 
 /**
+ * A chapter head, set the way a book sets one.
+ *
+ * The chapter's NUMBER is the largest thing on the page and hangs in the
+ * margin, so a reader thumbing past sees where they are before reading a word;
+ * the section name sits beside it in spaced capitals, the title under both, and
+ * a rule closes the head. What this replaced -- "02 — SOLUTIONS" in small caps
+ * stacked over the headline -- said the same thing twice at two sizes, which is
+ * a web page's idea of a heading rather than a book's.
+ *
+ * It is sized to fit ONE slot of the catalogue grid (~208px at 1440x900). That
+ * is the constraint behind the type sizes here: the head has to occupy exactly
+ * the height of an entry, or the verso's entries stop lining up with the
+ * recto's and the grid has bought nothing.
+ */
+function ChapterHead({
+  page,
+  headline,
+  epigraph,
+}: {
+  page: BookPage | BookSpread;
+  headline: string;
+  epigraph?: string;
+}) {
+  return (
+    // NOT min-h-0. A flex item with its automatic minimum removed can be
+    // shrunk below its own content, and once the settle cut the page from 900px
+    // to 762px the opening verso no longer fit -- so the head collapsed and its
+    // epigraph printed on top of the subtitle under it. `shrink-0` keeps the
+    // head at its content height and lets the page overflow instead, which the
+    // face clips; type over type is the worse failure by far.
+    <div data-ink className="shrink-0 self-start">
+      {/* Headpiece: the ornament that fills the blank at a chapter's head. */}
+      <Ornament className="mb-[0.9em] w-[38%] text-slate-300" />
+      <div className="flex items-baseline gap-[0.7em]">
+        <span
+          aria-hidden
+          className="font-[family-name:var(--font-display)] text-[clamp(2.2rem,4.4vw,4.4rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
+        >
+          {page.number}
+        </span>
+        <span className="text-[clamp(0.56rem,0.82vw,0.68rem)] leading-none tracking-[0.42em] text-slate-400/80">
+          {page.title.toUpperCase()}
+        </span>
+      </div>
+      <h2 className="mt-[0.3em] font-[family-name:var(--font-display)] text-[clamp(1.5rem,3vw,3rem)] leading-[1.03] font-light text-balance text-white">
+        {headline}
+      </h2>
+      {/* The rule that closes a chapter head. */}
+      <span aria-hidden className="mt-[0.45em] block h-px w-full bg-white/18" />
+      {epigraph ? (
+        <p className="mt-[0.7em] font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.1vw,1.05rem)] leading-snug text-slate-300/75 italic">
+          {epigraph}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
  * The opening left-hand page.
  *
  * Laid out as a book chapter opener, which is a specific thing and not just a
@@ -545,26 +650,27 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
     return <ServiceEntries services={page.facing.services ?? []} from={from} />;
   }
 
+  // A chapter opening that is also a catalogue page. The head and the entries
+  // share ONE grid so the head occupies slot 1 and the entries fall into the
+  // slots below it -- which is what puts entry II opposite entry V across the
+  // gutter. Rendering the head above a separate grid cannot do that: the grid
+  // would then divide whatever height was left over, and "whatever was left
+  // over" is a different number on each page.
+  if (isIllustrated(page.facing.services)) {
+    return (
+      <ServiceEntries
+        services={page.facing.services ?? []}
+        from={from}
+        head={
+          <ChapterHead page={page} headline={headline} epigraph={epigraph} />
+        }
+      />
+    );
+  }
+
   return (
     <>
-      <div data-ink>
-        {/* Headpiece: the ornament that fills the blank at a chapter's head. */}
-        <Ornament className="mb-[1.4em] w-[42%] text-slate-300" />
-        <p className="mb-4 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
-          {page.number} &mdash; {page.title.toUpperCase()}
-        </p>
-        <h2 className="font-[family-name:var(--font-display)] text-[clamp(2rem,4.2vw,4.2rem)] leading-[1.02] font-light text-balance text-white">
-          {headline}
-        </h2>
-        {/* Epigraph: the line a book sets under a chapter title, held off the
-            margin by a rule so it reads as quoted rather than as body text. */}
-        {epigraph ? (
-          <p className="mt-[1.1em] border-s border-white/15 ps-[1em] font-[family-name:var(--font-display)] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed text-slate-300/75 italic">
-            {epigraph}
-          </p>
-        ) : null}
-        <span aria-hidden className="mt-[1.1em] block h-px w-[38%] bg-white/20" />
-      </div>
+      <ChapterHead page={page} headline={headline} epigraph={epigraph} />
 
       {/* Guarded: an opener set with an epigraph and no subtitle -- which is
           what a chapter title page is -- otherwise printed an empty paragraph
@@ -601,11 +707,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
           them straight under the subtitle; an engraved one hangs its lead
           plate off the foot of the page. Both are catalogues, but only the
           second has a blank lower half to hang anything in. */}
-      {isIllustrated(page.facing.services) ? (
-        <div className="mt-[clamp(1em,2vh,1.6em)] lg:mt-[clamp(1.8em,4vh,3.2em)]">
-          <ServiceEntries services={page.facing.services ?? []} from={from} />
-        </div>
-      ) : page.facing.services?.[0] ? (
+      {isIllustrated(page.facing.services) ? null : page.facing.services?.[0] ? (
         <div className="mt-[1.4em] lg:mt-auto lg:mb-[7%]">
           <LeadService service={page.facing.services[0]} />
           {page.facing.services.length > 1 ? (
@@ -743,7 +845,7 @@ function ServiceEntry({
   return (
     <div
       data-ink
-      className={`flex items-center gap-[clamp(1em,2.4vw,2.4em)] ${
+      className={`flex min-h-0 items-center gap-[clamp(1em,2.4vw,2.4em)] self-center ${
         plateOnTheRight ? "flex-row-reverse" : ""
       }`}
     >
@@ -803,15 +905,28 @@ function ServicePlate({ image }: { image: PageFigure }) {
 function ServiceEntries({
   services,
   from,
+  head,
 }: {
   services: PageService[];
   from: number;
+  /** The chapter head, when this page opens a chapter. It takes slot 1. */
+  head?: React.ReactNode;
 }) {
+  // A grid of PAGE_SLOTS equal rows filling the page, NOT a flex column with a
+  // gap. The gap version packed the entries against the top and left a third of
+  // every page blank at the foot -- and because a chapter opening spends its
+  // first slot on the head, the verso's entries then sat at different heights
+  // from the recto's, so nothing lined up across the gutter. On equal rows they
+  // line up by construction and the page fills itself.
   return (
-    // The gap is what separates the entries now that the rules are gone, so it
-    // has to be big enough to do that job on its own -- at 1.15em, the padding
-    // the ruled version used, the run read as one block of alternating stripes.
-    <div className="flex flex-col gap-[clamp(0.9em,1.8vh,1.6em)] lg:gap-[clamp(1.6em,3.4vh,3em)]">
+    <div
+      className="grid h-full min-h-0 flex-1"
+      // Auto-placement does the offsetting: with a head present it takes row 1
+      // and the entries follow into rows 2 and 3; without one they start at row
+      // 1. No explicit row numbers, so adding a slot changes one constant.
+      style={{ gridTemplateRows: `repeat(${PAGE_SLOTS}, minmax(0, 1fr))` }}
+    >
+      {head}
       {services.map((service, i) => (
         <ServiceEntry key={service.title} service={service} index={from + i} />
       ))}
@@ -888,8 +1003,13 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
       {/* Tailpiece, closing the catalogue the way 01 closes its text -- but
           only where the catalogue actually ends. On the first of two spreads
           the run carries on over the page, and an ornament there would sign
-          off a chapter that has not finished. */}
-      {spread.lastOfChapter ?? true ? (
+          off a chapter that has not finished.
+
+          Not on the illustrated pages: their entries fill a grid that is the
+          whole height of the page, so there is no foot to put an ornament in --
+          and since every page now carries a printed border, the ornament has
+          nothing left to do there anyway. */}
+      {!illustrated && (spread.lastOfChapter ?? true) ? (
         <div data-ink className="mt-[2em]">
           <Ornament className="w-[30%] text-slate-300" />
         </div>
@@ -1256,11 +1376,14 @@ function VersoPage({ page }: { page: BookPage | BookSpread }) {
   return (
     <div
       className={`relative flex h-full w-full flex-col justify-start pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200 ${
-        continued ? "pt-[7%] lg:pt-[11%]" : "pt-[8%] lg:pt-[18%]"
+        continued ? "pt-[6%] lg:pt-[8%]" : "pt-[7%] lg:pt-[11%]"
       }`}
     >
       <FacingCopy page={page} />
-      <p className="absolute bottom-[7%] start-[calc(10%+var(--verso-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums">
+      <p
+        style={{ bottom: "calc(var(--page-rule-inset, 5.5%) + 1.9em)" }}
+        className="absolute start-[calc(10%+var(--verso-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums"
+      >
         {page.number} &mdash; {page.title.toUpperCase()}
       </p>
     </div>
@@ -1353,7 +1476,8 @@ function PageFoot({ page }: { page: BookPage }) {
   return (
     <div
       data-ink
-      className="absolute inset-x-0 bottom-[8%] flex justify-start ps-[12%]"
+      style={{ bottom: "calc(var(--page-rule-inset, 5.5%) + 1.9em)" }}
+      className="absolute inset-x-0 flex justify-start ps-[12%]"
     >
       <p className="text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/45 tabular-nums">
         {page.number} &mdash; {page.title.toUpperCase()}
@@ -1375,8 +1499,8 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         // and both halves of this spread take the same drop so their first
         // lines sit on one line across the gutter.
         page.facing
-          ? `justify-start pb-[8%] ${
-              continued ? "pt-[7%] lg:pt-[11%]" : "pt-[8%] lg:pt-[18%]"
+          ? `justify-start pb-[7%] ${
+              continued ? "pt-[6%] lg:pt-[8%]" : "pt-[7%] lg:pt-[11%]"
             }`
           : "justify-center py-[8%]"
       }`}
@@ -1443,7 +1567,13 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
       {page.facing ? (
         <p
           data-ink
-          className="absolute bottom-[7%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
+          // Positioned off the RULE, not off the page. At bottom-[7%] the
+          // folio landed within a pixel of the border and read as sitting on
+          // the line rather than inside it.
+          style={{
+            bottom: "calc(var(--page-rule-inset, 5.5%) + 1.9em)",
+          }}
+          className="absolute end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
         >
           {page.number}
         </p>

@@ -482,10 +482,20 @@ export const BOOK_PAGES: BookPage[] = [
 // modular grid on the recto -- and re-cutting those on a slot count would
 // throw away a layout that was designed, not computed.
 
-/** How many illustrated entries fit on a page, measured at 1440x900. */
-const OPENER_VERSO_SLOTS = 2;
-const VERSO_SLOTS = 3;
-const RECTO_SLOTS = 3;
+/**
+ * How many illustrated entries fit on a page, measured at 1440x900.
+ *
+ * These are SLOTS on a real grid, not a rough capacity. Every catalogue page is
+ * divided into PAGE_SLOTS equal rows and each entry is centred in one of them,
+ * which is what makes entry II on the verso sit on the same line as entry V on
+ * the recto. A chapter opening spends its first slot on the chapter head, so
+ * its verso holds one entry fewer -- that is the whole of the difference
+ * between OPENER_VERSO_SLOTS and VERSO_SLOTS.
+ */
+export const PAGE_SLOTS = 3;
+const OPENER_VERSO_SLOTS = PAGE_SLOTS - 1;
+const VERSO_SLOTS = PAGE_SLOTS;
+const RECTO_SLOTS = PAGE_SLOTS;
 
 /**
  * How many entries land on each spread of a chapter `total` entries long.

@@ -102,6 +102,41 @@ const MIN_SHOW_H = 0.45;
 // viewport edge.
 export const SHOW_MARGIN = 1.04;
 
+// ---------------------------------------------------------------------------
+// THE SETTLE: the camera backs off as the spread comes flat.
+//
+// The clip ends framed to FILL, which is right for a reveal and wrong for a
+// book you then have to read. At `cover` on a 1440x900 window the frame is
+// drawn 1600 wide, so the paper runs from x=-63 to x=1505: both outer edges of
+// the spread are off screen. Nothing printed on the page can reach them --
+// a ruled border loses its left and right sides, and the thumb index has
+// nowhere to sit but on top of the type.
+//
+// So over the last stretch of the clip the scale eases from `cover` down to a
+// fit that puts the whole spread on screen with its margins intact. It reads
+// as the camera settling once the book is open, which is a move the footage
+// invites rather than fights -- the push-in is over by then and the last dozen
+// frames are nearly still.
+//
+// It is a RAMP, not a step, and it starts late: anything earlier and the book
+// visibly shrinks while it is still opening, which looks like the page pulling
+// away from the reader.
+const SETTLE_FROM = 0.82;
+
+// What the fit has to leave room for, in CSS px.
+//
+// OUTER_MARGIN is the ground the book sits on. THUMB_STRIP is the fore-edge
+// strip <BookIndex> occupies at the window's right edge, and it has to agree
+// with that component: the index is right-aligned to the window, so any width
+// it takes is width the spread cannot have. Measured at 1440x900 with the
+// titles positioned out of flow -- the tabs are a numeral and a notch, 60px,
+// plus the pe-[clamp(0.9rem,2vw,2rem)] the component sets.
+//
+// Below Tailwind's lg the index drops its titles entirely, but it is the
+// numerals that set the box either way, so one number covers both.
+const OUTER_MARGIN = 34;
+const THUMB_STRIP = 78;
+
 export const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 export const smoothstep = (x: number) => {
@@ -166,7 +201,19 @@ export function planAt(
   // 16:9-ish desktop the source aspect matches and this is always exactly
   // cover, so the footage is shown 1:1 with no crop decision at all.
   const cover = Math.max(width / FRAME_W, height / FRAME_H);
-  const scale = Math.min(cover, width / showW, height / showH);
+  const reveal = Math.min(cover, width / showW, height / showH);
+
+  // The settle. `fit` is the scale at which the paper -- not the frame, the
+  // PAPER, which is inset from it -- spans the window less its margins and the
+  // thumb strip. Math.min so this can only ever pull back: on a viewport
+  // already wide enough for the whole spread there is nothing to do and the
+  // reveal's own framing stands.
+  const settle = smoothstep(
+    (playhead / (FRAME_COUNT - 1) - SETTLE_FROM) / (1 - SETTLE_FROM),
+  );
+  const fit =
+    (width - OUTER_MARGIN - THUMB_STRIP) / (PAPER_RIGHT_X - PAPER_LEFT_X);
+  const scale = lerp(reveal, Math.min(reveal, fit), settle);
 
   const drawWidth = FRAME_W * scale;
   const drawHeight = FRAME_H * scale;
@@ -183,12 +230,18 @@ export function planAt(
     return Math.min(hi, Math.max(lo, raw));
   };
 
+  // Horizontally the book is centred in what is left AFTER the thumb strip, so
+  // the strip is empty ground rather than a slice of the page. Centring in the
+  // full width instead put the index back over the fore-edge, which is the
+  // thing the settle exists to prevent.
+  const xExtent = width - THUMB_STRIP * settle;
+
   const layer = (index: number, alpha: number): Layer => {
     const frame = FRAMES[index];
     return {
       index,
       alpha,
-      x: place(frame.ax, width, drawWidth),
+      x: place(frame.ax, xExtent, drawWidth),
       y: place(frame.ay, height, drawHeight),
       width: drawWidth,
       height: drawHeight,

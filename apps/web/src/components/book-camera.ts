@@ -166,7 +166,25 @@ export function planAt(
   // 16:9-ish desktop the source aspect matches and this is always exactly
   // cover, so the footage is shown 1:1 with no crop decision at all.
   const cover = Math.max(width / FRAME_W, height / FRAME_H);
-  const scale = Math.min(cover, width / showW, height / showH);
+  const held = Math.min(cover, width / showW, height / showH);
+
+  // ...and by the end of the clip, fill it unconditionally.
+  //
+  // `credit` above already says cropping is free once the spread is flat, and
+  // it is spent on shrinking the must-show box. That is not enough on a narrow
+  // viewport, where the box still binds: on a 390x844 phone cover wants 0.781
+  // and width/showW caps it at 0.651, so the frame is drawn 1250x703 and the
+  // pages section shows ~55px of bare letterbox above and below the page. The
+  // page looked framed rather than full screen, which is the opposite of what
+  // the fallback is for.
+  //
+  // So the same credit also releases the constraint itself. At the end the
+  // scale IS cover on every aspect ratio, which is the honest reading of "the
+  // outer third is bare paper and nobody can tell it is missing" -- if the crop
+  // is free then the bars have nothing to buy. Desktop is untouched: at
+  // 1440x900 the constraint never bound, held already equals cover, and the
+  // lerp is between a number and itself.
+  const scale = lerp(held, cover, credit);
 
   const drawWidth = FRAME_W * scale;
   const drawHeight = FRAME_H * scale;

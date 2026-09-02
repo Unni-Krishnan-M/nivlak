@@ -3,9 +3,7 @@
 import {
   FRAME_COUNT,
   FRAME_SRC,
-  FRAME_W,
   LETTERBOX,
-  PAPER_EDGE_BAND,
   type Tier,
   finalFrameRect,
   spreadAt,
@@ -206,47 +204,6 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
   // land at or left of (width - indexWidth - INDEX_GUTTER), so the extra inset
   // is the difference, floored at zero: a page whose own margin already clears
   // the index asks for nothing.
-  // The printed border's inset from the page edge. In px off the page's WIDTH,
-  // not a percentage per side: a percentage resolves against a different axis
-  // top-to-bottom than left-to-right, so on a 674x762 page a flat "5.5%" would
-  // sit 37px in at the sides and 42px in at head and foot, and a rule box that
-  // is not an even distance from the edge all the way round reads as crooked.
-  // The page's own size, for anything that has to be sized against the PAGE
-  // rather than the viewport. The two stopped being interchangeable when the
-  // camera learned to settle: a page is now 674x762 inside a 1440x900 window,
-  // so a plate at 20vw is 43% of the page's width rather than the ~36% it was
-  // drawn for, and it pushed its own caption through the bottom rule.
-  stage.style.setProperty("--page-w", `${Math.round(sheetRect.width)}px`);
-  stage.style.setProperty("--page-h", `${Math.round(sheetRect.height)}px`);
-
-  const ruleInset = Math.round(sheetRect.width * 0.055);
-  stage.style.setProperty("--page-rule-inset", `${ruleInset}px`);
-
-  // The OUTER inset is bigger than the inner one, and not for taste.
-  //
-  // A page rect reaches past the paper by PAPER_EDGE_BAND of source px -- that
-  // is the lit edge of the page block in the photograph. Inset the same 36px
-  // all round, the outer side of the rule lands INSIDE that silver band and is
-  // swallowed by it: scanning a row of the render at 1440x900, the verso's
-  // outer rule sat at x=53 inside a band running x=46..70 and simply could not
-  // be seen, while the other three sides were fine.
-  //
-  // So the outer side gives the band back first and then takes the same margin
-  // as the spine, which puts an equal ~36px of PAPER on all four sides of every
-  // page -- which is what "the same border on both pages" actually means here.
-  const edgeBand = Math.round(PAPER_EDGE_BAND * (frame.width / FRAME_W));
-  stage.style.setProperty("--page-rule-outer", `${ruleInset + edgeBand}px`);
-
-  // And the same again for a verso printed on a sheet's BACK, which is a
-  // further correction. A sheet is the RIGHT page's width; the photographed
-  // left page is wider (955 source px against 927, 20 CSS px here), so a
-  // sheet's back covers the left page but stops short of its outer edge. Left
-  // uncorrected, one spread carried three borders in three positions.
-  stage.style.setProperty(
-    "--page-rule-outer-verso",
-    `${Math.max(ruleInset, ruleInset + edgeBand - Math.max(0, left.width - sheetRect.width))}px`,
-  );
-
   const indexEl = section.querySelector<HTMLElement>("[data-book-index]");
   const indexWidth = indexEl
     ? width - indexEl.getBoundingClientRect().left
@@ -323,13 +280,12 @@ export function BookSheets() {
               not flatten anything. The sheets must never have it -- see the
               note in CLAUDE.md about grouping properties.
 
-              It is also load-bearing rather than tidy. Once the camera settles,
-              the page is 762px tall instead of 900, and 01's footnote ran off
-              the bottom and printed on the bare ground under the book. */}
-          {/* The true left page, not a sheet's back: it is the full width
-              of the photographed verso, so it takes the uncorrected outer. */}
-          <PageRule outer="start" />
-          <div className="flex h-full w-full flex-col justify-start pt-[7%] pb-[7%] pe-[12%] lg:pt-[11%] ps-[calc(10%+var(--facing-inset-start,0px))] text-slate-200">
+              It is also load-bearing rather than tidy. This page is laid on
+              the measured left rect, so anything set taller than that rect
+              prints on the bare ground UNDER the book rather than being cut
+              off at the page edge -- which is what 01's footnote did the one
+              time the page came out shorter than the copy on it. */}
+          <div className="flex h-full w-full flex-col justify-start pt-[8%] pb-[8%] pe-[12%] lg:pt-[18%] ps-[calc(10%+var(--facing-inset-start,0px))] text-slate-200">
             <FacingCopy page={opening} />
 
             {/* Footnote. Behind a short rule at the foot of the page, which is
@@ -358,8 +314,7 @@ export function BookSheets() {
               the same value twice. */}
           <p
             data-ink
-            style={{ bottom: "calc(var(--page-rule-inset, 5.5%) + 1.9em)" }}
-            className="absolute start-[calc(10%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40"
+            className="absolute bottom-[7%] start-[calc(10%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40"
           >
             NIVLAK
           </p>
@@ -446,57 +401,6 @@ export function BookPageColumn() {
 // The only overlay left is the one the picture genuinely cannot supply: a
 // sheet standing up out of the page catches less light, and no still frame
 // knows that a page is being lifted.
-/**
- * The printed border: one hairline box on every page.
- *
- * A ruled border is INK -- the thing a printer put on the paper -- which is why
- * it is allowed here when a drawn gutter shadow or edge highlight is not. Those
- * would be a second copy of something the photograph already has, and would
- * drift out of agreement with it on resize. This has no counterpart in the
- * frame at all.
- *
- * It is drawn on the face rather than around the text so that both halves of a
- * spread carry the same box whatever is printed inside them -- including the
- * pages that are nearly empty, where the border is most of what says the page
- * is a page.
- */
-/**
- * Which side of this face is the book's OUTER edge -- the fore-edge.
- *
- * "start" for anything that lands on the left of the spread, "end" for the
- * right. It is stated rather than derived because a turned sheet's back is
- * mirrored and the obvious derivation gets it backwards: the face carries
- * rotateY(180deg), so you would expect its start edge to come to rest on the
- * screen's right -- and measured, it does not. With start=36 the turned verso's
- * rule landed at x=73, i.e. start resolved to the screen's LEFT. The rotation
- * is about the element's own centre, so the visual box maps start back onto the
- * left. Measurement over reasoning.
- */
-function PageRule({
-  outer,
-  verso = false,
-}: {
-  outer: "start" | "end";
-  /** Printed on a sheet's back, which is narrower than the page it covers. */
-  verso?: boolean;
-}) {
-  const outerInset = verso
-    ? "var(--page-rule-outer-verso, var(--page-rule-inset, 5.5%))"
-    : "var(--page-rule-outer, var(--page-rule-inset, 5.5%))";
-  const inner = "var(--page-rule-inset, 5.5%)";
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute border border-white/25"
-      style={{
-        insetBlock: inner,
-        insetInlineStart: outer === "start" ? outerInset : inner,
-        insetInlineEnd: outer === "end" ? outerInset : inner,
-      }}
-    />
-  );
-}
-
 function PageFace({
   side,
   children,
@@ -520,10 +424,6 @@ function PageFace({
             : "var(--page-back-pos, center)",
       }}
     >
-      <PageRule
-        outer={side === "back" ? "start" : "end"}
-        verso={side === "back"}
-      />
       {children}
       <div
         data-shade
@@ -658,11 +558,11 @@ function ChapterHead({
 }) {
   return (
     // NOT min-h-0. A flex item with its automatic minimum removed can be
-    // shrunk below its own content, and once the settle cut the page from 900px
-    // to 762px the opening verso no longer fit -- so the head collapsed and its
-    // epigraph printed on top of the subtitle under it. `shrink-0` keeps the
-    // head at its content height and lets the page overflow instead, which the
-    // face clips; type over type is the worse failure by far.
+    // shrunk below its own content, and a verso whose copy outruns the page is
+    // exactly when that happens: the head collapses and its epigraph prints on
+    // top of the subtitle beneath it. `shrink-0` keeps the head at its content
+    // height and lets the page overflow instead, which the face clips. Type
+    // over type is the worse failure by far.
     <div data-ink className="shrink-0 self-start">
       {/* Headpiece: the ornament that fills the blank at a chapter's head. */}
       <Ornament className="mb-[0.9em] w-[38%] text-slate-300" />
@@ -842,7 +742,7 @@ function LeadService({ service }: { service: PageService }) {
         {service.emblem ? (
           <Emblem
             name={service.emblem}
-            className="w-[clamp(58px,calc(var(--page-w,796px)*0.13),126px)] shrink-0 text-slate-200"
+            className="w-[clamp(70px,8.8vw,126px)] shrink-0 text-slate-200"
           />
         ) : null}
         <div className="pt-[0.2em]">
@@ -1018,14 +918,14 @@ function ServiceGrid({
         <div
           key={service.title}
           data-ink
-          className={`flex flex-col border-t border-white/12 py-[1.15em] lg:py-[1.45em] ${
+          className={`flex flex-col border-t border-white/12 py-[1.15em] lg:py-[2.3em] ${
             i % 2 === 0 ? "pe-[1.4em]" : "border-s ps-[1.4em]"
           }`}
         >
           {service.emblem ? (
             <Emblem
               name={service.emblem}
-              className="mb-[0.8em] w-[clamp(34px,calc(var(--page-w,796px)*0.072),58px)] text-slate-300"
+              className="mb-[1.1em] w-[clamp(38px,4.9vw,68px)] text-slate-300"
             />
           ) : null}
           <p className="mb-[0.55em] text-[clamp(0.52rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-400/70">
@@ -1070,10 +970,9 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
           the run carries on over the page, and an ornament there would sign
           off a chapter that has not finished.
 
-          Not on the illustrated pages: their entries fill a grid that is the
-          whole height of the page, so there is no foot to put an ornament in --
-          and since every page now carries a printed border, the ornament has
-          nothing left to do there anyway. */}
+          Not on the illustrated pages: their entries fill a grid that is
+          the whole height of the page, so there is no foot left to put an
+          ornament in. */}
       {!illustrated && (spread.lastOfChapter ?? true) ? (
         <div data-ink className="mt-[2em]">
           <Ornament className="w-[30%] text-slate-300" />
@@ -1188,7 +1087,7 @@ function EngravedPlate({
       className={
         beside
           ? "mt-auto mb-[9%] flex items-end gap-[1.4em] pt-[1.6em]"
-          : "mt-auto mb-[5%] w-[clamp(130px,calc(var(--page-w,796px)*0.32),290px)]"
+          : "mt-auto mb-[7%] w-[clamp(150px,20vw,290px)]"
       }
     >
       <div
@@ -1199,10 +1098,6 @@ function EngravedPlate({
         }`}
         style={{
           aspectRatio: plate.ratio,
-          // Capped against the PAGE, so a tall plate cannot run its caption
-          // through the foot rule. maskSize:contain means the drawing simply
-          // sits smaller inside the box rather than being cropped.
-          maxHeight: "calc(var(--page-h, 900px) * 0.24)",
           backgroundColor: "#dce7f7",
           maskImage: `url("${plate.src}")`,
           WebkitMaskImage: `url("${plate.src}")`,
@@ -1445,13 +1340,12 @@ function VersoPage({ page }: { page: BookPage | BookSpread }) {
   return (
     <div
       className={`relative flex h-full w-full flex-col justify-start pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200 ${
-        continued ? "pt-[6%] lg:pt-[8%]" : "pt-[7%] lg:pt-[11%]"
+        continued ? "pt-[7%] lg:pt-[11%]" : "pt-[8%] lg:pt-[18%]"
       }`}
     >
       <FacingCopy page={page} />
       <p
-        style={{ bottom: "calc(var(--page-rule-inset, 5.5%) + 1.9em)" }}
-        className="absolute start-[calc(10%+var(--verso-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums"
+        className="absolute bottom-[7%] start-[calc(10%+var(--verso-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums"
       >
         {page.number} &mdash; {page.title.toUpperCase()}
       </p>
@@ -1545,8 +1439,7 @@ function PageFoot({ page }: { page: BookPage }) {
   return (
     <div
       data-ink
-      style={{ bottom: "calc(var(--page-rule-inset, 5.5%) + 1.9em)" }}
-      className="absolute inset-x-0 flex justify-start ps-[12%]"
+      className="absolute inset-x-0 bottom-[8%] flex justify-start ps-[12%]"
     >
       <p className="text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/45 tabular-nums">
         {page.number} &mdash; {page.title.toUpperCase()}
@@ -1568,8 +1461,8 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         // and both halves of this spread take the same drop so their first
         // lines sit on one line across the gutter.
         page.facing
-          ? `justify-start pb-[7%] ${
-              continued ? "pt-[6%] lg:pt-[8%]" : "pt-[7%] lg:pt-[11%]"
+          ? `justify-start pb-[8%] ${
+              continued ? "pt-[7%] lg:pt-[11%]" : "pt-[8%] lg:pt-[18%]"
             }`
           : "justify-center py-[8%]"
       }`}
@@ -1636,13 +1529,7 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
       {page.facing ? (
         <p
           data-ink
-          // Positioned off the RULE, not off the page. At bottom-[7%] the
-          // folio landed within a pixel of the border and read as sitting on
-          // the line rather than inside it.
-          style={{
-            bottom: "calc(var(--page-rule-inset, 5.5%) + 1.9em)",
-          }}
-          className="absolute end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
+          className="absolute bottom-[7%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
         >
           {page.number}
         </p>

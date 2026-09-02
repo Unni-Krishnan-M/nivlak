@@ -107,23 +107,12 @@ export function BookIndex() {
               data-index={index}
               data-current="false"
               aria-label={`${page.number} ${page.title}`}
-              className="group relative flex cursor-pointer items-center justify-end gap-[0.75em]"
+              className="group flex cursor-pointer items-center justify-end gap-[0.75em]"
             >
-              {/* Out of flow on purpose. In flow, every tab reserved room for
-                  the widest title (PERSPECTIVES, 102px) whether or not it was
-                  showing, and that width is width the book cannot have -- the
-                  index is right-aligned to the window, so it sets THUMB_STRIP
-                  in book-camera.ts and the camera has to give up the same
-                  amount of spread to clear it. Absolute, the strip is the
-                  numeral and the notch alone.
-
-                  On HOVER only, not on the current tab. The title is ~100px
-                  wide and there is only the fore-edge margin to the left of the
-                  tabs, so a permanently-shown title on the current tab reached
-                  back over the page and across its printed border. Which tab is
-                  current is already said twice without it -- the numeral goes
-                  white and the notch is cut deeper. */}
-              <span className="pointer-events-none absolute end-full me-[0.75em] hidden translate-x-[0.4em] whitespace-nowrap text-[clamp(0.5rem,0.66vw,0.62rem)] lg:inline tracking-[0.26em] text-slate-300 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-70">
+              {/* The titles are hidden until a tab is current or hovered, so
+                  the index is a column of numerals at rest and names itself
+                  only where you are looking. */}
+              <span className="hidden translate-x-[0.4em] text-[clamp(0.5rem,0.66vw,0.62rem)] lg:inline tracking-[0.26em] text-slate-300 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-70 group-data-[current=true]:translate-x-0 group-data-[current=true]:opacity-100">
                 {page.title.toUpperCase()}
               </span>
               <span className="text-[clamp(0.5rem,0.66vw,0.62rem)] tabular-nums tracking-[0.2em] text-slate-400/45 transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white">

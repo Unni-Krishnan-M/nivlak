@@ -177,10 +177,7 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
     "--page-text-inset-end",
     `${Math.max(0, sheetRect.x + sheetRect.width - width)}px`,
   );
-  stage.style.setProperty(
-    "--facing-inset-start",
-    `${Math.max(0, -left.x)}px`,
-  );
+  stage.style.setProperty("--facing-inset-start", `${Math.max(0, -left.x)}px`);
 
   // How far the thumb index intrudes on the recto's type.
   //
@@ -205,9 +202,7 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
   // is the difference, floored at zero: a page whose own margin already clears
   // the index asks for nothing.
   const indexEl = section.querySelector<HTMLElement>("[data-book-index]");
-  const indexWidth = indexEl
-    ? width - indexEl.getBoundingClientRect().left
-    : 0;
+  const indexWidth = indexEl ? width - indexEl.getBoundingClientRect().left : 0;
   // Air between the last character and the notch. At 0 they touch and the type
   // reads as running into the tabs even though it no longer overlaps them.
   const INDEX_GUTTER = 18;
@@ -494,7 +489,12 @@ function Figure({
         className="w-full text-slate-300"
         fill="none"
       >
-        <path d="M8 11h304" stroke="currentColor" strokeWidth="1" opacity="0.26" />
+        <path
+          d="M8 11h304"
+          stroke="currentColor"
+          strokeWidth="1"
+          opacity="0.26"
+        />
         {figure.steps.map((step, i) => {
           const x = span * (i + 0.5);
           return (
@@ -505,7 +505,13 @@ function Figure({
                 strokeWidth="1"
                 opacity="0.26"
               />
-              <circle cx={x} cy="11" r="3.3" fill="currentColor" opacity="0.75" />
+              <circle
+                cx={x}
+                cy="11"
+                r="3.3"
+                fill="currentColor"
+                opacity="0.75"
+              />
             </g>
           );
         })}
@@ -612,7 +618,12 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
   // chapter title, no epigraph. Printing a chapter title again on the second
   // spread of the same chapter is the thing a book never does.
   if (spread.continued) {
-    return <ServiceEntries services={page.facing.services ?? []} from={from} />;
+    const carried = page.facing.services ?? [];
+    return isArchive(carried) ? (
+      <ArchiveEntries services={carried} from={from} />
+    ) : (
+      <ServiceEntries services={carried} from={from} />
+    );
   }
 
   // A chapter opening that is also a catalogue page. The head and the entries
@@ -672,7 +683,8 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
           them straight under the subtitle; an engraved one hangs its lead
           plate off the foot of the page. Both are catalogues, but only the
           second has a blank lower half to hang anything in. */}
-      {isIllustrated(page.facing.services) ? null : page.facing.services?.[0] ? (
+      {isIllustrated(page.facing.services) ? null : page.facing
+          .services?.[0] ? (
         <div className="mt-[1.4em] lg:mt-auto lg:mb-[7%]">
           <LeadService service={page.facing.services[0]} />
           {page.facing.services.length > 1 ? (
@@ -690,7 +702,25 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
         </div>
       ) : null}
 
-      {page.facing.plate ? <EngravedPlate plate={page.facing.plate} /> : null}
+      {page.facing.plate ? (
+        isArchive(page.services) ? (
+          // Portrait collapses the spread onto ONE full-bleed page, so the
+          // register's half-title and the first two records have to share
+          // 844px -- and they do not: the head, the epigraph and the subtitle
+          // come to ~195px, the plate and its caption to ~210, and two ledgers
+          // need ~360. The plate is the only thing there carrying no
+          // information a reader needs, so it is the one that goes.
+          //
+          // lg:contents rather than lg:block: the figure hangs off the foot of
+          // the page with mt-auto, which only works while it is a child of the
+          // page's own flex column.
+          <div className="hidden lg:contents">
+            <EngravedPlate plate={page.facing.plate} />
+          </div>
+        ) : (
+          <EngravedPlate plate={page.facing.plate} />
+        )
+      ) : null}
       {page.founder ? <Portrait founder={page.founder} /> : null}
       {page.contact && !page.facing.plate ? (
         <MarkPlate caption="NIVLAK TECHNOLOGIES" />
@@ -707,9 +737,19 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
 // printing `undefined` the first time a chapter grew past it -- the exact
 // change this file is now built to make easy.
 const ROMAN_PARTS: [number, string][] = [
-  [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
-  [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
-  [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+  [1000, "M"],
+  [900, "CM"],
+  [500, "D"],
+  [400, "CD"],
+  [100, "C"],
+  [90, "XC"],
+  [50, "L"],
+  [40, "XL"],
+  [10, "X"],
+  [9, "IX"],
+  [5, "V"],
+  [4, "IV"],
+  [1, "I"],
 ];
 function roman(n: number) {
   let rest = n;
@@ -770,6 +810,174 @@ function LeadService({ service }: { service: PageService }) {
  */
 function isIllustrated(services: PageService[] | undefined) {
   return Boolean(services?.some((service) => service.image));
+}
+
+/**
+ * Does this run set as an ARCHIVE -- a register of things made -- rather than
+ * as a catalogue of things offered?
+ *
+ * Asked of the run, like isIllustrated and for the same reason: the answer
+ * decides the setting for the whole chapter, and two settings down one page
+ * read as two lists stacked. What separates them is not decoration. A
+ * catalogue entry names a capability and is true by assertion; a register
+ * entry is a record of one build, so it carries the status that says whether
+ * it was built -- the first thing a reader wants to know about a portfolio and
+ * the thing a portfolio most often has nowhere to say.
+ */
+function isArchive(services: PageService[] | undefined) {
+  return Boolean(services?.some((service) => service.record));
+}
+
+/**
+ * One entry in the register: a ruled ledger, not a card.
+ *
+ * WHY NOT THE CATALOGUE SETTING, WHICH ALREADY EXISTS
+ *
+ * Because 04 used to BE the catalogue setting, and that was the bug. It read
+ * Web Applications / AI Platforms / SaaS Products / Mobile Apps / Brand
+ * Experiences -- 02's five entries, one spread later, with the photographs and
+ * the sentences taken off. Two chapters in the same setting saying the same
+ * five words is how the repetition stayed invisible for as long as it did.
+ *
+ * A register is ruled, labelled, and asks the same three questions of every
+ * entry, so the reader COMPARES entries instead of reading them one at a time.
+ * That is the difference between a portfolio and an archive, and it is carried
+ * by the setting rather than by the copy.
+ *
+ * WHY THE RULE IS BACK, HAVING BEEN TAKEN OFF THE CATALOGUE
+ *
+ * ServiceEntry drops its rules because a page already carrying five
+ * photographs does not need ruling as well -- the pictures were the strongest
+ * thing there and the lines competed with them. There are no photographs here.
+ * The rule is what makes a row of facts a row, and without it three labelled
+ * pairs under a title are just a paragraph that has been broken oddly.
+ */
+function ArchiveEntry({
+  service,
+  index,
+}: {
+  service: PageService;
+  index: number;
+}) {
+  const record = service.record;
+  if (!record) return null;
+  return (
+    // Two elements, and the inner one is why. The row is a full-height grid
+    // cell and the entry is centred in it, so a rule on the OUTER box draws at
+    // the top of the cell -- measured 99px above the entry it was ruling off,
+    // which reads as a stray line rather than as the head of a record. The
+    // rule belongs to the entry, so it goes on the box the entry is in.
+    <div data-ink className="flex min-h-0 flex-col justify-center">
+      {/* Tighter below lg, and it is not taste. A landscape phone gives the
+          page 390px of height against a desktop half's ~620, and two ledgers
+          set at desktop rhythm overran it by ~50px -- the last record lost the
+          foot of its final row to the face's clip. Every value here is the
+          desktop one scaled back by about a third; the type is untouched. */}
+      <div className="border-t border-white/12 pt-[0.55em] lg:pt-[0.9em]">
+        {/* The head of the entry: its number at the fore-edge margin and its
+          year at the other, the way a register rules a line. */}
+        <div className="flex items-baseline justify-between gap-[1em]">
+          <p className="min-w-0 text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/60">
+            PLATE {roman(index + 1)}
+            {record.series ? (
+              <span className="text-slate-400/40">
+                {" · "}
+                {record.series.toUpperCase()}
+              </span>
+            ) : null}
+          </p>
+          <p className="shrink-0 text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.24em] text-slate-400/45 tabular-nums">
+            {record.year}
+          </p>
+        </div>
+
+        <div className="mt-[0.3em] flex items-center gap-[0.6em] lg:mt-[0.5em] lg:gap-[0.7em]">
+          {service.emblem ? (
+            <Emblem
+              name={service.emblem}
+              className="w-[clamp(24px,2.7vw,38px)] shrink-0 text-slate-300"
+            />
+          ) : null}
+          <div className="min-w-0">
+            <h3 className="font-[family-name:var(--font-display)] text-[clamp(0.95rem,1.4vw,1.32rem)] leading-tight font-light text-balance text-white">
+              {service.title}
+            </h3>
+            {/* Discipline and status on one line, at one size. Setting the
+              status smaller, or in a colour, would make it the thing a reader
+              skips -- which is the opposite of why it is printed. */}
+            <p className="mt-[0.18em] text-[clamp(0.47rem,0.63vw,0.56rem)] tracking-[0.26em] text-slate-400/70 lg:mt-[0.3em]">
+              {record.discipline.toUpperCase()}
+              {" · "}
+              {record.status.toUpperCase()}
+            </p>
+          </div>
+        </div>
+
+        {/* Labels beside their values above lg and above them below it. A fixed
+          label column is what aligns the values down the page, and 7.4vw is
+          the width of the longest label the chapter uses; on a portrait phone
+          the whole spread is one 390px page and that column would take a fifth
+          of it, so the pairs stack instead of the values wrapping to nothing. */}
+        <dl className="mt-[0.45em] flex flex-col gap-y-[0.22em] text-[clamp(0.6rem,0.83vw,0.76rem)] lg:mt-[0.7em] lg:gap-y-[0.42em]">
+          {record.rows.map((row) => (
+            <div
+              key={row.label}
+              className="flex flex-col lg:flex-row lg:gap-x-[1em]"
+            >
+              <dt className="text-[0.8em] leading-[1.5] tracking-[0.2em] text-slate-400/60 uppercase lg:w-[clamp(4.4rem,7.4vw,6.8rem)] lg:shrink-0 lg:leading-[1.7]">
+                {row.label}
+              </dt>
+              <dd className="min-w-0 leading-[1.45] text-slate-300/80 lg:leading-[1.55]">
+                {row.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A page of the register.
+ *
+ * The rows are the entries ON THIS PAGE, not a fixed ARCHIVE_SLOTS of them,
+ * and that is the one place this setting departs from the catalogue's. The
+ * catalogue can divide every page into the same fixed number of rows because
+ * its pages are always full, and that is what puts entry II on the verso onto
+ * entry V's line across the gutter. The register's pages are not full: five
+ * entries fall 2 / 2 / 1 across its two spreads, so a fixed template would
+ * leave a third of the last recto blank beneath a stretched entry. Sizing the
+ * rows to the count fills every page, and the tailpiece takes the space on the
+ * last one that would otherwise have been the hole.
+ */
+function ArchiveEntries({
+  services,
+  from,
+}: {
+  services: PageService[];
+  from: number;
+}) {
+  if (!services.length) return null;
+  return (
+    <div
+      className="grid min-h-0 flex-1"
+      // min-content, NOT 0, as the floor. With minmax(0, 1fr) a page whose
+      // entries outrun it shrinks the rows instead of overflowing, and the
+      // entries print through each other: on a 390x844 portrait page PLATE I's
+      // STACK row landed across PLATE II's rule and its plate number. Overflow
+      // is clipped by the face and loses the foot of the last entry, which is
+      // a bad page; overprinting is two records on one line, which is not a
+      // page at all.
+      style={{
+        gridTemplateRows: `repeat(${services.length}, minmax(min-content, 1fr))`,
+      }}
+    >
+      {services.map((service, i) => (
+        <ArchiveEntry key={service.title} service={service} index={from + i} />
+      ))}
+    </div>
+  );
 }
 
 /**
@@ -956,11 +1164,15 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
   // is no offset to carry and servicesFrom is 0, so this is the count it always
   // was.
   const spread = page as Partial<BookSpread>;
-  const from = (spread.servicesFrom ?? 0) + (page.facing?.services?.length ?? 0);
+  const from =
+    (spread.servicesFrom ?? 0) + (page.facing?.services?.length ?? 0);
   const illustrated = isIllustrated(page.services);
+  const archive = isArchive(page.services);
   return (
     <>
-      {illustrated ? (
+      {archive ? (
+        <ArchiveEntries services={page.services} from={from} />
+      ) : illustrated ? (
         <ServiceEntries services={page.services} from={from} />
       ) : (
         <ServiceGrid services={page.services} from={from} />
@@ -974,8 +1186,23 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
           the whole height of the page, so there is no foot left to put an
           ornament in. */}
       {!illustrated && (spread.lastOfChapter ?? true) ? (
-        <div data-ink className="mt-[2em]">
+        // shrink-0 on the register: its grid is flex-1 and would otherwise
+        // take the ornament's height back off it, pushing the last entry up
+        // and re-opening the gap this block is standing in.
+        <div data-ink className={archive ? "mt-[1.4em] shrink-0" : "mt-[2em]"}>
           <Ornament className="w-[30%] text-slate-300" />
+          {/* The qualification, set where a footnote goes and doing its job.
+              Below the ornament rather than above it because it is a note
+              about the chapter that has just ended, not part of it. */}
+          {archive && page.colophon ? (
+            // Full measure, not max-w-[46ch]. At 0.68rem that capped it to
+            // ~248px of a 450px column, so it set as three short lines whose
+            // last one closed 4px below the page's bottom padding and level
+            // with the drop folio. A footnote is set to the measure.
+            <p className="mt-[0.85em] text-[clamp(0.55rem,0.75vw,0.68rem)] leading-relaxed text-slate-400/60">
+              {page.colophon}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </>
@@ -1029,10 +1256,7 @@ function SecondaryServices({
 /** The mark, struck at the foot of a page that would otherwise trail off. */
 function MarkPlate({ caption = "THE MARK" }: { caption?: string }) {
   return (
-    <figure
-      data-ink
-      className="mt-auto mb-[8%] flex items-center gap-[1.1em]"
-    >
+    <figure data-ink className="mt-auto mb-[8%] flex items-center gap-[1.1em]">
       <img
         src="/logo-mark.webp"
         alt=""
@@ -1096,25 +1320,27 @@ function EngravedPlate({
         className={`opacity-80 ${
           beside ? "w-[clamp(100px,12.3vw,176px)] shrink-0" : "w-full"
         }`}
-        style={{
-          aspectRatio: plate.ratio,
-          backgroundColor: "#dce7f7",
-          maskImage: `url("${plate.src}")`,
-          WebkitMaskImage: `url("${plate.src}")`,
-          maskSize: "contain",
-          WebkitMaskSize: "contain",
-          maskRepeat: "no-repeat",
-          WebkitMaskRepeat: "no-repeat",
-          maskPosition: "center",
-          WebkitMaskPosition: "center",
-          // The file is opaque greyscale with no alpha channel, and CSS
-          // masking defaults to alpha -- under which every pixel is fully
-          // opaque and the mask passes the whole rectangle. Reading it by
-          // LUMINANCE is what makes the white line work show and the black
-          // paper drop out. Without this the page gets a pale slab.
-          maskMode: "luminance",
-          WebkitMaskSourceType: "luminance",
-        } as React.CSSProperties}
+        style={
+          {
+            aspectRatio: plate.ratio,
+            backgroundColor: "#dce7f7",
+            maskImage: `url("${plate.src}")`,
+            WebkitMaskImage: `url("${plate.src}")`,
+            maskSize: "contain",
+            WebkitMaskSize: "contain",
+            maskRepeat: "no-repeat",
+            WebkitMaskRepeat: "no-repeat",
+            maskPosition: "center",
+            WebkitMaskPosition: "center",
+            // The file is opaque greyscale with no alpha channel, and CSS
+            // masking defaults to alpha -- under which every pixel is fully
+            // opaque and the mask passes the whole rectangle. Reading it by
+            // LUMINANCE is what makes the white line work show and the black
+            // paper drop out. Without this the page gets a pale slab.
+            maskMode: "luminance",
+            WebkitMaskSourceType: "luminance",
+          } as React.CSSProperties
+        }
       />
       <figcaption className={beside ? "pb-[0.4em]" : "mt-[0.9em]"}>
         <p className="text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.28em] text-slate-400/55">
@@ -1137,11 +1363,7 @@ function EngravedPlate({
  * empty ground with the mark in it, which is a plate awaiting its cut rather
  * than a broken image.
  */
-function Portrait({
-  founder,
-}: {
-  founder: NonNullable<BookPage["founder"]>;
-}) {
+function Portrait({ founder }: { founder: NonNullable<BookPage["founder"]> }) {
   return (
     <figure data-ink className="mt-auto mb-[6%] lg:mt-auto">
       <div className="relative w-[clamp(120px,15vw,200px)] border border-white/15 p-[6px]">
@@ -1344,9 +1566,7 @@ function VersoPage({ page }: { page: BookPage | BookSpread }) {
       }`}
     >
       <FacingCopy page={page} />
-      <p
-        className="absolute bottom-[7%] start-[calc(10%+var(--verso-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums"
-      >
+      <p className="absolute bottom-[7%] start-[calc(10%+var(--verso-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums">
         {page.number} &mdash; {page.title.toUpperCase()}
       </p>
     </div>
@@ -1359,7 +1579,10 @@ function Terms({ page }: { page: BookPage }) {
   return (
     <>
       {page.termsTitle ? (
-        <p data-ink className="mb-[1.3em] text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80">
+        <p
+          data-ink
+          className="mb-[1.3em] text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80"
+        >
           {page.termsTitle.toUpperCase()}
         </p>
       ) : null}
@@ -1485,10 +1708,7 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         <ServicesPage page={page} />
       ) : page.steps?.length ? (
         <>
-          <StepList
-            steps={page.steps}
-            from={page.facing?.steps?.length ?? 0}
-          />
+          <StepList steps={page.steps} from={page.facing?.steps?.length ?? 0} />
           {/* The recto's plate. A procedure spread runs its list down the
               verso and off the recto halfway, so the picture goes in what is
               left rather than under copy that reaches the foot. */}

@@ -62,12 +62,50 @@ export type PageFigure = {
   alt: string;
 };
 
+/**
+ * The ledger beside an archive entry: one build, stated as facts.
+ *
+ * WHY A RECORD AND NOT MORE PROSE
+ *
+ * A catalogue entry is true by assertion -- "we build web applications" is a
+ * claim about us. A register entry is a claim about a THING, so it has to
+ * carry the facts that let a reader check it and compare it with the entry
+ * below: what discipline it belongs to, whether it was actually built, and
+ * when. Prose can hold all three and hides them; three fields cannot.
+ *
+ * WHY `status` IS A FIELD AND NOT A TONE OF VOICE
+ *
+ * Most of this archive is our own studies rather than commissions. A portfolio
+ * that lets a concept read as a shipped product is lying quietly, and the way
+ * it does it is by never having anywhere to say which is which. This is that
+ * place, it is required, and the page prints it at the same size as the
+ * discipline so it cannot be skimmed past.
+ */
+export type PageRecord = {
+  /** The series an entry belongs to, if any, printed beside its plate number. */
+  series?: string;
+  /** WEB, AI, SAAS, MOBILE, PRODUCT -- what kind of thing this is. */
+  discipline: string;
+  /** SELECTED BUILD, PROTOTYPE, CONCEPT. Stated, never implied. */
+  status: string;
+  year: string;
+  /**
+   * The ruled rows, labelled per entry rather than by a fixed house set.
+   *
+   * A thing that exists and a study that does not are not answering the same
+   * three questions: "The work" is a record of what was done and would be a
+   * promise on a concept, where the honest third row is what it would take.
+   * Fixing the labels here would have forced one of the two to lie.
+   */
+  rows: { label: string; value: string }[];
+};
+
 /** One entry in an illustrated catalogue: a plate and what it is. */
 export type PageService = {
   /**
    * A line cut. Optional because an entry is illustrated ONCE: the catalogue
    * on 02 is set from photographs and gives its entries `image` instead, while
-   * 04 and 05 have no photographs and stay with the engraved emblems. An entry
+   * 05 has no photographs and stays with the engraved emblems. An entry
    * carrying both would print two pictures of the same idea side by side.
    */
   emblem?: EmblemName;
@@ -76,6 +114,12 @@ export type PageService = {
   title: string;
   /** Optional: a plate grid of titles alone is a legitimate setting. */
   body?: string;
+  /**
+   * The ledger, on an ARCHIVE entry. Its presence is what puts the whole
+   * chapter into the register setting -- see isArchive in book-sheets.tsx --
+   * the same way `image` is what puts one into the illustrated setting.
+   */
+  record?: PageRecord;
 };
 
 /** One numbered step of a procedure. */
@@ -151,6 +195,15 @@ export type BookPage = {
   plate?: PagePlate;
   /** The supporting entries, set as a modular grid on the right-hand page. */
   services?: PageService[];
+  /**
+   * A line set under the tailpiece on the chapter's LAST page.
+   *
+   * Where a footnote would go, and doing a footnote's job -- the qualification
+   * a reader needs and the running text should not stop for. It is printed on
+   * the last page rather than the first because that is where the reader has
+   * just finished counting the entries it qualifies.
+   */
+  colophon?: string;
   /** The second half of a numbered procedure. */
   steps?: PageStep[];
   /** A defined-terms list, set as the body of the right-hand page. */
@@ -317,7 +370,8 @@ export const BOOK_PAGES: BookPage[] = [
       src: "/plates/plate-process.webp",
       ratio: "417 / 620",
       caption: "Fig. 2 — Every step named, in order, ending in shipped",
-      credit: "S. Gilman, Graphic Charts for the Business Man, 1920. Public domain.",
+      credit:
+        "S. Gilman, Graphic Charts for the Business Man, 1920. Public domain.",
     },
     steps: [
       {
@@ -337,22 +391,172 @@ export const BOOK_PAGES: BookPage[] = [
       },
     ],
   },
+  // 04 is the REGISTER, and it is the one chapter whose brief was to stop
+  // repeating another. It used to read Web Applications / AI Platforms / SaaS
+  // Products / Mobile Apps / Brand Experiences -- which is 02's five entries,
+  // one spread later, with the pictures and the sentences taken off. Two
+  // chapters said the same thing and the second said it worse.
+  //
+  // 02 says what we offer. This says what exists. Nothing here is a capability
+  // and every entry is a thing, which is why each one carries a status: one is
+  // built and four are studies, and the difference is printed rather than
+  // implied. The alternative -- five plausible project names with no status on
+  // them -- is what a portfolio does when it has nothing to show, and a reader
+  // who finds out later stops believing the rest of the book.
   {
     number: "04",
     title: "Work",
     facing: {
       headline: "Ideas Brought to Life.",
-      subtitle: "Six kinds of work, and the shape each one takes.",
-      services: [
-        { emblem: "code", title: "Web Applications" },
-        { emblem: "chip", title: "AI Platforms" },
-      ],
+      subtitle:
+        "One built, four on the bench. What each one is, and what it takes.",
+      epigraph: "A studio is what it has built, not what it offers.",
+      // The opening verso carries no entries -- see OPENER_ARCHIVE_VERSO_SLOTS
+      // -- so it takes the plate, and a code table is the right one for a
+      // register: it is itself a list of things standing for other things.
+      plate: {
+        src: "/plates/plate-code.webp",
+        ratio: "586 / 620",
+        caption: "Fig. 3 — Printing telegraph code table, 1888",
+        credit: "J. M. E. Baudot, US 388,244. Public domain.",
+      },
     },
+    colophon:
+      "Entries marked CONCEPT are our own studies, not client work. They are labelled so you can tell which is which.",
     services: [
-      { emblem: "cloud", title: "SaaS Products" },
-      { emblem: "mobile", title: "Mobile Apps" },
-      { emblem: "megaphone", title: "Brand Experiences" },
-      { emblem: "book", title: "Case Studies" },
+      {
+        emblem: "book",
+        title: "This Book",
+        record: {
+          discipline: "Web",
+          status: "Selected build",
+          year: "2026",
+          rows: [
+            {
+              label: "What it is",
+              value:
+                "The site you are reading: a monograph that opens under the scroll, then turns a page at a time.",
+            },
+            {
+              label: "The work",
+              value:
+                "The type and the layout, the pipeline that renders the opening, and the geometry that lays each page onto the photograph.",
+            },
+            {
+              label: "Stack",
+              value: "Next.js · React · GSAP · Tailwind · Turborepo",
+            },
+          ],
+        },
+      },
+      {
+        emblem: "chip",
+        title: "AI Workflow",
+        record: {
+          series: "Nivlak Lab 01",
+          discipline: "AI",
+          status: "Concept",
+          year: "2026",
+          rows: [
+            {
+              label: "What it is",
+              value:
+                "A study in handing repetitive office work to a model without handing over the judgement.",
+            },
+            {
+              label: "The question",
+              value:
+                "Where does a person have to stay in the loop, and how do you make that step quick enough that they keep doing it?",
+            },
+            {
+              label: "What it takes",
+              value:
+                "A work queue, a model with a narrow brief, and a review screen that shows its working.",
+            },
+          ],
+        },
+      },
+      {
+        emblem: "cloud",
+        title: "SaaS Product",
+        record: {
+          series: "Nivlak Lab 02",
+          discipline: "SaaS",
+          status: "Concept",
+          year: "2026",
+          rows: [
+            {
+              label: "What it is",
+              value:
+                "A subscription product cut back to the parts every one of them needs: accounts, billing, roles, an admin view.",
+            },
+            {
+              label: "The question",
+              value:
+                "How much of a SaaS is the same every time, and how much has to be built for the business it serves?",
+            },
+            {
+              label: "What it takes",
+              value:
+                "Sign-in, a tenant model, a billing hook, and a dashboard that is honest about what it knows.",
+            },
+          ],
+        },
+      },
+      {
+        emblem: "chart",
+        title: "Intelligent Commerce",
+        record: {
+          series: "Nivlak Lab 03",
+          discipline: "Product",
+          status: "Concept",
+          year: "2026",
+          rows: [
+            {
+              label: "What it is",
+              value:
+                "A shop that arranges itself around what people actually buy, rather than around a category tree drawn once and left alone.",
+            },
+            {
+              label: "The question",
+              value:
+                "Can a catalogue rank itself without turning the storefront into a slot machine?",
+            },
+            {
+              label: "What it takes",
+              value:
+                "Event capture, a ranking pass you can read, and an override for the person who knows the stock.",
+            },
+          ],
+        },
+      },
+      {
+        emblem: "mobile",
+        title: "Mobile Experience",
+        record: {
+          series: "Nivlak Lab 04",
+          discipline: "Mobile",
+          status: "Concept",
+          year: "2026",
+          rows: [
+            {
+              label: "What it is",
+              value:
+                "One codebase, two platforms, and an interface that still behaves the way each one expects.",
+            },
+            {
+              label: "The question",
+              value:
+                "Which parts of an app can be shared, and which have to be written twice to be worth using?",
+            },
+            {
+              label: "What it takes",
+              value:
+                "A shared core, a shell per platform, and storage that works with no signal.",
+            },
+          ],
+        },
+      },
     ],
   },
   {
@@ -364,7 +568,7 @@ export const BOOK_PAGES: BookPage[] = [
       plate: {
         src: "/plates/plate-antenna.webp",
         ratio: "620 / 478",
-        caption: "Fig. 3 — Fractal antenna, 2002",
+        caption: "Fig. 4 — Fractal antenna, 2002",
         credit: "US 6,452,553 B1. Public domain.",
       },
       services: [
@@ -435,13 +639,17 @@ export const BOOK_PAGES: BookPage[] = [
       plate: {
         src: "/plates/plate-telegraphy.webp",
         ratio: "431 / 620",
-        caption: "Fig. 4 — Telegraphy, 1876",
+        caption: "Fig. 5 — Telegraphy, 1876",
         credit: "A. G. Bell, US 174,465. Public domain.",
       },
     },
     contact: {
       rows: [
-        { emblem: "phone", value: "+91 97873 04869", href: "tel:+919787304869" },
+        {
+          emblem: "phone",
+          value: "+91 97873 04869",
+          href: "tel:+919787304869",
+        },
         {
           emblem: "mail",
           value: "nivlak.work@gmail.com",
@@ -455,7 +663,8 @@ export const BOOK_PAGES: BookPage[] = [
         { emblem: "pin", value: "Nagercoil, Tamil Nadu, India" },
       ],
       enquiryTitle: "Business Enquiry",
-      enquiryBody: "Let's start a conversation about your next digital product.",
+      enquiryBody:
+        "Let's start a conversation about your next digital product.",
       cta: "Start a Conversation",
     },
   },
@@ -477,10 +686,15 @@ export const BOOK_PAGES: BookPage[] = [
 // before -- means every addition is really three edits: the entry, the page it
 // moves onto, and the balance of everything after it.
 //
-// Only ILLUSTRATED chapters paginate. 04 and 05 set their entries as engraved
-// grids whose two halves are composed by hand -- a lead plate on the verso, a
-// modular grid on the recto -- and re-cutting those on a slot count would
-// throw away a layout that was designed, not computed.
+// A chapter is COMPUTED when its entries carry something the page has to make
+// room for -- a photograph (02) or a ledger (04). 05 carries neither: its
+// entries are engraved titles, and its two halves were composed by hand as a
+// lead plate on the verso against a modular grid on the recto. Re-cutting that
+// on a slot count would throw away a layout that was designed.
+//
+// Which is why the test is a question about the ENTRIES and not a list of
+// chapter numbers. 04 used to be on the hand-composed side of it and moved
+// across by gaining records, without this file learning its number.
 
 /**
  * How many illustrated entries fit on a page, measured at 1440x900.
@@ -498,6 +712,49 @@ const VERSO_SLOTS = PAGE_SLOTS;
 const RECTO_SLOTS = PAGE_SLOTS;
 
 /**
+ * The same count for an ARCHIVE page, which is not the same object.
+ *
+ * A catalogue entry is a picture with a caption beside it. A register entry is
+ * a ledger -- a plate number, a title, a status line and three ruled rows --
+ * which measures ~150px against a catalogue entry's ~90 at 1440x900. Three to
+ * a page fills the half with the rows still open; four closes them tighter
+ * than the body text they sit beside, which is what makes a page of a book
+ * read as a spreadsheet.
+ */
+const ARCHIVE_SLOTS = 3;
+
+/**
+ * The register's opening verso takes NO entries, and that is the setting
+ * rather than an accident of the arithmetic.
+ *
+ * Every other chapter opener shares its verso with the run it introduces.
+ * This one cannot afford to. The headpiece, the numeral, the title, the rule,
+ * the epigraph, the subtitle and the sinkage above them come to ~260px of a
+ * ~460px column at 1440x900, and one ledger needs ~150 of the ~200 that are
+ * left -- so a single entry would sit marooned under the title while the recto
+ * carried three, which is the lopsided spread OPENER_VERSO_SLOTS exists to
+ * avoid on the catalogue.
+ *
+ * Giving the whole verso to the chapter opening and its plate instead is a
+ * setting a book already has a name for: a half-title facing the first page of
+ * the register.
+ */
+const OPENER_ARCHIVE_VERSO_SLOTS = 0;
+
+/** The slots a chapter gets, which depend on which setting it is in. */
+function slotsFor(archive: boolean) {
+  return archive
+    ? {
+        opener: OPENER_ARCHIVE_VERSO_SLOTS,
+        verso: ARCHIVE_SLOTS,
+        recto: ARCHIVE_SLOTS,
+      }
+    : { opener: OPENER_VERSO_SLOTS, verso: VERSO_SLOTS, recto: RECTO_SLOTS };
+}
+
+type PageSlots = ReturnType<typeof slotsFor>;
+
+/**
  * How many entries land on each spread of a chapter `total` entries long.
  *
  * Two rules, and the second is the one that matters. Use as few spreads as the
@@ -511,9 +768,9 @@ const RECTO_SLOTS = PAGE_SLOTS;
  * smallest: its verso is a chapter opening and gives up a page's worth of
  * space to the title, the epigraph and the sinkage above them.
  */
-function planSpreads(total: number): number[] {
+function planSpreads(total: number, slots: PageSlots): number[] {
   const capacityOf = (spread: number) =>
-    (spread === 0 ? OPENER_VERSO_SLOTS : VERSO_SLOTS) + RECTO_SLOTS;
+    (spread === 0 ? slots.opener : slots.verso) + slots.recto;
 
   let spreads = 1;
   let capacity = capacityOf(0);
@@ -554,8 +811,10 @@ export type BookSpread = BookPage & {
 
 function expandChapter(page: BookPage, chapter: number): BookSpread[] {
   const run = page.services ?? [];
-  // The engraved chapters keep the halves they were authored with.
-  if (!run.some((service) => service.image)) {
+  // Which setting this chapter is in, and so whether it is cut at all. A run
+  // of bare engraved titles keeps the halves it was authored with.
+  const archive = run.some((service) => service.record);
+  if (!archive && !run.some((service) => service.image)) {
     return [
       {
         ...page,
@@ -567,14 +826,17 @@ function expandChapter(page: BookPage, chapter: number): BookSpread[] {
     ];
   }
 
+  const slots = slotsFor(archive);
   let cursor = 0;
-  const plan = planSpreads(run.length);
+  const plan = planSpreads(run.length, slots);
   return plan.map((count, spread) => {
     // Halve each spread's share, but never past what the verso holds. The
     // recto can always take the rest: the verso's cap is the lower of the two
     // on the opening spread and equal to it after, so the remainder fits by
-    // construction.
-    const versoCap = spread === 0 ? OPENER_VERSO_SLOTS : VERSO_SLOTS;
+    // construction. That still holds when the opener's verso cap is zero --
+    // planSpreads never gives spread 0 more than capacityOf(0), which is then
+    // the recto's count alone.
+    const versoCap = spread === 0 ? slots.opener : slots.verso;
     const versoCount = Math.min(versoCap, Math.ceil(count / 2));
     const from = cursor;
     const verso = run.slice(from, from + versoCount);

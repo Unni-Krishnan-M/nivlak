@@ -55,9 +55,9 @@ production. Changing `next.config.ts` or the output mode affects both.
 no footer, no panels.
 
 ```
-<Book />   one section, one pin, one timeline   +=779%
+<Book />   one section, one pin, one timeline   +=860%
              0%..250%   the book opens (91-frame canvas scrub)
-           250%..779%   seven sheets turn over the frame it lands on
+           250%..860%   seven sheets turn over the frame it lands on
 ```
 
 The scroll length is derived, not written down: `VH_PER_UNIT` (67% of viewport
@@ -117,10 +117,56 @@ What follows from that:
 - **`continued` and `lastOfChapter` are both needed and are not each other's
   negation.** A chapter of one spread is the first *and* the last. `continued`
   suppresses the opener devices; `lastOfChapter` is what the tailpiece keys off.
-- **The engraved chapters (04, 05) do not paginate.** Their two halves — a lead
-  plate on the verso, a modular grid on the recto — were composed by hand, and
-  re-cutting them on a slot count would throw away a layout that was designed
-  rather than computed. `expandChapter` opts them out by looking for an `image`.
+- **Chapter 05 does not paginate.** Its two halves — a lead plate on the verso,
+  a modular grid on the recto — were composed by hand, and re-cutting them on a
+  slot count would throw away a layout that was designed rather than computed.
+  `expandChapter` opts a chapter out when no entry carries an `image` or a
+  `record`, so the test is a question about the entries and never a list of
+  chapter numbers — which is how 04 crossed from one side of it to the other
+  without that file learning its number.
+
+### Three settings, and the data picks which
+
+A run of entries is set one of three ways, and nothing says which: the shape of
+the entries decides, the same way it decides whether the chapter paginates.
+
+| The entries carry | Setting | Where |
+| --- | --- | --- |
+| `image` | catalogue — photograph beside copy, alternating sides | 02 |
+| `record` | register — a ruled ledger, three labelled rows | 04 |
+| neither | engraved — a lead plate over a modular grid | 05 |
+
+`isIllustrated()` and `isArchive()` ask the question of the **whole run**, not
+of each entry, because the answer is the setting for the page. Two settings
+down one page read as two lists stacked.
+
+**04 is a register and not a second catalogue, and that is the point of it.**
+It used to be set as a catalogue and it read Web Applications / AI Platforms /
+SaaS Products / Mobile Apps / Brand Experiences — 02's five entries, one spread
+later, with the pictures and the sentences taken off. Two chapters in the same
+setting saying the same five words is how the repetition stayed invisible. 02
+says what we offer; 04 says what exists, so its entries are things rather than
+capabilities and every one carries a `status` that says whether it was built.
+Do not let a concept onto that page without one.
+
+Consequences worth knowing before touching it:
+
+- **The register's opening verso takes no entries** (`OPENER_ARCHIVE_VERSO_SLOTS
+  = 0`). The head, epigraph, subtitle and sinkage come to ~260px of a ~460px
+  column at 1440x900 and one ledger needs ~150 of what is left, so an entry
+  there would sit marooned while the recto carried three. The verso is a
+  half-title facing the first page of the register, and it takes the plate.
+- **Its rows are floored at `min-content`, not at 0.** The catalogue can use
+  `minmax(0, 1fr)` because its pages are always full; the register's are not,
+  and on a 390x844 portrait page the shrinking rows printed PLATE I's `STACK`
+  row across PLATE II's rule. Overflow is clipped by the face and loses a line;
+  overprinting is two records on one line, which is not a page at all.
+- **The rule belongs to the entry, not to the grid row.** A `border-t` on the
+  row draws at the top of a full-height cell — measured 99px above the entry it
+  was ruling off, which reads as a stray line.
+- **The register's opener drops its plate below `lg`.** Portrait collapses the
+  spread onto one page, so the half-title and the first two records share 844px
+  and do not fit. The plate is the only thing there carrying no information.
 
 ### Rules that are not obvious from the code
 

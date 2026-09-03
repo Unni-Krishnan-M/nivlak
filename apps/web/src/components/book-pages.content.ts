@@ -100,6 +100,93 @@ export type PageRecord = {
   rows: { label: string; value: string }[];
 };
 
+/**
+ * A stage of a procedure, set as a PLATE with its descriptive letterpress.
+ *
+ * WHY THIS IS NOT `PageStep`, WHICH ALREADY EXISTS
+ *
+ * A step is a name and a sentence, and six of them run down a spread as a
+ * ruled list -- which is what 03 was, and it was a summary rather than an
+ * answer. A client reading it learned the order of the work and nothing about
+ * what the work IS, what arrives at the end of a stage, or what changes
+ * because it happened.
+ *
+ * A stage carries those three things as fields, because a page cannot ask a
+ * question the content has no room to answer. `work` is what happens, and
+ * `deliverable` and `outcome` are the two halves of what a client gets: the
+ * artefact and the state of the world after it. Prose can hold all three and
+ * buries them; three fields cannot, and the reader can compare stage 02's
+ * against stage 05's without reading either one twice.
+ *
+ * WHY `deliverable` AND `outcome` ARE BOTH REQUIRED
+ *
+ * They are not the same claim and one of them is much easier to write. A
+ * deliverable is a thing that exists and can be handed over; an outcome is
+ * what it was for. A stage that can name the first but not the second is a
+ * stage that produces paperwork, and this is the field that makes that
+ * visible while the copy is being written rather than after it ships.
+ */
+export type PageStage = {
+  /**
+   * The plate's number, in roman.
+   *
+   * Roman, and not the FIG. 01 of the brief this chapter was drawn from, for
+   * the reason the note above ROMAN_PARTS in book-sheets.tsx already gives:
+   * illustrations are numbered in roman here so they cannot be confused with
+   * the 01-07 of the chapters. That mattered more on this chapter than
+   * anywhere else -- "FIG. 04" printed inside chapter 03 reads as a pointer to
+   * chapter 04, which is one tab away in the thumb index and is a real
+   * chapter. It also keeps these clear of the engraved Fig. 1-4, which are
+   * diagrams rather than photographs and are a different series.
+   */
+  figure: string;
+  /** What KIND of work the stage is -- RESEARCH & INSIGHT, SYSTEM BLUEPRINT. */
+  label: string;
+  /** The stage stated as one imperative sentence. */
+  headline: string;
+  /** What happens here, as a run of short phrases set with separators. */
+  work: string[];
+  /** The artefact that is handed over. */
+  deliverable: string;
+  /** What is true afterwards that was not true before. */
+  outcome: string;
+};
+
+/**
+ * The page that closes a chapter: what the whole run added up to, and the way
+ * out of it.
+ *
+ * It exists because a procedure has an END and a catalogue does not. 02 can
+ * stop after its last entry -- a list of what we build needs no summary, since
+ * the reader has been comparing entries the whole way down. Six stages read in
+ * order are a journey, and a journey that stops on its last leg leaves the
+ * reader on the page rather than at the door.
+ *
+ * The arc and the deliverables it prints are DERIVED from the chapter's own
+ * stages rather than written here, for the same reason nothing in this file
+ * says which page an entry is on: a seventh stage should change one place.
+ */
+export type PageTailpiece = {
+  arcTitle: string;
+  valueTitle: string;
+  /** What the process buys, in the client's words rather than ours. */
+  value: string[];
+  /**
+   * The qualification a reader needs once they have counted six stages: that
+   * they do not have to start at the first one. Set where a footnote goes,
+   * doing a footnote's job -- see `colophon`.
+   */
+  note: string;
+  cta: {
+    eyebrow: string;
+    headline: string;
+    body: string;
+    /** Both seek the timeline by CHAPTER index, the way the thumb index does. */
+    primary: { label: string; chapter: number };
+    secondary: { label: string; chapter: number };
+  };
+};
+
 /** One entry in an illustrated catalogue: a plate and what it is. */
 export type PageService = {
   /**
@@ -120,6 +207,17 @@ export type PageService = {
    * the same way `image` is what puts one into the illustrated setting.
    */
   record?: PageRecord;
+  /**
+   * The letterpress, on a PLATE-SECTION entry. Its presence is what puts the
+   * chapter into the plate setting, the third of the three the data decides
+   * between -- see isPlateSection in book-sheets.tsx.
+   *
+   * An entry carrying `stage` also carries `image`, and that is not the
+   * catalogue setting arriving by the back door: isPlateSection is asked
+   * FIRST, so a stage's photograph is set as a full-measure plate with its
+   * description under it rather than as a 42% thumbnail beside a sentence.
+   */
+  stage?: PageStage;
 };
 
 /** One numbered step of a procedure. */
@@ -206,6 +304,12 @@ export type BookPage = {
   colophon?: string;
   /** The second half of a numbered procedure. */
   steps?: PageStep[];
+  /**
+   * The page that closes a PLATE SECTION. Only a chapter set as one has a use
+   * for it: see PageTailpiece, and the pagination at the foot of this file for
+   * where it lands.
+   */
+  tailpiece?: PageTailpiece;
   /** A defined-terms list, set as the body of the right-hand page. */
   termsTitle?: string;
   terms?: PageTerm[];
@@ -226,6 +330,17 @@ export type BookPage = {
     rows: PageContact[];
     enquiryTitle: string;
     enquiryBody: string;
+    /**
+     * Where a reader recognises themselves before they write.
+     *
+     * These belong on the contact page and not at the end of 03, which is
+     * where the brief put them. 03 answers "how does this work"; a reader
+     * still deciding whether they are the right shape of client is asking
+     * something else, and they ask it at the point of writing to us. Set as
+     * questions rather than as segments because the reader is meant to answer
+     * one, not to be sorted by it.
+     */
+    prompts?: string[];
     cta: string;
   };
 };
@@ -342,54 +457,226 @@ export const BOOK_PAGES: BookPage[] = [
       },
     ],
   },
+  // 03 is the PLATE SECTION, the third of the three settings the data picks
+  // between, and it is here because the other two would both have been wrong.
+  //
+  // WHAT IT WAS
+  //
+  // Six `steps` -- an emblem, a name and one sentence each -- three down the
+  // verso and three down the recto against an engraved plate. It was accurate
+  // and it answered nothing. A client who read it came away knowing the ORDER
+  // of the work and not what any stage of it involves, what arrives at the end
+  // of one, or what is different afterwards. "Deploying with confidence and
+  // performance" is a caption, and captions are what you write when the page
+  // has no room for an answer.
+  //
+  // WHY NOT THE CATALOGUE SETTING, WHICH ALREADY HANDLES PHOTOGRAPHS
+  //
+  // Because 02 is the catalogue and this would then be the second one, which
+  // is the exact bug 04 was rebuilt to fix -- see the note above it. Two
+  // chapters set the same way one spread apart stop reading as two chapters.
+  // And the catalogue's plate is 42% of a text column, about 260px wide on a
+  // 1440 viewport: these six photographs are a notebook of interview notes, a
+  // strategy blueprint, a wireframe sheet, an architecture diagram, a
+  // deployment pipeline and an analytics dashboard, and every one of them is
+  // MADE of small type. At 260px none of it is readable and the plate becomes
+  // a texture. The whole reason to use these photographs rather than emblems
+  // is that a client can look at one and see the actual artefact.
+  //
+  // SO: ONE STAGE PER PAGE, PLATE ABOVE ITS LETTERPRESS
+  //
+  // The plate takes the full measure of the page and the three questions a
+  // client is actually asking are answered under it in order -- what happens,
+  // what you get, what is true afterwards. Eight pages: a half-title, the six
+  // stages, and a tailpiece. The pagination at the foot of this file derives
+  // that from the run; nothing here says which page a stage is on.
+  //
+  // The chapter carries no engraved plate any more. There is no page left for
+  // one, and a Baudot code table beside a photograph of a deployment pipeline
+  // is two answers to the same question -- the reason 02 dropped its own.
+  // Retiring it closed the gap in the engraved numbering: 04, 05 and 07 are
+  // now Fig. 2, 3 and 4, where they were 3, 4 and 5.
   {
     number: "03",
     title: "Approach",
     facing: {
       headline: "From Vision to Reality.",
-      subtitle: "Six steps, in the order they actually happen.",
-      steps: [
-        {
-          emblem: "search",
-          title: "Discover",
-          body: "Understanding your business before writing a single line of code.",
-        },
-        {
-          emblem: "target",
-          title: "Strategize",
-          body: "Planning scalable solutions aligned with your goals.",
-        },
-        {
-          emblem: "pencil",
-          title: "Design",
-          body: "Crafting experiences that are intuitive and meaningful.",
-        },
-      ],
+      epigraph: "Six stages, in the order they actually happen.",
+      intro: {
+        lead: "Every product begins with understanding.",
+        body: "Not with assumptions, and not with a stack chosen before anyone knows what it is for. This chapter is the whole of the work: what happens at each stage, what you are handed at the end of it, and what changes because it happened.",
+      },
     },
-    plate: {
-      src: "/plates/plate-process.webp",
-      ratio: "417 / 620",
-      caption: "Fig. 2 — Every step named, in order, ending in shipped",
-      credit:
-        "S. Gilman, Graphic Charts for the Business Man, 1920. Public domain.",
-    },
-    steps: [
+    services: [
       {
-        emblem: "code",
+        image: {
+          src: "/process/discover.webp",
+          ratio: "1240 / 698",
+          alt: "An open notebook of customer interview notes and business observations beside a magnifier, photographs and a folded plan.",
+        },
+        title: "Discover",
+        body: "We learn how your business works, who your users are, and what problem actually needs solving — before anyone writes code. This is the cheapest stage at which to be wrong.",
+        stage: {
+          figure: "I",
+          label: "Research & Insight",
+          headline: "Understand before building.",
+          work: [
+            "Stakeholder discovery",
+            "Business analysis",
+            "User research",
+            "Requirement gathering",
+            "Opportunity mapping",
+          ],
+          deliverable: "Discovery Report",
+          outcome:
+            "A shared understanding of the problem, agreed before development begins.",
+        },
+      },
+      {
+        image: {
+          src: "/process/strategize.webp",
+          ratio: "1240 / 698",
+          alt: "A product strategy blueprint on a drafting table: business goals, user needs and technology strategy feeding a system architecture, with a scale rule and a pencil beside it.",
+        },
+        title: "Strategize",
+        body: "With the problem clear, we settle what to build and in what order: the architecture, the technology, and which features earn their place in the first release.",
+        stage: {
+          figure: "II",
+          label: "System Blueprint",
+          headline: "Build the right roadmap.",
+          work: [
+            "Product strategy",
+            "Technical architecture",
+            "Feature prioritization",
+            "Technology selection",
+            "Development roadmap",
+          ],
+          deliverable: "System Blueprint",
+          outcome:
+            "One document that connects the business goals to the technical decisions they imply.",
+        },
+      },
+      {
+        image: {
+          src: "/process/design.webp",
+          ratio: "1240 / 698",
+          alt: "Wireframe sheets for a website and a phone laid out beside a component library, a type specimen and a colour palette.",
+        },
+        title: "Design",
+        body: "Strategy becomes something you can click. Flows, wireframes, a visual system and a working prototype, drawn around your users rather than around our taste.",
+        stage: {
+          figure: "III",
+          label: "Experience & Interface",
+          headline: "Shape something people enjoy using.",
+          work: [
+            "User flows",
+            "Wireframing",
+            "UX and UI design",
+            "Design systems",
+            "Prototyping",
+          ],
+          deliverable: "Design System",
+          outcome:
+            "An interface you can click through and judge before a line of it is built.",
+        },
+      },
+      {
+        image: {
+          src: "/process/engineer.webp",
+          ratio: "1240 / 698",
+          alt: "A monitor showing a service architecture diagram over an editor and a running terminal, beside a second screen of engineering documentation.",
+        },
         title: "Engineer",
-        body: "Developing secure, scalable and future-ready products.",
+        body: "The plan becomes a product. The same people who scoped it build it, so nothing is lost in a handover — and it is built to be read, extended and handed on.",
+        stage: {
+          figure: "IV",
+          label: "Building the System",
+          headline: "Turn the plan into working software.",
+          work: [
+            "Frontend development",
+            "Backend development",
+            "API integration",
+            "AI integration",
+            "Database engineering",
+            "Security and performance",
+          ],
+          deliverable: "Working Product",
+          outcome:
+            "A system that is secure, that scales, and that the next person to open it can read.",
+        },
       },
       {
-        emblem: "rocket",
+        image: {
+          src: "/process/launch.webp",
+          ratio: "1240 / 698",
+          alt: "A production deployment pipeline on screen — build, test, staging, deploy, verify — beside service health, response times and deployment history.",
+        },
         title: "Launch",
-        body: "Deploying with confidence and performance.",
+        body: "We test it, tune it and put it into production, then watch it. Going live is a procedure with a checklist, not an event you hope goes well.",
+        stage: {
+          figure: "V",
+          label: "From Build to Production",
+          headline: "Go live without holding your breath.",
+          work: [
+            "Quality assurance",
+            "Deployment",
+            "Performance testing",
+            "Production configuration",
+            "Monitoring",
+          ],
+          deliverable: "Live Platform",
+          outcome:
+            "The product in front of real users, with the instrumentation to know it is well.",
+        },
       },
       {
-        emblem: "chart",
+        image: {
+          src: "/process/evolve.webp",
+          ratio: "1240 / 698",
+          alt: "A product analytics dashboard showing growth, feature adoption and an iteration roadmap, above an open notebook working through the next release.",
+        },
         title: "Evolve",
-        body: "Supporting continuous improvement and long-term growth.",
+        body: "Launch is the beginning. Analytics, feedback and what people actually do with the product decide what gets built next, release after release.",
+        stage: {
+          figure: "VI",
+          label: "Continuous Evolution",
+          headline: "Keep improving what matters.",
+          work: [
+            "Product analytics",
+            "User feedback",
+            "Feature improvements",
+            "Performance optimization",
+            "Long-term support",
+          ],
+          deliverable: "Growth Roadmap",
+          outcome:
+            "Decisions about what to build next made from evidence rather than from opinion.",
+        },
       },
     ],
+    tailpiece: {
+      arcTitle: "The whole of it",
+      valueTitle: "What you get",
+      value: [
+        "Clarity",
+        "Strategy",
+        "Design",
+        "Technology",
+        "Launch",
+        "Continuous improvement",
+      ],
+      note: "Not every project starts at the same stage. We can carry an idea from discovery through to launch, or step in at the one where your product is stuck.",
+      cta: {
+        eyebrow: "Ready when you are",
+        headline: "Have an idea worth building?",
+        body: "Whether you are starting from an idea, improving a product that already exists, or scaling one that is growing faster than it was built for, we will help you turn the next step into something real.",
+        // Chapter indices into BOOK_PAGES, the same currency the thumb index
+        // spends: 6 is 07 Connect, 3 is 04 Work. <Book> resolves both through
+        // FIRST_SPREAD_OF_CHAPTER, so neither survives a chapter moving.
+        primary: { label: "Start a project", chapter: 6 },
+        secondary: { label: "Explore our work", chapter: 3 },
+      },
+    },
   },
   // 04 is the REGISTER, and it is the one chapter whose brief was to stop
   // repeating another. It used to read Web Applications / AI Platforms / SaaS
@@ -417,7 +704,7 @@ export const BOOK_PAGES: BookPage[] = [
       plate: {
         src: "/plates/plate-code.webp",
         ratio: "586 / 620",
-        caption: "Fig. 3 — Printing telegraph code table, 1888",
+        caption: "Fig. 2 — Printing telegraph code table, 1888",
         credit: "J. M. E. Baudot, US 388,244. Public domain.",
       },
     },
@@ -568,7 +855,7 @@ export const BOOK_PAGES: BookPage[] = [
       plate: {
         src: "/plates/plate-antenna.webp",
         ratio: "620 / 478",
-        caption: "Fig. 4 — Fractal antenna, 2002",
+        caption: "Fig. 3 — Fractal antenna, 2002",
         credit: "US 6,452,553 B1. Public domain.",
       },
       services: [
@@ -639,7 +926,7 @@ export const BOOK_PAGES: BookPage[] = [
       plate: {
         src: "/plates/plate-telegraphy.webp",
         ratio: "431 / 620",
-        caption: "Fig. 5 — Telegraphy, 1876",
+        caption: "Fig. 4 — Telegraphy, 1876",
         credit: "A. G. Bell, US 174,465. Public domain.",
       },
     },
@@ -664,7 +951,14 @@ export const BOOK_PAGES: BookPage[] = [
       ],
       enquiryTitle: "Business Enquiry",
       enquiryBody:
-        "Let's start a conversation about your next digital product.",
+        "Let's start a conversation about your next digital product. Any of these is a place to begin:",
+      prompts: [
+        "You have an idea.",
+        "You have a product already.",
+        "You need a redesign.",
+        "You need engineering support.",
+        "You need AI or automation.",
+      ],
       cta: "Start a Conversation",
     },
   },
@@ -807,12 +1101,95 @@ export type BookSpread = BookPage & {
    * carry across the gutter and across spreads rather than restarting.
    */
   servicesFrom: number;
+  /**
+   * Which half of this spread the chapter's closing page takes, on a PLATE
+   * SECTION. Undefined everywhere else.
+   *
+   * Two values because the answer depends on the stage count and there is no
+   * third option that is not a blank page. Six stages plus a half-title is
+   * seven pages, so the tailpiece takes the eighth and the spread is full:
+   * "recto". Seven stages would leave it opening a spread of its own, and a
+   * closing page facing a blank one is the lopsided ending the catalogue's
+   * even distribution exists to avoid -- so it takes both halves instead:
+   * "spread", the arc on the verso and the way out on the recto.
+   */
+  tail?: "recto" | "spread";
 };
+
+/**
+ * A PLATE SECTION, cut into spreads: one stage per page.
+ *
+ * There is no slot count here and no distribution to choose, which is the
+ * difference between this and the catalogue. A catalogue entry is a picture
+ * beside a paragraph and three of them share a page; a stage is a full-measure
+ * plate over its own description and there is room for exactly one. So the
+ * pagination is arithmetic rather than a policy:
+ *
+ *   page 0        the half-title -- the chapter head, its opening paragraph,
+ *                 and the six stages listed in order, which is the contents of
+ *                 the chapter and doubles as its navigation
+ *   pages 1..n    the stages
+ *   the last      the tailpiece
+ *
+ * Six stages make that eight pages, four spreads, no page left over. An ODD
+ * stage count would leave the tailpiece opening a spread with a blank facing
+ * it, so it takes the whole closing spread instead -- see `tail`. Both cases
+ * are here because the second one is what happens the first time someone adds
+ * a seventh stage, and a blank page is not a thing this book should be able to
+ * print by accident.
+ */
+function expandPlateChapter(page: BookPage, chapter: number): BookSpread[] {
+  const run = page.services ?? [];
+  // The half-title, then the stages. The tailpiece takes what is left of the
+  // last spread, which is one page when that lands on a recto and two when it
+  // does not.
+  const pagesBeforeTail = 1 + run.length;
+  const tail: "recto" | "spread" = pagesBeforeTail % 2 === 1 ? "recto" : "spread";
+  const spreads = Math.ceil((pagesBeforeTail + (tail === "recto" ? 1 : 2)) / 2);
+
+  // Which stage a page carries, or none for the half-title and the tailpiece.
+  const stageOn = (pageIndex: number) =>
+    pageIndex >= 1 && pageIndex < pagesBeforeTail
+      ? run.slice(pageIndex - 1, pageIndex)
+      : [];
+
+  return Array.from({ length: spreads }, (_, spread) => {
+    const versoPage = spread * 2;
+    const verso = stageOn(versoPage);
+    const recto = stageOn(versoPage + 1);
+    return {
+      ...page,
+      chapter,
+      // The half-title is on spread 0 and nowhere else, so every later spread
+      // is a continuation and takes none of the opener furniture -- the same
+      // rule the catalogue follows, for the same reason.
+      continued: spread > 0,
+      lastOfChapter: spread === spreads - 1,
+      // The chapter's run is one stage per page, so the first entry of a
+      // spread is at its verso's page index minus the half-title. Clamped for
+      // spread 0, whose verso carries no entry at all.
+      servicesFrom: Math.max(0, versoPage - 1),
+      tail: spread === spreads - 1 ? tail : undefined,
+      facing: { ...(page.facing ?? { headline: page.title }), services: verso },
+      services: recto,
+    };
+  });
+}
 
 function expandChapter(page: BookPage, chapter: number): BookSpread[] {
   const run = page.services ?? [];
   // Which setting this chapter is in, and so whether it is cut at all. A run
   // of bare engraved titles keeps the halves it was authored with.
+  //
+  // The plate section is asked FIRST, because its entries carry `image` too
+  // and would otherwise be cut as a catalogue -- three to a page, at 42% of a
+  // text column. Order here is the same claim isPlateSection makes in
+  // book-sheets.tsx and the two have to agree: the question a run answers is
+  // "what setting is this", and a run that answers it twice is a bug in one of
+  // the two places, not a chapter with two settings.
+  if (run.some((service) => service.stage)) {
+    return expandPlateChapter(page, chapter);
+  }
   const archive = run.some((service) => service.record);
   if (!archive && !run.some((service) => service.image)) {
     return [
@@ -870,3 +1247,23 @@ export const CHAPTER_OF_SPREAD: number[] = BOOK_SPREADS.map((s) => s.chapter);
 export const FIRST_SPREAD_OF_CHAPTER: number[] = BOOK_PAGES.map((_, chapter) =>
   BOOK_SPREADS.findIndex((s) => s.chapter === chapter),
 );
+
+/**
+ * Which spread an entry of a chapter's run landed on.
+ *
+ * The process index at the head of 03 lists the chapter's six stages and
+ * scrolls to one, and a stage is a PAGE rather than a chapter -- so the thumb
+ * index's currency, a chapter number, cannot address it. This is the other
+ * direction of the same lookup FIRST_SPREAD_OF_CHAPTER does, and it is derived
+ * from the pagination for the same reason: the index has to keep working when
+ * a stage is added and the spreads re-cut underneath it.
+ */
+export function spreadOfEntry(chapter: number, entry: number): number {
+  const found = BOOK_SPREADS.findIndex((spread) => {
+    if (spread.chapter !== chapter) return false;
+    const held =
+      (spread.facing?.services?.length ?? 0) + (spread.services?.length ?? 0);
+    return entry >= spread.servicesFrom && entry < spread.servicesFrom + held;
+  });
+  return found < 0 ? (FIRST_SPREAD_OF_CHAPTER[chapter] ?? 0) : found;
+}

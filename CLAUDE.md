@@ -55,9 +55,9 @@ production. Changing `next.config.ts` or the output mode affects both.
 no footer, no panels.
 
 ```
-<Book />   one section, one pin, one timeline   +=860%
-             0%..250%   the book opens (91-frame canvas scrub)
-           250%..860%   seven sheets turn over the frame it lands on
+<Book />   one section, one pin, one timeline   +=1101%
+              0%..250%   the book opens (91-frame canvas scrub)
+           250%..1101%   ten sheets turn over the frame it lands on
 ```
 
 The scroll length is derived, not written down: `VH_PER_UNIT` (67% of viewport
@@ -125,20 +125,89 @@ What follows from that:
   chapter numbers — which is how 04 crossed from one side of it to the other
   without that file learning its number.
 
-### Three settings, and the data picks which
+### Four settings, and the data picks which
 
-A run of entries is set one of three ways, and nothing says which: the shape of
+A run of entries is set one of four ways, and nothing says which: the shape of
 the entries decides, the same way it decides whether the chapter paginates.
 
 | The entries carry | Setting | Where |
 | --- | --- | --- |
+| `stage` | plate section — one full-measure plate per page, with its letterpress | 03 |
 | `image` | catalogue — photograph beside copy, alternating sides | 02 |
 | `record` | register — a ruled ledger, three labelled rows | 04 |
 | neither | engraved — a lead plate over a modular grid | 05 |
 
-`isIllustrated()` and `isArchive()` ask the question of the **whole run**, not
-of each entry, because the answer is the setting for the page. Two settings
-down one page read as two lists stacked.
+`isPlateSection()`, `isIllustrated()` and `isArchive()` ask the question of the
+**whole run**, not of each entry, because the answer is the setting for the
+page. Two settings down one page read as two lists stacked.
+
+**The order of those three questions is load-bearing.** A stage carries `image`
+as well, so `isIllustrated()` would claim it — and `isPlateSection()` is asked
+first in both `book-sheets.tsx` and `expandChapter`. The two have to agree: a
+run that answers "what setting is this" twice is a bug in one of the two
+places, not a chapter with two settings.
+
+**03 is a plate section and not a second catalogue, for the reason 04 is not
+one either.** Two chapters set the same way one spread apart stop reading as
+two chapters. And the catalogue's plate is 42% of a text column — about 260px
+at 1440 — where these six photographs are *made of* small type: a notebook of
+interview notes, a strategy blueprint, a wireframe sheet, an architecture
+diagram, a deployment pipeline, an analytics dashboard. At 260px none of it is
+readable and the plate is a texture. Being able to read it is the whole reason
+they are photographs and not emblems.
+
+Consequences worth knowing before touching it:
+
+- **Its pagination is arithmetic, not a slot policy.** A stage is a plate over
+  its own description and there is room for exactly one to a page, so
+  `expandPlateChapter` lays out page 0 as a half-title, pages 1..n as the
+  stages, and the last as the tailpiece. Six stages make eight pages and four
+  spreads with nothing left over. An **odd** stage count would leave the
+  tailpiece opening a spread with a blank facing it, so it takes the whole
+  closing spread instead — that is what `tail: "recto" | "spread"` is for, and
+  why there is no third value.
+- **The chapter navigates by SPREAD, and it is the only thing in the book that
+  does.** Every other nav item carries a CHAPTER; the contents list on the
+  half-title and the stage index in every stage's head carry a spread, via
+  `spreadOfEntry`, because six stages are six pages of one chapter and a
+  chapter number would send all six to the half-title the reader is already
+  looking at. `<Book>` dispatches on `data-spread` before `data-index`.
+- **`StageIndex` exists because a spread carries two stages.** Ask for Design
+  and the book turns to Strategize | Design — the right spread, with the page
+  you asked for on the right — and the page your eye lands on first is
+  Strategize. The navigation was correct and read as broken, because nothing on
+  either page said which of the two had been asked for. The mark under 03 sits
+  on the Design page and under 02 on the Strategize page, so the two halves of
+  a spread stop looking like the same answer. It is a numeral over a notch —
+  `<BookIndex>`'s own device, doing the same job one level down; a progress bar
+  would be a second answer to a question this book had already answered.
+  Hidden below `lg`, where both stages are on one screen anyway. Its
+  `aria-label` is "Stage index" and not "The stages of the process", which is
+  the contents list's: two landmarks with one name are announced identically
+  while going to different places.
+- **The reduced-motion column needs its own branch.** That column sets an
+  uncut CHAPTER per article, and a catalogue or a register is the same object
+  cut or not. A plate section is not: its pagination is what says a page holds
+  one stage, and what closes the chapter is a page. Routed through the spread
+  path it printed stage 01 and stopped — five stages and the whole call to
+  action missing for exactly the readers who never see the book open.
+  `PlateSectionColumn` is that branch, and `chapter === undefined` is what
+  selects it.
+- **Portrait sheds the description, the summary and the arc, and keeps the
+  plates.** The fallback collapses a spread onto one 844px sheet and prints the
+  verso's copy above the recto's, so two whole stages share a phone screen. The
+  parts dropped below `lg` are the only ones that restate something the page
+  says elsewhere: a stage's `body` elaborates its own headline, and the
+  tailpiece's arc and value list are the six stage names and the six
+  deliverables again. The headline, the work, the deliverable and the outcome
+  never go.
+- **A stage reserves the drop folio; nothing before it had to.** `VersoPage`
+  and `PageBody` print the folio at 7% of the page HEIGHT while their own
+  bottom padding is a percentage of its WIDTH — 56px against a folio whose top
+  edge is 71px up. Every earlier page stopped short of its own padding so the
+  15px overlap never showed. A stage hangs its deliverable off the foot with
+  `mt-auto` and lands exactly there: the verso printed `03 — APPROACH` through
+  the last line of the outcome.
 
 **04 is a register and not a second catalogue, and that is the point of it.**
 It used to be set as a catalogue and it read Web Applications / AI Platforms /
@@ -170,6 +239,15 @@ Consequences worth knowing before touching it:
 
 ### Rules that are not obvious from the code
 
+- **Illustrations are numbered in roman and chapters in arabic**, and 03 is
+  why that rule earns its keep rather than merely being a convention. Its plate
+  labels read `PLATE IV`, not the `FIG. 04` the brief asked for: an arabic 04
+  printed inside chapter 03 reads as a pointer to chapter 04, which is one tab
+  away in the thumb index and is a real chapter. The engraved `Fig. 1`–`Fig. 4`
+  are a separate series — diagrams, not photographs — and stay sentence-case.
+  03's own engraving was retired when it gained six photographs (the reason 02
+  has none), which closed the gap behind it: 04, 05 and 07 are now Fig. 2, 3
+  and 4.
 - **Geometry comes from the camera, never from CSS.** Sheets sit on the real
   gutter because `spreadAt()` runs the same arithmetic the painter runs. A
   hardcoded `50%` will drift apart from the photograph on resize.
@@ -250,6 +328,19 @@ Consequences worth knowing before touching it:
   viewport edge.
 
 ### Rebuilding the frames
+
+`tools/build-process-plates.sh` turns the six process photographs into the
+plates of chapter 03. They arrive as finished pictures with no ground to key,
+so nothing here is cut out — what is wrong with them is TONE, and in two ways
+at once: three of the six measure *darker than the paper* (LAUNCH's median is
+0.047 against the recto's 0.205), which is a hole punched in the page rather
+than a picture; and 0.047 to 0.598 across the set is two collections of stock
+photographs rather than one chapter. `+level-colors` fixes both in one pass by
+compressing every plate into a shared band between the book's navy and its
+silver, and per-image gammas close the day/night gap *part* of the way and stop
+there — paper by daylight becoming screens at night is the arc of the chapter.
+The script fails rather than ships if any plate lands at or below the paper.
+Read its header before changing any number in it.
 
 `tools/build-service-plates.sh` turns the service renders into the plates on
 spread 02. Like the frame sources, the renders it reads are **not in the repo**

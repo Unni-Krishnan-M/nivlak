@@ -19,6 +19,7 @@ import {
   type PagePlate,
   type PageService,
   type PageStep,
+  spreadOfEntry,
 } from "@/components/book-pages.content";
 
 // The sheets that turn over the open book, and the arithmetic that puts them
@@ -359,6 +360,7 @@ export function BookSheets() {
 export function BookPageColumn() {
   return (
     <section
+      data-book-column
       className="w-full"
       style={{ backgroundColor: LETTERBOX }}
       aria-label="Nivlak sections"
@@ -612,6 +614,12 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
   const { headline, subtitle, intro, epigraph, note, figure } = page.facing;
   const spread = page as Partial<BookSpread>;
   const from = spread.servicesFrom ?? 0;
+  // Which chapter this half-title opens, if it is a plate section's. `chapter`
+  // is on a spread and not on a BookPage, so the reduced-motion column -- which
+  // sets uncut chapters -- has to find its own index.
+  const plateChapter = !spreadIsPlates(page)
+    ? -1
+    : (spread.chapter ?? BOOK_PAGES.indexOf(page as BookPage));
 
   // A continuation spread's verso is more of the catalogue, not the start of
   // anything, so it takes NONE of the opener devices -- no headpiece, no
@@ -619,6 +627,24 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
   // spread of the same chapter is the thing a book never does.
   if (spread.continued) {
     const carried = page.facing.services ?? [];
+    // A plate section's continuation verso is one stage, or -- on a chapter
+    // whose stage count left the tailpiece opening its own spread -- the first
+    // half of the tailpiece. See `tail` on BookSpread for why there are two
+    // cases and no third.
+    if (spread.tail === "spread") return <ChapterTailpiece page={page} half="arc" />;
+    if (isPlateSection(carried)) {
+      // The run comes from BOOK_PAGES rather than from the spread: a spread
+      // holds one stage and the index in the head has to show all six.
+      const chapter = spread.chapter ?? -1;
+      return (
+        <StagePlate
+          service={carried[0]!}
+          index={from}
+          run={BOOK_PAGES[chapter]?.services ?? carried}
+          chapter={chapter}
+        />
+      );
+    }
     return isArchive(carried) ? (
       <ArchiveEntries services={carried} from={from} />
     ) : (
@@ -678,6 +704,19 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       ) : null}
 
       {figure ? <Figure figure={figure} /> : null}
+
+      {/* The chapter's own contents, on its half-title. A plate section is the
+          one setting that needs one: its stages are a SEQUENCE and a reader
+          landing mid-chapter has no way to see how many there are or where
+          they are in them, which a catalogue's entries never have to answer.
+          It is also the only navigation in the book that addresses a page
+          rather than a chapter -- see spreadOfEntry. */}
+      {plateChapter >= 0 ? (
+        <ChapterContents
+          chapter={plateChapter}
+          services={BOOK_PAGES[plateChapter]?.services ?? []}
+        />
+      ) : null}
 
       {/* An illustrated catalogue sets its entries full measure and starts
           them straight under the subtitle; an engraved one hangs its lead
@@ -826,6 +865,591 @@ function isIllustrated(services: PageService[] | undefined) {
  */
 function isArchive(services: PageService[] | undefined) {
   return Boolean(services?.some((service) => service.record));
+}
+
+/**
+ * Does this run set as a PLATE SECTION -- a numbered plate per page with its
+ * description under it -- rather than as a catalogue or a register?
+ *
+ * Asked of the run and not of each entry, like the other two and for the same
+ * reason: the answer is the setting for the whole chapter.
+ *
+ * It has to be asked FIRST, because a stage carries `image` as well and
+ * isIllustrated would claim it. That is not an ordering accident to be tidied
+ * away later -- the two questions are genuinely both true of the data, and the
+ * one that wins decides whether a photograph of an architecture diagram is
+ * printed at the full measure of a page or at 42% of a text column. At the
+ * second size none of the type inside it can be read, and being able to read
+ * it is the entire reason these are photographs and not emblems.
+ */
+function isPlateSection(services: PageService[] | undefined) {
+  return Boolean(services?.some((service) => service.stage));
+}
+
+/** Is any half of this spread set as a plate section? */
+function spreadIsPlates(page: BookPage | BookSpread) {
+  return isPlateSection(page.facing?.services) || isPlateSection(page.services);
+}
+
+/**
+ * The stage index, run as a head across every page of the chapter.
+ *
+ * WHY THE CONTENTS LIST ON THE HALF-TITLE IS NOT ENOUGH
+ *
+ * It is on ONE page. Turn past it and there is nothing left saying how many
+ * stages there are or which of them you are looking at -- and the thumb index
+ * cannot answer either, because it deals in chapters and all six of these are
+ * inside one.
+ *
+ * WHY IT MATTERS MORE HERE THAN IT WOULD ON A CATALOGUE
+ *
+ * A spread carries TWO stages, on facing pages. Ask for Design and the book
+ * turns to Strategize | Design -- the right spread, with the page you asked
+ * for on the right-hand side -- and the page your eye lands on first is
+ * Strategize. The navigation was correct and read as broken, because nothing
+ * on either page said which of the two had been asked for. This is what says
+ * it: the mark under 03 is on the Design page and under 02 on the Strategize
+ * page, so the two halves of a spread no longer look like the same answer.
+ *
+ * WHY IT IS THE THUMB INDEX'S VOCABULARY AND NOT A PROGRESS BAR
+ *
+ * A numeral over a notch, the current one cut deeper -- the same device
+ * <BookIndex> uses on the fore-edge, because it is doing the same job one
+ * level down. A filled bar would be a website's answer; this book already had
+ * one for "where am I in a sequence" and inventing a second is how a set of
+ * pages stops looking like one book.
+ *
+ * Hidden below lg. Portrait sets both stages of a spread on one screen, so the
+ * reader can see where they are by looking, and printing the index twice down
+ * a 390px page would be the loudest thing on it.
+ */
+function StageIndex({
+  services,
+  chapter,
+  current,
+}: {
+  services: PageService[];
+  chapter: number;
+  /** Which stage's page this copy is printed on. */
+  current: number;
+}) {
+  return (
+    <nav
+      // Not "The stages of the process" -- that is the contents list on the
+      // half-title, and two navigation landmarks with the same accessible name
+      // are announced identically while going to different places.
+      aria-label="Stage index"
+      className="hidden shrink-0 items-baseline gap-[clamp(0.5rem,1vw,0.9rem)] lg:flex"
+    >
+      {services.map((service, i) => {
+        const number = String(i + 1).padStart(2, "0");
+        const here = i === current;
+        return (
+          <button
+            key={service.title}
+            type="button"
+            data-nav-item
+            data-spread={spreadOfEntry(chapter, i)}
+            data-anchor={`stage-${number}`}
+            aria-label={`${number} ${service.title}`}
+            aria-current={here ? "step" : undefined}
+            className="group flex cursor-pointer flex-col items-center gap-[0.45em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+          >
+            <span
+              className={`text-[clamp(0.46rem,0.6vw,0.55rem)] tracking-[0.2em] tabular-nums transition-colors duration-300 ${
+                here
+                  ? "text-white"
+                  : "text-slate-400/45 group-hover:text-slate-200"
+              }`}
+            >
+              {number}
+            </span>
+            {/* The notch, cut deeper where you are. */}
+            <span
+              aria-hidden
+              className={`block h-px transition-all duration-300 ${
+                here
+                  ? "w-[18px] bg-white/75"
+                  : "w-[10px] bg-white/20 group-hover:w-[14px] group-hover:bg-white/45"
+              }`}
+            />
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+/**
+ * One stage of the procedure: a plate, and the letterpress that describes it.
+ *
+ * WHY THE ORDER OF THE PARTS IS THE ORDER IT IS
+ *
+ * A client arriving on this page is asking three questions in a fixed sequence
+ * -- what is this stage, what happens in it, and what do I end up with -- and
+ * the page answers them in that order and stops. The numeral and the name say
+ * where in the six you are; the plate shows the actual artefact; the sentence
+ * says what the stage is for; the run of phrases is the work; and the two
+ * ruled rows at the foot are the two halves of the answer to the third
+ * question, which is the one that decides whether a stage was worth paying
+ * for.
+ *
+ * WHY THE WORK IS A RUN AND NOT A LIST
+ *
+ * Five or six bullets down a column is four to six rules and about 150px of a
+ * page that also has to carry a plate. Set as one wrapped run with hairline
+ * separators it is two lines, it still reads as enumerated, and it stays
+ * subordinate to the deliverable and the outcome -- which are what the reader
+ * came for. A bulleted list would have been the most prominent thing on the
+ * page and it is the least important of the three.
+ *
+ * WHY THE FOOT IS RULED WHEN THE CATALOGUE'S ENTRIES ARE NOT
+ *
+ * ServiceEntry drops its rules because a page carrying five photographs does
+ * not need ruling as well. This page carries ONE, and the rules are doing a
+ * different job here anyway: they make DELIVERABLE and OUTCOME a two-row table
+ * that reads across from stage to stage, so a reader can compare what they get
+ * at 02 with what they get at 05 without re-reading either page. That is the
+ * register's argument, applied to two rows instead of three.
+ */
+function StagePlate({
+  service,
+  index,
+  run,
+  chapter,
+  anchored = false,
+}: {
+  service: PageService;
+  index: number;
+  /** The chapter's whole run, for the stage index in the head. */
+  run: PageService[];
+  chapter: number;
+  /**
+   * Print an id on this stage.
+   *
+   * Only the reduced-motion column does. Under reduced motion the sheets and
+   * the column are BOTH in the document -- the book is parked open above the
+   * copy rather than replaced by it -- so a stage that anchored itself in both
+   * would put two `stage-04`s in the page and getElementById would answer with
+   * the one inside the parked book. There is nothing to scroll to there.
+   */
+  anchored?: boolean;
+}) {
+  const stage = service.stage;
+  if (!stage) return null;
+  const number = String(index + 1).padStart(2, "0");
+  return (
+    <article
+      id={anchored ? `stage-${number}` : undefined}
+      data-ink
+      // aria-label rather than aria-labelledby, because the id it would point
+      // at is not unique. <FacingCopy> is rendered twice per spread -- once on
+      // the verso and once into the hidden block the portrait fallback shows
+      // instead -- so every stage's markup exists twice in the document and an
+      // id on its heading would too.
+      aria-label={`${number} ${service.title}`}
+      // Reserving the drop folio, which no other page has had to.
+      //
+      // VersoPage and PageBody both print it absolutely at 7% of the page
+      // HEIGHT, while their own bottom padding is a percentage of the page's
+      // WIDTH -- 8% of ~700 is 56px against a folio whose top edge is ~71px
+      // up. Every page before this one stopped short of its own padding, so
+      // the 15px the two overlap by never showed. This one hangs its
+      // deliverable off the foot with mt-auto, so it lands exactly there: the
+      // verso printed "03 — APPROACH" through the last line of the outcome.
+      // Reserved in vh because the folio is placed in vh; a percentage here
+      // would resolve against the width and miss it again.
+      //
+      // h-full and the folio reservation are BOTH lg-only, and for the same
+      // reason: below lg there is no spread. The portrait fallback collapses
+      // both halves onto one full-bleed sheet and prints the verso's copy
+      // above the recto's, so a stage is one of TWO on the page rather than
+      // the page itself. h-full would then make each of them 844px tall and
+      // push the second clean off the bottom, and there is no drop folio down
+      // there to reserve room for.
+      className="flex min-h-0 flex-col lg:h-full lg:pb-[clamp(20px,3vh,34px)]"
+    >
+      {/* The head: the stage's own numeral, large, and its name beside it.
+          Same construction as ChapterHead's numeral and section name, one size
+          down -- this is a page inside a chapter, not the chapter opening. */}
+      <div className="flex shrink-0 items-baseline justify-between gap-[0.9em]">
+        <div className="flex items-baseline gap-[0.6em]">
+          <span
+            aria-hidden
+            className="font-[family-name:var(--font-display)] text-[clamp(1.7rem,3.4vw,3.2rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
+          >
+            {number}
+          </span>
+          <h3 className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.7vw,1.55rem)] leading-none font-light text-white">
+            {service.title}
+          </h3>
+        </div>
+        <StageIndex services={run} chapter={chapter} current={index} />
+      </div>
+
+      {/* The label and the plate number, on one line against the rule that
+          closes the head. The plate number is set to the right because it
+          belongs to the PICTURE below it rather than to the stage -- the
+          numeral above already numbers the stage, and printing IV beside 04
+          twice is the same fact said at two sizes. */}
+      <div className="mt-[0.5em] flex shrink-0 items-baseline justify-between gap-[1em] border-t border-white/18 pt-[0.55em]">
+        <p className="text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/75">
+          {stage.label.toUpperCase()}
+        </p>
+        <p className="shrink-0 text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/50">
+          PLATE {stage.figure}
+        </p>
+      </div>
+
+      {service.image ? (
+        // The plate is the one thing on this page that must not be allowed to
+        // squeeze. `aspectRatio` from the content reserves its height before
+        // the file decodes -- the sheets are laid out by measurement and a
+        // plate that resizes after paint drags the copy under it -- and
+        // shrink-0 keeps flex from taking the height back when the letterpress
+        // is long. A plate that has been squeezed is a distorted photograph,
+        // which is worse than a page that overflows its foot by a line.
+        <img
+          src={service.image.src}
+          alt={service.image.alt}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          // 74% below lg, full measure above it. Two stages share 844px on
+          // a portrait phone and a stage's fixed furniture -- head, label,
+          // headline, work and the two ruled rows -- is about 230px of that,
+          // which leaves ~160px for the plate against the 191px a full-measure
+          // 16:9 needs. At 74% it is 141px and both stages land on the page.
+          // Not smaller: these photographs are made of small type, and the
+          // reason to print them rather than an emblem is that it can be read.
+          className="mt-[0.75em] w-[74%] shrink-0 select-none lg:mt-[0.9em] lg:w-full"
+          style={{ aspectRatio: service.image.ratio, objectFit: "cover" }}
+        />
+      ) : null}
+
+      {/* The letterpress is set at the book's own body size and not smaller.
+          It was a size down at first -- 12.4px against the 16.5px the prose
+          pages use at 1440 -- which read as a caption block rather than as the
+          page's text, and left about 190px of the page unfilled underneath it.
+          This is the page a client reads most carefully; it takes the measure
+          the rest of the book takes. */}
+      <h4 className="mt-[0.85em] shrink-0 font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.62vw,1.5rem)] leading-tight font-light text-balance text-[#dce7f7]">
+        {stage.headline}
+      </h4>
+
+      {service.body ? (
+        // Dropped below lg. It is the only part of a stage that says
+        // something the page says elsewhere -- it elaborates the headline
+        // above it -- so when two stages have to share a phone screen it is
+        // the one that can go without the page stopping answering a question.
+        // The headline, the work, the deliverable and the outcome all stay.
+        <p className="mt-[0.55em] hidden shrink-0 text-[clamp(0.74rem,1.04vw,0.95rem)] leading-relaxed text-slate-300/80 lg:block">
+          {service.body}
+        </p>
+      ) : null}
+
+      {/* What happens here. A `ul` because it is a list and a screen reader
+          should say so; the separators are decorative and are drawn by the
+          rule below rather than typed into the copy, so nothing announces
+          "middle dot" five times. */}
+      <ul className="mt-[0.95em] flex shrink-0 flex-wrap items-baseline gap-x-[0.75em] gap-y-[0.25em] text-[clamp(0.64rem,0.88vw,0.8rem)] leading-relaxed text-slate-300/65">
+        {stage.work.map((item, i) => (
+          <li key={item} className="flex items-baseline gap-[0.7em]">
+            {i > 0 ? (
+              <span aria-hidden className="text-slate-400/35">
+                &middot;
+              </span>
+            ) : null}
+            {item}
+          </li>
+        ))}
+      </ul>
+
+      {/* The two rows that answer "what do I get". mt-auto hangs them off the
+          foot of the page rather than letting them float under copy of
+          whatever length, so they sit on the same line from stage to stage and
+          can be read across the six. */}
+      {/* mt-auto only at lg. On the stacked portrait sheet it would drop
+          the first stage's deliverable to the foot of the screen and land it
+          on top of the second stage's head. */}
+      <dl className="mt-[1em] grid shrink-0 grid-cols-[auto_1fr] gap-x-[1.2em] pt-[0.6em] lg:mt-auto lg:pt-[1.2em]">
+        <dt className="border-t border-white/18 pt-[0.6em] text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/70">
+          DELIVERABLE
+        </dt>
+        <dd className="border-t border-white/18 pt-[0.6em] text-[clamp(0.78rem,1.08vw,1rem)] leading-tight text-white">
+          {stage.deliverable}
+        </dd>
+        <dt className="border-t border-white/10 pt-[0.6em] text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/70">
+          OUTCOME
+        </dt>
+        <dd className="border-t border-white/10 pt-[0.6em] text-[clamp(0.7rem,0.96vw,0.88rem)] leading-snug text-slate-300/80">
+          {stage.outcome}
+        </dd>
+      </dl>
+    </article>
+  );
+}
+
+/**
+ * The whole plate section as one run, for the reduced-motion column.
+ *
+ * That column sets a CHAPTER per article rather than a spread -- there are no
+ * pages to turn, so the reason a chapter is cut across sheets does not apply.
+ * Everything else in the book falls out of that for free, because a catalogue
+ * and a register are the same object whether their run is cut or not. A plate
+ * section is not: its pagination is what decides that a page holds one stage,
+ * and what closes the chapter is a page rather than a paragraph. Rendered
+ * through the spread path, an uncut chapter printed stage 01 and stopped --
+ * five stages and the whole call to action silently missing for exactly the
+ * readers who cannot see the book open.
+ */
+function PlateSectionColumn({ page }: { page: BookPage }) {
+  return (
+    <>
+      {(page.services ?? []).map((service, i) => (
+        <div key={service.title} className="mb-12">
+          <StagePlate
+            service={service}
+            index={i}
+            run={page.services ?? []}
+            chapter={BOOK_PAGES.indexOf(page)}
+            anchored
+          />
+        </div>
+      ))}
+      {page.tailpiece ? <ChapterTailpiece page={page} half="both" /> : null}
+    </>
+  );
+}
+
+/**
+ * The contents of the chapter, printed on its half-title.
+ *
+ * It is the brief's "process index" and it is also just a table of contents,
+ * which is the device a book already has for this and puts in the same place.
+ * Derived from the run rather than written down, so a seventh stage appears
+ * here without anyone remembering to add it.
+ *
+ * The entries seek a SPREAD rather than a chapter, which is the one thing the
+ * thumb index cannot do -- see the note on spreadOfEntry. `data-nav-item` is
+ * what wires them up; <Book> owns the handler, because the scroll position of
+ * a page in a pinned section is a time on a playhead and nothing in this file
+ * can know it.
+ */
+function ChapterContents({
+  chapter,
+  services,
+}: {
+  chapter: number;
+  services: PageService[];
+}) {
+  return (
+    <nav
+      data-ink
+      aria-label="The stages of the process"
+      className="mt-[0.7em] border-t border-white/18 lg:mt-[1.5em]"
+    >
+      {/* Two columns below lg and one above it. Portrait sets this
+          half-title and the whole of stage 01 on one 844px sheet, and six
+          full-measure rows cost ~145px of it -- enough to push the stage's
+          outcome off the foot. Paired, they cost ~72 and the list still reads
+          in order, down the left column and then the right being wrong: they
+          are numbered, so they are read across. */}
+      <ol className="grid grid-cols-2 gap-x-[1.2em] lg:block">
+        {services.map((service, i) => {
+          const number = String(i + 1).padStart(2, "0");
+          return (
+            <li key={service.title}>
+              <button
+                type="button"
+                data-nav-item
+                data-spread={spreadOfEntry(chapter, i)}
+                data-anchor={`stage-${number}`}
+                // Tighter below lg. Portrait collapses the spread, so this
+                // half-title shares 844px with the first stage -- at the
+                // desktop rhythm the six rows cost ~180px and pushed
+                // Discover's deliverable off the foot of the screen.
+                className="group flex w-full cursor-pointer items-baseline gap-[0.9em] border-b border-white/10 py-[0.32em] text-start transition-colors duration-300 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 lg:py-[0.5em]"
+              >
+                <span className="text-[clamp(0.52rem,0.7vw,0.62rem)] tracking-[0.26em] text-slate-400/60 tabular-nums">
+                  {number}
+                </span>
+                <span className="text-[clamp(0.66rem,0.92vw,0.84rem)] tracking-[0.16em] text-slate-200/85 transition-colors duration-300 group-hover:text-white">
+                  {service.title.toUpperCase()}
+                </span>
+                {/* The rule and the deliverable are what a one-column list
+                    has room for. Paired at 145px a column, neither fits, and
+                    the deliverable is on the stage's own page anyway. */}
+                <span
+                  aria-hidden
+                  className="mx-[0.2em] hidden h-px flex-1 bg-white/10 transition-colors duration-300 group-hover:bg-white/30 lg:block"
+                />
+                <span className="hidden shrink-0 text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.26em] text-slate-400/45 lg:inline">
+                  {service.stage?.deliverable.toUpperCase()}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+/**
+ * The page that closes the chapter.
+ *
+ * WHY THE ARC IS DERIVED AND NOT WRITTEN
+ *
+ * The brief asked for "DISCOVER -> STRATEGIZE -> DESIGN -> ENGINEER -> LAUNCH
+ * -> EVOLVE" as a line of copy. Written down it is a seventh place the stage
+ * names live, and the first time one is renamed it is the place nobody
+ * remembers. It is read off the run instead, which is the same rule the
+ * contents on the half-title follow.
+ *
+ * WHY THE TWO ACTIONS ARE RULED LINES AND NOT BUTTONS
+ *
+ * They ARE buttons -- they seek the timeline, they take focus, they say what
+ * they do. What they are not is a pair of filled pills, because the contact
+ * page four sheets later already has this exact device (a tracked capital
+ * line over a rule, with an arrow) and a book that invents a second button
+ * style on its own last-but-one page has stopped being a book. Matching it
+ * costs nothing and is the difference between a page of a printed thing and a
+ * landing page that happens to have paper behind it.
+ */
+function ChapterTailpiece({
+  page,
+  half,
+}: {
+  page: BookPage | BookSpread;
+  half: "arc" | "cta" | "both";
+}) {
+  const tail = page.tailpiece;
+  if (!tail) return null;
+  const stages = page.services?.length
+    ? page.services
+    : (page.facing?.services ?? []);
+  // The run this page summarises is the CHAPTER's, and by the time the
+  // tailpiece is reached the spread it sits on carries at most one stage of
+  // it. BOOK_PAGES is where the whole run still is.
+  const chapter = (page as Partial<BookSpread>).chapter;
+  const run =
+    chapter === undefined ? stages : (BOOK_PAGES[chapter]?.services ?? stages);
+
+  // The arc and the value list are the two things on this page that RESTATE
+  // rather than say: the arc is the six names the half-title already listed
+  // and the reader has just turned through, and the values are the six
+  // deliverables already printed on the stages. On a desktop spread they earn
+  // their place as the summary a procedure ends on. On portrait this page is
+  // sharing 844px with the whole of stage 06, and keeping them cost the CTA --
+  // which is the one thing on the page that is not a restatement of anything.
+  const summary = (
+    <div className="hidden lg:contents">
+      <p className="text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/70">
+        {tail.arcTitle.toUpperCase()}
+      </p>
+      {/* The six names, run on with arrows and allowed to wrap. A single line
+          would have to set at about 7px on a 460px column to fit; wrapped, it
+          keeps the body size and still reads as one sequence. */}
+      <p className="mt-[0.7em] flex flex-wrap items-baseline gap-x-[0.5em] gap-y-[0.15em] border-t border-white/18 pt-[0.8em] text-[clamp(0.62rem,0.86vw,0.78rem)] tracking-[0.14em] text-slate-200/85">
+        {run.map((service, i) => (
+          <span key={service.title} className="flex items-baseline gap-[0.5em]">
+            {i > 0 ? (
+              <span aria-hidden className="text-slate-400/40">
+                &rarr;
+              </span>
+            ) : null}
+            {service.title.toUpperCase()}
+          </span>
+        ))}
+      </p>
+
+      <p className="mt-[1.6em] text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/70">
+        {tail.valueTitle.toUpperCase()}
+      </p>
+      {/* Two columns, because six short words down one column is a list of
+          six things and in two it is a block of one thing -- which is what it
+          is: the process, restated as what it buys. */}
+      <ul className="mt-[0.6em] grid grid-cols-2 border-t border-white/18">
+        {tail.value.map((item, i) => (
+          <li
+            key={item}
+            className={`py-[0.5em] text-[clamp(0.64rem,0.88vw,0.8rem)] text-slate-200/85 ${
+              i % 2 === 0 ? "pe-[1em]" : "border-s border-white/10 ps-[1em]"
+            }`}
+          >
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  const arc = (
+    <>
+      {summary}
+      {/* Where a footnote goes and doing a footnote's job: the qualification
+          the reader needs having just counted six stages, which the running
+          text should not stop for. Same place `colophon` is set. It stays on
+          portrait: "you do not have to start at stage one" is the one thing
+          here a reader could not have worked out from the pages behind them. */}
+      <p className="mt-[1em] border-t border-white/10 pt-[0.8em] text-[clamp(0.62rem,0.82vw,0.74rem)] leading-relaxed text-slate-400/70 italic lg:mt-[1.2em]">
+        {tail.note}
+      </p>
+    </>
+  );
+
+  const cta = (
+    <>
+      <Ornament className="mb-[1em] hidden w-[30%] text-slate-300/70 lg:block" />
+      <p className="text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/70">
+        {tail.cta.eyebrow.toUpperCase()}
+      </p>
+      <h3 className="mt-[0.4em] font-[family-name:var(--font-display)] text-[clamp(1.3rem,2.4vw,2.3rem)] leading-[1.05] font-light text-balance text-white">
+        {tail.cta.headline}
+      </h3>
+      <p className="mt-[0.7em] max-w-[38ch] text-[clamp(0.64rem,0.88vw,0.8rem)] leading-relaxed text-slate-300/75">
+        {tail.cta.body}
+      </p>
+      <div className="mt-[1.4em] flex flex-wrap items-center gap-x-[2em] gap-y-[0.8em]">
+        {[tail.cta.primary, tail.cta.secondary].map((action, i) => (
+          <button
+            key={action.label}
+            type="button"
+            data-nav-item
+            data-index={action.chapter}
+            className={`group inline-flex cursor-pointer items-center gap-[0.8em] border-b pb-[0.4em] text-[clamp(0.58rem,0.8vw,0.72rem)] tracking-[0.26em] transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/60 ${
+              // The primary is struck in the page's own silver over a brighter
+              // rule; the secondary is body-weight over a hairline. One pair
+              // of ink values apart, which is as much hierarchy as two lines
+              // of tracked capitals can carry without one of them becoming a
+              // pill.
+              i === 0
+                ? "border-white/45 text-white hover:border-white/80"
+                : "border-white/18 text-slate-300/80 hover:border-white/45 hover:text-white"
+            }`}
+          >
+            {action.label.toUpperCase()}
+            <span
+              aria-hidden
+              className="transition-transform duration-300 group-hover:translate-x-[0.25em]"
+            >
+              &rarr;
+            </span>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+
+  if (half === "arc") return arc;
+  if (half === "cta") return <div className="lg:mt-auto">{cta}</div>;
+  return (
+    <>
+      {arc}
+      <div className="mt-[1.4em] lg:mt-auto lg:pt-[1.8em]">{cta}</div>
+    </>
+  );
 }
 
 /**
@@ -1536,6 +2160,22 @@ function ContactPage({ page }: { page: BookPage }) {
         <p className="max-w-[32ch] text-[clamp(0.72rem,1vw,0.92rem)] leading-relaxed text-slate-300/80">
           {contact.enquiryBody}
         </p>
+        {/* Where a reader recognises themselves. Set as a run of short lines
+            against a hanging rule rather than as bullets: a client picking one
+            of five is not reading a list of five, and the rule is what stops
+            them reading as five separate offers. */}
+        {contact.prompts?.length ? (
+          <ul className="mt-[0.9em] flex flex-col border-t border-white/10">
+            {contact.prompts.map((prompt) => (
+              <li
+                key={prompt}
+                className="py-[0.42em] text-[clamp(0.64rem,0.86vw,0.78rem)] leading-snug text-slate-300/65"
+              >
+                {prompt}
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <a
           href={mail ?? "#"}
           className="group mt-[1.2em] inline-flex items-center gap-[0.8em] border-b border-white/25 pb-[0.4em] text-[clamp(0.6rem,0.82vw,0.74rem)] tracking-[0.26em] text-white transition-colors duration-300 hover:border-white/60"
@@ -1704,7 +2344,37 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         </div>
       ) : null}
 
-      {page.services?.length ? (
+      {(page as Partial<BookSpread>).tail ? (
+        // The closing recto. On a full spread it is the second half only --
+        // the arc has already been set on the verso facing it.
+        <ChapterTailpiece
+          page={page}
+          half={(page as Partial<BookSpread>).tail === "spread" ? "cta" : "both"}
+        />
+      ) : isPlateSection(page.services) &&
+        (page as Partial<BookSpread>).chapter === undefined ? (
+        // An uncut chapter -- the reduced-motion column. `chapter` is set by
+        // the pagination and by nothing else, so its absence is what says this
+        // is a BookPage rather than one of the spreads it was cut into.
+        <PlateSectionColumn page={page as BookPage} />
+      ) : isPlateSection(page.services) ? (
+        // The recto's place in the chapter's run is where the SPREAD starts
+        // plus whatever the verso took -- one stage on every spread but the
+        // first, whose verso is the half-title and takes none. Reading
+        // servicesFrom alone printed 03 as 02 on every continuation spread.
+        <StagePlate
+          service={page.services![0]!}
+          index={
+            ((page as Partial<BookSpread>).servicesFrom ?? 0) +
+            (page.facing?.services?.length ?? 0)
+          }
+          run={
+            BOOK_PAGES[(page as Partial<BookSpread>).chapter ?? -1]?.services ??
+            page.services!
+          }
+          chapter={(page as Partial<BookSpread>).chapter ?? -1}
+        />
+      ) : page.services?.length ? (
         <ServicesPage page={page} />
       ) : page.steps?.length ? (
         <>

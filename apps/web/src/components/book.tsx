@@ -17,6 +17,7 @@ import {
 import { BookIndex, BookNav } from "@/components/book-nav";
 import {
   BOOK_PAGES,
+  BOOK_SPREADS,
   CHAPTER_OF_SPREAD,
   FIRST_SPREAD_OF_CHAPTER,
 } from "@/components/book-pages.content";
@@ -301,12 +302,31 @@ export function Book() {
       // a section is a time on the playhead.
       const navItems = [
         ...section.querySelectorAll<HTMLElement>("[data-nav-item]"),
+        // The reduced-motion column is rendered OUTSIDE this section and has
+        // to be: pin:true reparents the section into a spacer, so anything
+        // React places beside it has to be a sibling of the wrapper instead.
+        // Its contents list and its call to action carry nav items too, and
+        // querying the section alone left every one of them inert for the
+        // readers who only ever see that column.
+        ...document.querySelectorAll<HTMLElement>(
+          "[data-book-column] [data-nav-item]",
+        ),
       ];
       const headNav = section.querySelector<HTMLElement>("[data-book-nav]");
       const thumbIndex = section.querySelector<HTMLElement>("[data-book-index]");
       let goTo = (_index: number) => {};
+      // A nav item usually carries a CHAPTER, which is what the running head
+      // and the thumb index deal in. The process index on 03's half-title
+      // carries a SPREAD instead, because its six entries are six PAGES of one
+      // chapter and a chapter number cannot tell them apart -- every one of
+      // them would land on the half-title the reader is already looking at.
+      let goToSpread = (_index: number, _anchor?: string) => {};
       const onNavClick = (event: Event) => {
         const el = (event.currentTarget ?? event.target) as HTMLElement;
+        if (el.dataset.spread !== undefined) {
+          goToSpread(Number(el.dataset.spread), el.dataset.anchor);
+          return;
+        }
         goTo(Number(el.dataset.index));
       };
       for (const el of navItems) el.addEventListener("click", onNavClick);
@@ -332,6 +352,17 @@ export function Book() {
               : document.getElementById(`section-${BOOK_PAGES[index]?.number}`);
           if (target) target.scrollIntoView();
           else window.scrollTo(0, 0);
+        };
+        // There are no spreads under reduced motion -- the column sets a whole
+        // chapter as one article -- so a stage is addressed by the anchor
+        // <StagePlate> prints on itself, and the chapter is the fallback.
+        goToSpread = (index, anchor) => {
+          const target =
+            (anchor ? document.getElementById(anchor) : null) ??
+            document.getElementById(
+              `section-${BOOK_SPREADS[index]?.number ?? ""}`,
+            );
+          target?.scrollIntoView();
         };
         return () => {
           dropNav();
@@ -507,10 +538,9 @@ export function Book() {
       // many spreads it runs to -- and the timeline is measured in spreads, so
       // this is where the two meet: a click on a tab goes to where its chapter
       // OPENS.
-      const seek = (chapter: number) => {
+      const seekSpread = (index: number) => {
         const trigger = tl.scrollTrigger;
         if (!trigger) return;
-        const index = chapter < 0 ? -1 : (FIRST_SPREAD_OF_CHAPTER[chapter] ?? 0);
         const y =
           index < 0
             ? 0
@@ -525,9 +555,12 @@ export function Book() {
           overwrite: true,
         });
       };
+      const seek = (chapter: number) =>
+        seekSpread(chapter < 0 ? -1 : (FIRST_SPREAD_OF_CHAPTER[chapter] ?? 0));
       // contextSafe is optional in the hook's types, so fall back to the bare
       // function rather than asserting it is there.
       goTo = contextSafe ? contextSafe(seek) : seek;
+      goToSpread = contextSafe ? contextSafe(seekSpread) : seekSpread;
 
       // Which page is face up. This runs on every scrubbed frame, so it only
       // writes to the DOM when the answer actually changes.

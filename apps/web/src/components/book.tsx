@@ -334,6 +334,109 @@ export function Book() {
         for (const el of navItems) el.removeEventListener("click", onNavClick);
       };
 
+      // --- the windows: 04's project stage and 05's volvelle ----------------
+      //
+      // Two chapters have a fixed window and an index that changes what is in
+      // it. 04 shows one 16:9 plate of four; 05 shows one of six opinions. The
+      // mechanism is identical and the settings are not, which is exactly the
+      // case for one binder called twice rather than two handlers.
+      //
+      // Queried from the DOCUMENT rather than from the section, and for a
+      // reason that is not the reduced-motion column's: the two halves of a
+      // spread are DIFFERENT SHEETS -- a verso is the back of the sheet before
+      // it -- so an index and the panels it drives are in sibling subtrees with
+      // nothing above them to hold state. There is also more than one copy of
+      // each: <FacingCopy> and <PageBody> both render for the portrait
+      // fallback, and again in the column. Setting them all keeps every copy in
+      // step, which is simpler than deciding which is live.
+      const windowTeardowns: (() => void)[] = [];
+      const bindWindow = (group: string, landmark: string) => {
+        const buttons = [
+          ...document.querySelectorAll<HTMLElement>(`[data-${group}]`),
+        ];
+        if (!buttons.length) return;
+        // Everything the index drives. A panel is the copy; a plate is the
+        // picture, which 04 has and 05 does not, and they live in separate
+        // grids so the image can be a fixed 16:9 box while the letterpress
+        // under it is sized by its longest member.
+        const driven = [
+          ...document.querySelectorAll<HTMLElement>(`[data-${group}-panel]`),
+          ...document.querySelectorAll<HTMLElement>(`[data-${group}-plate]`),
+        ];
+        const key = `${group}Panel`;
+        const plateKey = `${group}Plate`;
+        const count = new Set(buttons.map((el) => el.dataset[group])).size;
+
+        const show = (index: number) => {
+          for (const el of buttons) {
+            const on = Number(el.dataset[group]) === index;
+            el.dataset.current = String(on);
+            // aria-current, not aria-selected: these are not tabs owning a
+            // panel they can point at. An id would have to be unique and the
+            // markup exists three times over.
+            if (on) el.setAttribute("aria-current", "true");
+            else el.removeAttribute("aria-current");
+          }
+          for (const el of driven) {
+            const at = el.dataset[key] ?? el.dataset[plateKey];
+            const on = Number(at) === index;
+            el.dataset.current = String(on);
+            // Copy leaves the accessibility tree when it is not showing, so a
+            // screen reader is not read four projects where the page shows
+            // one. The plates are not touched: their alt text is already
+            // reachable only through the panel that is current, and an
+            // aria-hidden <img> that is about to fade in reads as a flicker to
+            // some AT.
+            if (el.dataset[key] === undefined) continue;
+            if (on) el.removeAttribute("aria-hidden");
+            else el.setAttribute("aria-hidden", "true");
+          }
+        };
+
+        const onClick = (event: Event) => {
+          const el = (event.currentTarget ?? event.target) as HTMLElement;
+          show(Number(el.dataset[group]));
+        };
+        // Arrow keys move between entries and carry focus with them, which is
+        // what a reader who is not using a mouse expects of a list that changes
+        // something. Home and End go to the ends.
+        const onKey = (event: Event) => {
+          const k = (event as KeyboardEvent).key;
+          const el = (event.currentTarget ?? event.target) as HTMLElement;
+          const at = Number(el.dataset[group]);
+          let next = at;
+          if (k === "ArrowRight" || k === "ArrowDown") next = at + 1;
+          else if (k === "ArrowLeft" || k === "ArrowUp") next = at - 1;
+          else if (k === "Home") next = 0;
+          else if (k === "End") next = count - 1;
+          else return;
+          event.preventDefault();
+          next = (next + count) % count;
+          show(next);
+          // Focus the same index on whichever COPY of the index this key came
+          // from, so focus does not jump to the hidden portrait duplicate.
+          const scope = el.closest(`[aria-label='${landmark}']`) ?? document;
+          scope.querySelector<HTMLElement>(`[data-${group}="${next}"]`)?.focus();
+        };
+
+        for (const el of buttons) {
+          el.addEventListener("click", onClick);
+          el.addEventListener("keydown", onKey);
+        }
+        windowTeardowns.push(() => {
+          for (const el of buttons) {
+            el.removeEventListener("click", onClick);
+            el.removeEventListener("keydown", onKey);
+          }
+        });
+      };
+      bindWindow("project", "Projects");
+      bindWindow("perspective", "Perspectives");
+      const dropWindows = () => {
+        for (const drop of windowTeardowns) drop();
+        windowTeardowns.length = 0;
+      };
+
       if (reduced) {
         // Park the book open and let <BookPageColumn> below carry the copy.
         scroll.u = 1;
@@ -366,6 +469,7 @@ export function Book() {
         };
         return () => {
           dropNav();
+          dropWindows();
           teardown();
         };
       }
@@ -588,6 +692,7 @@ export function Book() {
 
       return () => {
         dropNav();
+        dropWindows();
         teardown();
       };
     },

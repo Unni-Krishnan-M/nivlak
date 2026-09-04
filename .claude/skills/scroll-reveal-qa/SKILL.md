@@ -43,7 +43,10 @@ looks wrong — the montage is for finding the suspect frame, not for judging it
 ## What to check, every time
 
 1. **Document height.** The tool prints it. One section, one pin, so it is
-   `1 + 700% = 8.0` viewports (4.7 under reduced motion, which does not pin).
+   `1 + SCROLL_LENGTH` viewports — 11.2 at nine sheets (`+=1034%`), and it grows
+   by one page's worth every time a spread is added, so check it against
+   `BOOK_SPREADS.length` rather than against a number written here. Reduced
+   motion does not pin and is much shorter.
    Larger means pin spacing is being left behind by a killed trigger. Two
    pinned sections would mean someone has split `<Book>` again — don't.
 2. **No black stretch.** A run of near-empty dark frames means sheets are

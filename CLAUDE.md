@@ -55,9 +55,9 @@ production. Changing `next.config.ts` or the output mode affects both.
 no footer, no panels.
 
 ```
-<Book />   one section, one pin, one timeline   +=1101%
+<Book />   one section, one pin, one timeline   +=1034%
               0%..250%   the book opens (91-frame canvas scrub)
-           250%..1101%   ten sheets turn over the frame it lands on
+           250%..1034%   nine sheets turn over the frame it lands on
 ```
 
 The scroll length is derived, not written down: `VH_PER_UNIT` (67% of viewport
@@ -125,27 +125,47 @@ What follows from that:
   chapter numbers — which is how 04 crossed from one side of it to the other
   without that file learning its number.
 
-### Four settings, and the data picks which
+### Five settings, and the data picks which
 
-A run of entries is set one of four ways, and nothing says which: the shape of
+A run of entries is set one of five ways, and nothing says which: the shape of
 the entries decides, the same way it decides whether the chapter paginates.
 
 | The entries carry | Setting | Where |
 | --- | --- | --- |
 | `stage` | plate section — one full-measure plate per page, with its letterpress | 03 |
+| `project` | project stage — a selectable 16:9 plate over its facts | 04 |
 | `image` | catalogue — photograph beside copy, alternating sides | 02 |
-| `record` | register — a ruled ledger, three labelled rows | 04 |
-| neither | engraved — a lead plate over a modular grid | 05 |
+| `perspective` | perspectives — an index on the verso, one window on the recto | 05 |
+| neither | engraved — a lead plate over a modular grid | — |
 
-`isPlateSection()`, `isIllustrated()` and `isArchive()` ask the question of the
-**whole run**, not of each entry, because the answer is the setting for the
-page. Two settings down one page read as two lists stacked.
+The engraved grid is the fallback and currently nothing selects it: it was 05's
+setting until 05 became the perspectives. It is kept because it is what a run
+with no shape at all should print, not because a chapter is using it. The
+`record` setting — a ruled register, which 04 was for one revision — was
+removed with the same change; `git log` has it if it is ever wanted back.
 
-**The order of those three questions is load-bearing.** A stage carries `image`
-as well, so `isIllustrated()` would claim it — and `isPlateSection()` is asked
-first in both `book-sheets.tsx` and `expandChapter`. The two have to agree: a
-run that answers "what setting is this" twice is a bug in one of the two
-places, not a chapter with two settings.
+`isPlateSection()`, `isProjects()`, `isIllustrated()` and `isPerspective()` ask
+the question of the **whole run**, not of each entry, because the answer is the
+setting for the page. Two settings down one page read as two lists stacked.
+
+**The order of those questions is load-bearing, and `isIllustrated()` is the
+one that lies.** Both 03's stages and 04's projects carry `image` as well, so
+`isIllustrated()` answers true for all three of the picture-bearing settings.
+`isPlateSection()` and `isProjects()` are therefore asked FIRST, in
+`book-sheets.tsx` and in `expandChapter`, and the two have to agree: a run that
+answers "what setting is this" twice is a bug in one of the two places, not a
+chapter with two settings.
+
+It is not only the dispatch that has to ask in that order. Any test written as
+`!isIllustrated(...)` meaning "not the catalogue" is a bug waiting for the day
+another setting gains pictures — which has now happened twice. The tailpiece in
+`ServicesPage` was exactly that, and the day 04's records gained plates the
+ornament **and the colophon under it** vanished from the end of the chapter:
+the one page in the book that has to carry the line saying which entries are
+studies. It names every picture-bearing setting now
+(`!illustrated && !projects && !perspective`), and the list grows rather than
+the test getting cleverer. Ask what setting a run is in, never whether an entry
+happens to have an image.
 
 **03 is a plate section and not a second catalogue, for the reason 04 is not
 one either.** Two chapters set the same way one spread apart stop reading as
@@ -186,8 +206,7 @@ Consequences worth knowing before touching it:
   the contents list's: two landmarks with one name are announced identically
   while going to different places.
 - **The reduced-motion column needs its own branch.** That column sets an
-  uncut CHAPTER per article, and a catalogue or a register is the same object
-  cut or not. A plate section is not: its pagination is what says a page holds
+  uncut CHAPTER per article, and a catalogue is the same object cut or not. A plate section is not: its pagination is what says a page holds
   one stage, and what closes the chapter is a page. Routed through the spread
   path it printed stage 01 and stopped — five stages and the whole call to
   action missing for exactly the readers who never see the book open.
@@ -209,33 +228,118 @@ Consequences worth knowing before touching it:
   `mt-auto` and lands exactly there: the verso printed `03 — APPROACH` through
   the last line of the outcome.
 
-**04 is a register and not a second catalogue, and that is the point of it.**
-It used to be set as a catalogue and it read Web Applications / AI Platforms /
-SaaS Products / Mobile Apps / Brand Experiences — 02's five entries, one spread
-later, with the pictures and the sentences taken off. Two chapters in the same
-setting saying the same five words is how the repetition stayed invisible. 02
-says what we offer; 04 says what exists, so its entries are things rather than
-capabilities and every one carries a `status` that says whether it was built.
-Do not let a concept onto that page without one.
+**04 is a project stage: four studies, one window, one spread.** It has been
+three things now — a catalogue, a register, and this — and the two rewrites are
+worth knowing because each fixed what the one before it could not say.
+
+As a catalogue it read Web Applications / AI Platforms / SaaS Products / Mobile
+Apps: 02's entries one spread later with the pictures taken off. As a register
+it was five ruled ledgers with a `status` on every one, which fixed the
+duplication and answered *which of these exists*. What it could not answer was
+*what does the work look like*: its plates sat at about 150px beside the rows,
+and these four images are pictures of software — panels, table rows, the
+direction a graph is read in — where everything worth printing is small. At
+150px an interface is a texture.
+
+The stage gives one of them the full measure of the recto and lets the index
+change which. That is also why the chapter costs one spread instead of two:
+`+=1101%` became `+=1034%`, 720px of document at 1440x900.
 
 Consequences worth knowing before touching it:
 
-- **The register's opening verso takes no entries** (`OPENER_ARCHIVE_VERSO_SLOTS
-  = 0`). The head, epigraph, subtitle and sinkage come to ~260px of a ~460px
-  column at 1440x900 and one ledger needs ~150 of what is left, so an entry
-  there would sit marooned while the recto carried three. The verso is a
-  half-title facing the first page of the register, and it takes the plate.
-- **Its rows are floored at `min-content`, not at 0.** The catalogue can use
-  `minmax(0, 1fr)` because its pages are always full; the register's are not,
-  and on a 390x844 portrait page the shrinking rows printed PLATE I's `STACK`
-  row across PLATE II's rule. Overflow is clipped by the face and loses a line;
-  overprinting is two records on one line, which is not a page at all.
-- **The rule belongs to the entry, not to the grid row.** A `border-t` on the
-  row draws at the top of a full-height cell — measured 99px above the entry it
-  was ruling off, which reads as a stray line.
-- **The register's opener drops its plate below `lg`.** Portrait collapses the
-  spread onto one page, so the half-title and the first two records share 844px
-  and do not fit. The plate is the only thing there carrying no information.
+- **The four projects are 02's first four services again**, in the brief's own
+  words, and that is the repetition the register was built to remove. It is
+  survivable only because the two chapters are now set nothing like each other
+  and because every entry here carries `Nivlak Lab · Concept` where 02's are
+  offers. Give any of these four a specific identity — a name, a thing that
+  exists — and the overlap goes. It is recorded above the chapter in
+  `book-pages.content.ts` so that nobody has to rediscover it.
+- **`status` is required, and the page says it three times.** None of these is
+  delivered client work. It prints on the category line at the category's size;
+  the colophon says it again in a sentence; and `cta` says it a third time by
+  being an enquiry rather than the brief's "VIEW PROJECT →" — there is nothing
+  to view, no route exists, and inventing one would mean inventing the results
+  to put on it. A large photograph of an interface is believed the moment it is
+  seen, which is why the label is not left to do the work alone.
+- **The colophon changes PAGE below 480px of viewport height.** Probed at
+  844x390: the sheet measures 475px in a 390px viewport — it is sized to the
+  photographed page, which at that aspect is taller than the window — so it
+  hangs 40px off the top and 45px off the bottom and the section clips both.
+  That measurement is the reason for three separate rules in this file; it is
+  written down here because this is where it first cost something. The recto
+  there runs index + plate + category + title + metadata + action and lands the
+  colophon at y=379, inside the clipped band. The
+  verso at that size is carrying a head, an epigraph and a subtitle in 390px
+  and has the room, because portrait has already dropped its engraving. It is
+  printed in both places and shown in one; `display:none` keeps the other out
+  of the accessibility tree. The line saying these are studies is the last
+  thing in the chapter that may be dropped for space, so it moves rather than
+  disappears.
+- **The description is the only thing that goes below `lg`-height**, and only
+  below 480px. Everything that is a *fact* — category, status, services,
+  platform — stays at every size; the sentence that goes is the one the plate
+  and the headline have already said.
+- **All four plates are in the markup and three are transparent**, sharing one
+  grid cell, so the 16:9 box is fixed from the first paint and nothing below it
+  moves on a swap. Rendering only the current one would mean a decode per
+  click — a blank frame in the window, which is the one thing a window may not
+  do. The first is `loading="eager"`; the other three are behind a click that
+  has not happened.
+- **The index is horizontal and 05's is a column, on purpose.** They are one
+  spread apart and share a mechanism (see `bindWindow` below). Two adjacent
+  chapters that both put a numbered vertical list on the verso and a window on
+  the recto stop reading as two chapters — the same failure that collapsed 04
+  into 02 when both were catalogues. Here the index is a running head above its
+  own plate, on the recto, and the verso is a plain half-title.
+- **The epigraph is not "a studio is what it has built".** It was, when one of
+  the five entries was a delivered build. With four concepts it would be the
+  page arguing against its own colophon two inches away.
+
+**05 is a volvelle, and that is why a page in this book is allowed to change
+without turning.** Its six perspectives are not six pages: they are six answers
+to one question, and a reader wants to compare them rather than read through
+them. Six spreads would have been six page turns to get back to the one you
+wanted. A volvelle — the rotating paper disc bound into books since the
+thirteenth century — is the printed precedent for a page that shows one of
+several states in a fixed window, and it is the only device in the book that
+moves without the scroll moving it. It replaced an engraved plate of a fractal
+antenna that had nothing to do with the chapter.
+
+Consequences worth knowing before touching it:
+
+- **The index is on the verso and the window is on the recto, which are
+  different sheets.** A verso is the back of the sheet before it, so the six
+  buttons and the six panels they drive sit in sibling subtrees with nothing
+  above them to hold state. `<Book>` therefore queries from the DOCUMENT, not
+  from the section, and sets every copy. There are three copies of the index —
+  the verso, the hidden portrait duplicate inside `data-facing-inline`, and the
+  reduced-motion column — and keeping them all in step is simpler than deciding
+  which one is live. Arrow keys move focus within the index's own
+  `aria-label` scope so it never jumps to the hidden duplicate.
+- **`bindWindow(group, landmark)` in `book.tsx` drives both this and 04.** One
+  factory called twice — `("project", "Projects")` and
+  `("perspective", "Perspectives")` — because the mechanism is identical and
+  the settings are not. It reads `[data-<group>]` for the index and both
+  `[data-<group>-panel]` (copy, which leaves the accessibility tree when it is
+  not showing) and `[data-<group>-plate]` (pictures, which do not: their alt
+  text is already reachable only through the current panel, and an
+  `aria-hidden` `<img>` mid-fade reads as a flicker to some AT). Adding a third
+  window is one more call, not another handler.
+- **All six panels are in the markup and five are transparent.** They share one
+  grid cell, so the window is as tall as the longest thesis from the first
+  paint and does not resize on a click. `opacity` is safe here and nowhere near
+  a sheet: a panel is inside a face, which its own clip has already flattened.
+  The five that are off are `aria-hidden` and `pointer-events-none`.
+- **This chapter has no tailpiece**, and the guard in `ServicesPage` says so
+  (`&& !perspective`). An ornament under a window that is about to change is
+  signing off a page that has not finished.
+- **The panel takes extra sinkage below 480px of viewport HEIGHT.** At 844x390
+  the page's top 40px is off-screen (see 04's colophon note above) and the
+  page's own 8% sinkage resolves against WIDTH to 33px, which does not clear
+  it. Every other recto leads with type, whose line box carries leading above
+  the cap and hides the cut; this one leads with a struck emblem that starts
+  flush at the top of its box, and the chip's pins came off. Hiding the emblem
+  only moves the cut onto the kicker.
 
 ### Rules that are not obvious from the code
 
@@ -243,11 +347,12 @@ Consequences worth knowing before touching it:
   why that rule earns its keep rather than merely being a convention. Its plate
   labels read `PLATE IV`, not the `FIG. 04` the brief asked for: an arabic 04
   printed inside chapter 03 reads as a pointer to chapter 04, which is one tab
-  away in the thumb index and is a real chapter. The engraved `Fig. 1`–`Fig. 4`
+  away in the thumb index and is a real chapter. The engraved `Fig. 1`–`Fig. 3`
   are a separate series — diagrams, not photographs — and stay sentence-case.
   03's own engraving was retired when it gained six photographs (the reason 02
-  has none), which closed the gap behind it: 04, 05 and 07 are now Fig. 2, 3
-  and 4.
+  has none), and 05's went with the fractal antenna when 05 became the
+  perspectives, which closed the gap behind them twice: the three engravings
+  left — 01, 04 and 07 — are Fig. 1, 2 and 3.
 - **Geometry comes from the camera, never from CSS.** Sheets sit on the real
   gutter because `spreadAt()` runs the same arithmetic the painter runs. A
   hardcoded `50%` will drift apart from the photograph on resize.
@@ -328,6 +433,29 @@ Consequences worth knowing before touching it:
   viewport edge.
 
 ### Rebuilding the frames
+
+`tools/build-work-plates.sh` turns the four interface mockups into the plates on
+04's stage. Two things are wrong with the sources and only one
+is cosmetic. They arrive as marketing compositions — a wordmark, a paragraph of
+body copy, a feature list, and on one of them a set of design annotations
+printed into the pixels — so each is cropped to its interface panel. And they
+are populated with **invented clients and invented revenue**: named companies
+against amounts paid, MRR, churn. Chapter 04's whole argument is that a reader
+can tell a study from a build, and a picture of a named client paying an invoice
+printed beside an entry that says CONCEPT does not read as a contradiction — the
+picture wins and the label becomes decoration. Those regions are blurred, under one rule the header
+states: **blur anything that names a party or states money; keep counts, hours,
+percentages and unlabelled charts.** Money hides in axis labels — both revenue
+charts label theirs in lakhs and both needed a box of their own.
+
+The 560px output used to be the backstop that made the redaction true rather
+than merely covered. It is not any more: a full-measure stage needs 1200px
+against crops of 1100-1434, so the resize is about 1:1 and destroys nothing.
+**The blur is now the whole redaction**, which is why every box has to be proved
+by looking at the OUTPUT at 100%, not by reading the list. Read the header
+before changing a crop or a box; the first run measured the boxes against the
+crop instead of the source and put a smear over a chart while leaving every
+client name legible.
 
 `tools/build-process-plates.sh` turns the six process photographs into the
 plates of chapter 03. They arrive as finished pictures with no ground to key,

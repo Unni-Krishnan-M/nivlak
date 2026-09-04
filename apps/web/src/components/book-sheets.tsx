@@ -645,11 +645,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
         />
       );
     }
-    return isArchive(carried) ? (
-      <ArchiveEntries services={carried} from={from} />
-    ) : (
-      <ServiceEntries services={carried} from={from} />
-    );
+    return <ServiceEntries services={carried} from={from} />;
   }
 
   // A chapter opening that is also a catalogue page. The head and the entries
@@ -686,6 +682,34 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
         </p>
       ) : null}
 
+      {/* The chapter's qualification, on the half-title -- but ONLY below 480px
+          of viewport height, where its twin at the foot of the stage cannot
+          fit. Measured at 844x390: the recto there runs index 26 + plate 172 +
+          category, title, metadata and action, and lands the colophon at y=379
+          in a window whose bottom 45px are already off-screen. The verso at the
+          same size is carrying a head, an epigraph and a subtitle in 390px and
+          has the room, because its engraving has already gone (portrait
+          collapses the spread and the plate is the one thing there carrying no
+          information).
+
+          The line saying these four are studies is the last thing in this
+          chapter that may be dropped for space, which is why it moves pages
+          rather than disappearing. */}
+      {isProjects(page.services) && (page as BookPage).colophon ? (
+        <div
+          data-ink
+          className="mt-[1.6em] hidden [@media(max-height:480px)]:block"
+        >
+          <span
+            aria-hidden
+            className="mb-[0.9em] block h-px w-[26%] bg-white/15"
+          />
+          <p className="text-[clamp(0.55rem,0.75vw,0.68rem)] leading-relaxed text-slate-400/60">
+            {(page as BookPage).colophon}
+          </p>
+        </div>
+      ) : null}
+
       {intro ? (
         <p
           data-ink
@@ -704,6 +728,14 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       ) : null}
 
       {figure ? <Figure figure={figure} /> : null}
+
+      {/* The index of perspectives. It reads page.services rather than
+          facing.services because the run belongs to the CHAPTER and both
+          halves of this spread need all six of it -- the verso to list them,
+          the recto to hold a window on each. */}
+      {isPerspective(page.services) ? (
+        <PerspectiveIndex services={page.services ?? []} />
+      ) : null}
 
       {/* The chapter's own contents, on its half-title. A plate section is the
           one setting that needs one: its stages are a SEQUENCE and a reader
@@ -742,13 +774,12 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       ) : null}
 
       {page.facing.plate ? (
-        isArchive(page.services) ? (
-          // Portrait collapses the spread onto ONE full-bleed page, so the
-          // register's half-title and the first two records have to share
-          // 844px -- and they do not: the head, the epigraph and the subtitle
-          // come to ~195px, the plate and its caption to ~210, and two ledgers
-          // need ~360. The plate is the only thing there carrying no
-          // information a reader needs, so it is the one that goes.
+        isProjects(page.services) ? (
+          // Portrait collapses the spread onto ONE full-bleed page, so 04's
+          // half-title has to share 844px with the whole stage -- the index,
+          // a 16:9 plate and its letterpress -- and they do not fit. The
+          // engraving is the only thing there carrying no information a reader
+          // needs, so it is the one that goes.
           //
           // lg:contents rather than lg:block: the figure hangs off the foot of
           // the page with mt-auto, which only works while it is a child of the
@@ -849,22 +880,6 @@ function LeadService({ service }: { service: PageService }) {
  */
 function isIllustrated(services: PageService[] | undefined) {
   return Boolean(services?.some((service) => service.image));
-}
-
-/**
- * Does this run set as an ARCHIVE -- a register of things made -- rather than
- * as a catalogue of things offered?
- *
- * Asked of the run, like isIllustrated and for the same reason: the answer
- * decides the setting for the whole chapter, and two settings down one page
- * read as two lists stacked. What separates them is not decoration. A
- * catalogue entry names a capability and is true by assertion; a register
- * entry is a record of one build, so it carries the status that says whether
- * it was built -- the first thing a reader wants to know about a portfolio and
- * the thing a portfolio most often has nowhere to say.
- */
-function isArchive(services: PageService[] | undefined) {
-  return Boolean(services?.some((service) => service.record));
 }
 
 /**
@@ -1453,153 +1468,392 @@ function ChapterTailpiece({
 }
 
 /**
- * One entry in the register: a ruled ledger, not a card.
+ * Is this run a set of PERSPECTIVES -- opinions the reader picks between --
+ * rather than a catalogue, a register or a plate section?
  *
- * WHY NOT THE CATALOGUE SETTING, WHICH ALREADY EXISTS
- *
- * Because 04 used to BE the catalogue setting, and that was the bug. It read
- * Web Applications / AI Platforms / SaaS Products / Mobile Apps / Brand
- * Experiences -- 02's five entries, one spread later, with the photographs and
- * the sentences taken off. Two chapters in the same setting saying the same
- * five words is how the repetition stayed invisible for as long as it did.
- *
- * A register is ruled, labelled, and asks the same three questions of every
- * entry, so the reader COMPARES entries instead of reading them one at a time.
- * That is the difference between a portfolio and an archive, and it is carried
- * by the setting rather than by the copy.
- *
- * WHY THE RULE IS BACK, HAVING BEEN TAKEN OFF THE CATALOGUE
- *
- * ServiceEntry drops its rules because a page already carrying five
- * photographs does not need ruling as well -- the pictures were the strongest
- * thing there and the lines competed with them. There are no photographs here.
- * The rule is what makes a row of facts a row, and without it three labelled
- * pairs under a title are just a paragraph that has been broken oddly.
+ * Asked of the run like the other three, and asked before the engraved
+ * fallback, which is where a chapter with no photographs and no ledgers would
+ * otherwise land. 05 is still that chapter; what changed is that its entries
+ * now hold a view, and a view wants a window rather than a grid cell.
  */
-function ArchiveEntry({
-  service,
-  index,
-}: {
-  service: PageService;
-  index: number;
-}) {
-  const record = service.record;
-  if (!record) return null;
+function isPerspective(services: PageService[] | undefined) {
+  return Boolean(services?.some((service) => service.perspective));
+}
+
+/**
+ * The index of perspectives, printed on the verso.
+ *
+ * Six buttons, each a numeral over a notch cut into a rule -- the thumb
+ * index's device again, and the stage index's on 03, because all three are
+ * answering "which of these am I looking at" and a book that invents a third
+ * answer to that has stopped being one book.
+ *
+ * What is different here is what a click DOES. Everywhere else in this
+ * monograph a click turns to a page; here the page stays and its right-hand
+ * half changes. <Book> owns that, as it owns every other click: these carry
+ * data-perspective and nothing more, because the element they change is on the
+ * OTHER SHEET -- a spread's verso is the back of the sheet before it -- and
+ * nothing on this side of the gutter can reach across to it.
+ */
+function PerspectiveIndex({ services }: { services: PageService[] }) {
   return (
-    // Two elements, and the inner one is why. The row is a full-height grid
-    // cell and the entry is centred in it, so a rule on the OUTER box draws at
-    // the top of the cell -- measured 99px above the entry it was ruling off,
-    // which reads as a stray line rather than as the head of a record. The
-    // rule belongs to the entry, so it goes on the box the entry is in.
-    <div data-ink className="flex min-h-0 flex-col justify-center">
-      {/* Tighter below lg, and it is not taste. A landscape phone gives the
-          page 390px of height against a desktop half's ~620, and two ledgers
-          set at desktop rhythm overran it by ~50px -- the last record lost the
-          foot of its final row to the face's clip. Every value here is the
-          desktop one scaled back by about a third; the type is untouched. */}
-      <div className="border-t border-white/12 pt-[0.55em] lg:pt-[0.9em]">
-        {/* The head of the entry: its number at the fore-edge margin and its
-          year at the other, the way a register rules a line. */}
-        <div className="flex items-baseline justify-between gap-[1em]">
-          <p className="min-w-0 text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/60">
-            PLATE {roman(index + 1)}
-            {record.series ? (
-              <span className="text-slate-400/40">
-                {" · "}
-                {record.series.toUpperCase()}
-              </span>
+    <nav
+      data-ink
+      aria-label="Perspectives"
+      className="mt-[1.6em] border-t border-white/18"
+    >
+      <ul>
+        {services.map((service, i) => {
+          const number = String(i + 1).padStart(2, "0");
+          return (
+            <li key={service.title}>
+              <button
+                type="button"
+                data-perspective={i}
+                // The opening state, set in the markup rather than by script:
+                // the page has to be right in the HTML that arrives, and the
+                // recto's first panel is printed current for the same reason.
+                data-current={i === 0 ? "true" : "false"}
+                aria-current={i === 0 ? "true" : undefined}
+                className="group flex w-full cursor-pointer items-baseline gap-[0.9em] border-b border-white/10 py-[0.42em] text-start transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 lg:py-[0.62em]"
+              >
+                <span className="text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.26em] text-slate-400/55 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white">
+                  {number}
+                </span>
+                <span className="text-[clamp(0.66rem,0.92vw,0.84rem)] tracking-[0.16em] text-slate-300/70 transition-colors duration-300 group-hover:text-white group-data-[current=true]:text-white">
+                  {service.title.toUpperCase()}
+                </span>
+                {/* The notch, cut deeper where you are. Not colour alone:
+                    the rule's length is the second signal, for a reader who
+                    cannot tell the two greys apart. */}
+                <span
+                  aria-hidden
+                  className="ms-auto block h-px w-[14px] bg-white/20 transition-all duration-300 group-hover:w-[22px] group-hover:bg-white/45 group-data-[current=true]:w-[34px] group-data-[current=true]:bg-white/75"
+                />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
+/**
+ * The window on the recto: every perspective, one visible.
+ *
+ * WHY ALL SIX ARE IN THE MARKUP AND FIVE ARE TRANSPARENT
+ *
+ * They share one grid cell, so the box is as tall as the longest of them from
+ * the first paint and stays that height whichever is showing. Rendering only
+ * the current one would resize the window on every click -- the thesis lines
+ * run to two lines or three -- and a window that changes size is not a window.
+ *
+ * It also means the sheets can stay what they are: static markup that <Book>
+ * drives by data attribute. Nothing here holds state.
+ *
+ * WHY opacity IS SAFE HERE AND IS NOT ON A SHEET
+ *
+ * Per CSS Transforms 2 a fractional opacity forces transform-style: flat, which
+ * is why nothing in this file ever fades a sheet -- it would drop the faces out
+ * of the 3D context and stop them being separate planes. These panels are
+ * inside a face, which its own overflow clip has already flattened, so there is
+ * no 3D left to lose. Same reason the first page's ink may fade.
+ */
+function PerspectivePanels({ services }: { services: PageService[] }) {
+  return (
+    // The extra sinkage below 480px of viewport HEIGHT is not taste. At
+    // 844x390 the sheet measures 475px in a 390px window -- it is sized to the
+    // photographed page, which at that aspect is taller than the screen -- so
+    // the page's top 40px is off-screen, and its own 8% sinkage resolves
+    // against the page WIDTH to 33px, which does not clear it. Every other
+    // recto in the book leads with type, whose line box carries leading above
+    // the cap and hides the cut; this one leads with a struck emblem that
+    // starts flush at the top of its box, and the chip's pins came off. 8% of
+    // the panel is 24px, which puts the emblem at +17 and its foot at 227 in a
+    // 390px window -- clear at both ends. Hiding the emblem instead only moves
+    // the cut onto the kicker.
+    <div className="grid min-h-0 [@media(max-height:480px)]:pt-[8%]">
+      {services.map((service, i) => {
+        const perspective = service.perspective;
+        if (!perspective) return null;
+        const current = i === 0;
+        return (
+          <article
+            key={service.title}
+            data-ink
+            data-perspective-panel={i}
+            data-current={current ? "true" : "false"}
+            aria-hidden={current ? undefined : "true"}
+            // Every panel in the same cell, so the window is sized by the
+            // longest and never resizes.
+            className="[grid-area:1/1] transition-opacity duration-300 ease-out data-[current=false]:pointer-events-none data-[current=false]:opacity-0 motion-reduce:transition-none"
+          >
+            {/* The visual. A struck emblem rather than a photograph: no
+                pictures were supplied for this chapter, and the brief that
+                asked for one also asked for no stock photography -- which is
+                the same answer. The box is fixed at every size, so swapping
+                perspectives moves nothing below it. */}
+            {service.emblem ? (
+              // Sized by WIDTH, like every other Emblem in this file. The
+              // component puts the className on a div and the svg inside it is
+              // `h-auto w-full`, so a height on the outside has nothing to
+              // resolve against: `h-full w-auto` made the box take the flex
+              // row's width instead and the cut printed straight through the
+              // thesis at ~180px. Every emblem shares a 64x64 viewBox, so one
+              // width is also one square, and the panels line up under it.
+              <Emblem
+                name={service.emblem}
+                className="w-[clamp(52px,6.4vw,88px)] text-slate-200"
+              />
             ) : null}
-          </p>
-          <p className="shrink-0 text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.24em] text-slate-400/45 tabular-nums">
-            {record.year}
-          </p>
-        </div>
 
-        <div className="mt-[0.3em] flex items-center gap-[0.6em] lg:mt-[0.5em] lg:gap-[0.7em]">
-          {service.emblem ? (
-            <Emblem
-              name={service.emblem}
-              className="w-[clamp(24px,2.7vw,38px)] shrink-0 text-slate-300"
-            />
-          ) : null}
-          <div className="min-w-0">
-            <h3 className="font-[family-name:var(--font-display)] text-[clamp(0.95rem,1.4vw,1.32rem)] leading-tight font-light text-balance text-white">
-              {service.title}
-            </h3>
-            {/* Discipline and status on one line, at one size. Setting the
-              status smaller, or in a colour, would make it the thing a reader
-              skips -- which is the opposite of why it is printed. */}
-            <p className="mt-[0.18em] text-[clamp(0.47rem,0.63vw,0.56rem)] tracking-[0.26em] text-slate-400/70 lg:mt-[0.3em]">
-              {record.discipline.toUpperCase()}
-              {" · "}
-              {record.status.toUpperCase()}
+            <p className="mt-[1.1em] text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/70">
+              {service.title.toUpperCase()}
             </p>
-          </div>
-        </div>
-
-        {/* Labels beside their values above lg and above them below it. A fixed
-          label column is what aligns the values down the page, and 7.4vw is
-          the width of the longest label the chapter uses; on a portrait phone
-          the whole spread is one 390px page and that column would take a fifth
-          of it, so the pairs stack instead of the values wrapping to nothing. */}
-        <dl className="mt-[0.45em] flex flex-col gap-y-[0.22em] text-[clamp(0.6rem,0.83vw,0.76rem)] lg:mt-[0.7em] lg:gap-y-[0.42em]">
-          {record.rows.map((row) => (
-            <div
-              key={row.label}
-              className="flex flex-col lg:flex-row lg:gap-x-[1em]"
-            >
-              <dt className="text-[0.8em] leading-[1.5] tracking-[0.2em] text-slate-400/60 uppercase lg:w-[clamp(4.4rem,7.4vw,6.8rem)] lg:shrink-0 lg:leading-[1.7]">
-                {row.label}
-              </dt>
-              <dd className="min-w-0 leading-[1.45] text-slate-300/80 lg:leading-[1.55]">
-                {row.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </div>
+            <h3 className="mt-[0.5em] font-[family-name:var(--font-display)] text-[clamp(1.35rem,2.6vw,2.5rem)] leading-[1.06] font-light text-balance text-white">
+              {perspective.thesis}
+            </h3>
+            <p className="mt-[0.9em] max-w-[42ch] border-t border-white/12 pt-[0.9em] text-[clamp(0.72rem,1vw,0.92rem)] leading-relaxed text-slate-300/80">
+              {service.body}
+            </p>
+          </article>
+        );
+      })}
     </div>
   );
 }
 
 /**
- * A page of the register.
+ * Does this run set as the PROJECT STAGE -- one 16:9 plate that changes --
+ * rather than as a catalogue of things offered?
  *
- * The rows are the entries ON THIS PAGE, not a fixed ARCHIVE_SLOTS of them,
- * and that is the one place this setting departs from the catalogue's. The
- * catalogue can divide every page into the same fixed number of rows because
- * its pages are always full, and that is what puts entry II on the verso onto
- * entry V's line across the gutter. The register's pages are not full: five
- * entries fall 2 / 2 / 1 across its two spreads, so a fixed template would
- * leave a third of the last recto blank beneath a stretched entry. Sizing the
- * rows to the count fills every page, and the tailpiece takes the space on the
- * last one that would otherwise have been the hole.
+ * Asked of the run and not of each entry, like the other three and for the
+ * same reason: the answer is the setting for the whole chapter.
+ *
+ * It has to be asked BEFORE isIllustrated, which is now the third setting to
+ * need that. A project carries `image`, so the catalogue would claim it and
+ * print four photographs at 42% of a text column, three to a page, down two
+ * spreads -- which is precisely the layout this setting exists to replace. The
+ * ordering is not tidiness deferred; both questions are genuinely true of the
+ * data and the one asked first decides the page.
  */
-function ArchiveEntries({
+function isProjects(services: PageService[] | undefined) {
+  return Boolean(services?.some((service) => service.project));
+}
+
+/**
+ * The WORK stage: a selectable index, one 16:9 plate, and the facts under it.
+ *
+ * WHY ONE WINDOW AND NOT FOUR ENTRIES
+ *
+ * Because the plate is the entry. These four are pictures of software -- a
+ * dashboard, a workflow graph, an analytics screen, three phone screens -- and
+ * everything that makes them worth printing is small: panel structure, table
+ * rows, the direction a graph is read in. At the ~150px the register gave them
+ * an interface is a texture. At the full measure of a recto it is an interface.
+ *
+ * Four of those down a page is also four times the height for one idea, which
+ * is the thing the brief asked to avoid and the reason this chapter went from
+ * two spreads to one.
+ *
+ * WHY ALL FOUR PLATES ARE IN THE MARKUP AND THREE ARE TRANSPARENT
+ *
+ * The same reason the volvelle on 05 keeps all six panels: they share one grid
+ * cell, so the window is one fixed 16:9 box from the first paint and nothing
+ * below it moves when the plate changes. Rendering only the current one would
+ * mean a decode on every click -- a blank frame in the window, which is the one
+ * thing a window must never do.
+ *
+ * `opacity` is safe here and is not on a sheet: these are inside a face, which
+ * its own clip has already flattened. See the note in CLAUDE.md.
+ *
+ * WHY THE INDEX IS HORIZONTAL WHERE 05'S IS A COLUMN
+ *
+ * Partly because the brief draws it that way, and partly because 05 is one
+ * spread later. Two adjacent chapters that both put a numbered vertical list
+ * on the verso and a window on the recto stop reading as two chapters -- the
+ * same failure that made 04 and 02 collapse into each other when both were
+ * catalogues. Here the index is a running head ABOVE its own plate, on the
+ * recto, and the verso is a plain half-title. Nothing about the two spreads
+ * rhymes except that both answer to a click, which is a mechanism and not a
+ * setting.
+ */
+function ProjectStage({
   services,
-  from,
+  colophon,
 }: {
   services: PageService[];
-  from: number;
+  colophon?: string;
 }) {
-  if (!services.length) return null;
+  const entries = services.filter((service) => service.project);
+  if (!entries.length) return null;
   return (
-    <div
-      className="grid min-h-0 flex-1"
-      // min-content, NOT 0, as the floor. With minmax(0, 1fr) a page whose
-      // entries outrun it shrinks the rows instead of overflowing, and the
-      // entries print through each other: on a 390x844 portrait page PLATE I's
-      // STACK row landed across PLATE II's rule and its plate number. Overflow
-      // is clipped by the face and loses the foot of the last entry, which is
-      // a bad page; overprinting is two records on one line, which is not a
-      // page at all.
-      style={{
-        gridTemplateRows: `repeat(${services.length}, minmax(min-content, 1fr))`,
-      }}
-    >
-      {services.map((service, i) => (
-        <ArchiveEntry key={service.title} service={service} index={from + i} />
-      ))}
+    // flex-1 so the colophon's mt-auto has a page to drop to -- EXCEPT below
+    // 480px of viewport height, where the foot of the page is not on screen.
+    // At 844x390 the sheet measures 475px in a 390px window (it is sized to
+    // the photographed page, which at that aspect is taller than the screen)
+    // and hangs 45px off the bottom. Filling the page there would push the
+    // line saying these are studies into the part nobody can see, which is the
+    // same trap the register fell into on the same viewport.
+    <div className="flex min-h-0 flex-col lg:flex-1 [@media(max-height:480px)]:flex-none [@media(max-height:480px)]:pt-[4%]">
+      {/* The index. `nav` with its own name: <BookIndex> and the contents list
+          on 03 are both landmarks too, and three landmarks announced the same
+          way go to three different places. */}
+      <nav
+        aria-label="Projects"
+        className="flex shrink-0 items-baseline gap-[clamp(0.9em,2.4vw,2.2em)] border-b border-white/15 pb-[0.7em]"
+      >
+        {entries.map((service, i) => (
+          <button
+            key={service.title}
+            type="button"
+            data-project={i}
+            data-current={i === 0 ? "true" : "false"}
+            aria-current={i === 0 ? "true" : undefined}
+            className="group flex items-baseline gap-[0.5em] text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:text-white motion-reduce:transition-none"
+          >
+            <span className="text-[clamp(0.44rem,0.6vw,0.55rem)] tracking-[0.24em] tabular-nums opacity-70">
+              {service.project!.number}
+            </span>
+            <span className="text-[clamp(0.52rem,0.72vw,0.66rem)] tracking-[0.26em] uppercase">
+              {service.project!.label}
+            </span>
+            {/* The active mark. <BookIndex>'s own device and the volvelle's --
+                a rule that grows under the current item -- so the book answers
+                "which one is this" the same way at every level. Focus is the
+                same rule at half strength, so a keyboard reader can see where
+                they are before they commit. */}
+            <span
+              aria-hidden
+              className="h-px w-0 self-center bg-current transition-all duration-200 group-focus-visible:w-[0.9em] group-data-[current=true]:w-[1.4em] motion-reduce:transition-none"
+            />
+          </button>
+        ))}
+      </nav>
+
+      {/* The window. aspect-ratio reserves the box before a byte of image has
+          landed, so nothing below it moves on load or on a swap. */}
+      <div
+        className="relative mt-[1em] grid w-full shrink-0 overflow-hidden border border-white/12"
+        style={{ aspectRatio: "16 / 9" }}
+      >
+        {entries.map((service, i) => (
+          <img
+            key={service.title}
+            data-project-plate={i}
+            data-current={i === 0 ? "true" : "false"}
+            src={service.image!.src}
+            alt={service.image!.alt}
+            // The first plate is the one on screen when the spread arrives, so
+            // it is the only one worth fetching eagerly; the other three are
+            // behind a click that has not happened.
+            loading={i === 0 ? "eager" : "lazy"}
+            decoding="async"
+            draggable={false}
+            className="[grid-area:1/1] h-full w-full object-cover object-center transition-opacity duration-300 ease-out select-none data-[current=false]:opacity-0 motion-reduce:transition-none"
+          />
+        ))}
+      </div>
+
+      {/* The letterpress. One panel per project in one cell, like the plates
+          above, so the tallest description sets the height once and the CTA
+          never moves under the pointer. */}
+      <div className="mt-[1.1em] grid min-h-0">
+        {entries.map((service, i) => {
+          const project = service.project!;
+          return (
+            <div
+              key={service.title}
+              data-project-panel={i}
+              data-current={i === 0 ? "true" : "false"}
+              aria-hidden={i === 0 ? undefined : "true"}
+              className="flex [grid-area:1/1] flex-col transition-opacity duration-300 ease-out data-[current=false]:pointer-events-none data-[current=false]:opacity-0 motion-reduce:transition-none"
+            >
+              {/* Category and status on ONE line, at ONE size. The status is
+                  the load-bearing half -- none of these is client work -- and
+                  setting it smaller or lighter than the category is how a
+                  portfolio says it without saying it. */}
+              <p className="text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.3em] text-slate-400/75 uppercase">
+                {project.category}
+                <span aria-hidden className="mx-[0.9em] text-slate-500/60">
+                  ·
+                </span>
+                {project.status}
+              </p>
+              <h3 className="mt-[0.45em] font-[family-name:var(--font-display)] text-[clamp(1.1rem,2vw,1.85rem)] leading-[1.1] font-light text-balance text-white">
+                {service.title}
+              </h3>
+              {/* The description goes below 480px of viewport HEIGHT and
+                  nowhere else. At 844x390 the page has ~390px against a
+                  desktop half's ~620 and the plate alone takes 172 of it; the
+                  three lines this sets to are what the plate and the headline
+                  have already said. Everything that is a FACT -- category,
+                  status, services, platform -- stays at every size. */}
+              <p className="mt-[0.7em] max-w-[46ch] text-[clamp(0.7rem,0.95vw,0.86rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
+                {service.body}
+              </p>
+              <dl className="mt-[0.9em] grid grid-cols-[auto_1fr] gap-x-[1.4em] gap-y-[0.35em] border-t border-white/12 pt-[0.8em] text-[clamp(0.56rem,0.76vw,0.68rem)] leading-snug">
+                <dt className="tracking-[0.2em] text-slate-500/80 uppercase">
+                  Services
+                </dt>
+                <dd className="text-slate-300/85">{project.services}</dd>
+                <dt className="tracking-[0.2em] text-slate-500/80 uppercase">
+                  Platform
+                </dt>
+                <dd className="text-slate-300/85">{project.platform}</dd>
+              </dl>
+              {/* The action, set the way 03's tailpiece sets its two: tracked
+                  capitals over a rule with an arrow, which is what this book
+                  has instead of a button. */}
+              <button
+                type="button"
+                data-nav-item
+                data-index={project.cta.chapter}
+                className="group mt-[1.1em] flex w-fit items-center gap-[0.7em] border-b border-white/25 pb-[0.4em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.28em] text-slate-200 uppercase transition-colors duration-200 outline-none hover:border-white/60 hover:text-white focus-visible:border-white focus-visible:text-white motion-reduce:transition-none"
+              >
+                {project.cta.label}
+                <span
+                  aria-hidden
+                  className="transition-transform duration-200 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
+                >
+                  →
+                </span>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* The chapter's qualification, at the foot of the page the four plates
+          are on. It rode under the ornament at the end of the register, which
+          is where a colophon goes -- but the stage has no end page, and the
+          half-title opposite is already carrying an engraving that ends in its
+          own caption and credit. Two footnotes at the foot of one verso
+          printed straight through each other.
+
+          Under the plates is the better place regardless: this is a note about
+          what the pictures are, and a large photograph of an interface is
+          believed the moment it is seen. mt-auto drops it to the foot however
+          tall the panel above turns out to be. */}
+      {/* Hidden below 480px of viewport HEIGHT, where the twin of this block
+          on the half-title takes over -- see the note there. It is printed in
+          both places and shown in one; display:none keeps the other out of the
+          accessibility tree, so nothing is announced twice. */}
+      {colophon ? (
+        <div
+          data-ink
+          className="mt-auto pt-[1.6em] [@media(max-height:480px)]:hidden"
+        >
+          <span
+            aria-hidden
+            className="mb-[0.9em] block h-px w-[26%] bg-white/15"
+          />
+          <p className="text-[clamp(0.55rem,0.75vw,0.68rem)] leading-relaxed text-slate-400/60">
+            {colophon}
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1791,13 +2045,22 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
   const from =
     (spread.servicesFrom ?? 0) + (page.facing?.services?.length ?? 0);
   const illustrated = isIllustrated(page.services);
-  const archive = isArchive(page.services);
+  const projects = isProjects(page.services);
+  const perspective = isPerspective(page.services);
   return (
     <>
-      {archive ? (
-        <ArchiveEntries services={page.services} from={from} />
+      {/* The picture-bearing settings are asked FIRST and isIllustrated LAST.
+          It answers true for the project stage as well, and would print four
+          16:9 plates as thumbnails beside sentences. */}
+      {projects ? (
+        <ProjectStage
+          services={page.services}
+          colophon={(page as BookPage).colophon}
+        />
       ) : illustrated ? (
         <ServiceEntries services={page.services} from={from} />
+      ) : perspective ? (
+        <PerspectivePanels services={page.services} />
       ) : (
         <ServiceGrid services={page.services} from={from} />
       )}
@@ -1806,27 +2069,25 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
           the run carries on over the page, and an ornament there would sign
           off a chapter that has not finished.
 
-          Not on the illustrated pages: their entries fill a grid that is
-          the whole height of the page, so there is no foot left to put an
-          ornament in. */}
-      {!illustrated && (spread.lastOfChapter ?? true) ? (
-        // shrink-0 on the register: its grid is flex-1 and would otherwise
-        // take the ornament's height back off it, pushing the last entry up
-        // and re-opening the gap this block is standing in.
-        <div data-ink className={archive ? "mt-[1.4em] shrink-0" : "mt-[2em]"}>
+          Not on the CATALOGUE's pages: its entries fill a grid that is the
+          whole height of the page, so there is no foot left to put an ornament
+          in. The register's pages are the opposite -- sized to their count,
+          with the foot deliberately left for this.
+
+          Ask what SETTING a run is in, never whether an entry happens to
+          have an image. `!illustrated` alone read like that test for as long
+          as only 02 had pictures, and has now been wrong twice: the register's
+          records carried plates, and the stage's projects carry them too.
+          Both times isIllustrated() started answering true and this ornament
+          silently vanished from a chapter that still needed closing. Every
+          picture-bearing setting has to be named here, which is why the list
+          grows rather than the test getting cleverer -- see CLAUDE.md. */}
+      {!illustrated &&
+      !projects &&
+      !perspective &&
+      (spread.lastOfChapter ?? true) ? (
+        <div data-ink className="mt-[2em]">
           <Ornament className="w-[30%] text-slate-300" />
-          {/* The qualification, set where a footnote goes and doing its job.
-              Below the ornament rather than above it because it is a note
-              about the chapter that has just ended, not part of it. */}
-          {archive && page.colophon ? (
-            // Full measure, not max-w-[46ch]. At 0.68rem that capped it to
-            // ~248px of a 450px column, so it set as three short lines whose
-            // last one closed 4px below the page's bottom padding and level
-            // with the drop folio. A footnote is set to the measure.
-            <p className="mt-[0.85em] text-[clamp(0.55rem,0.75vw,0.68rem)] leading-relaxed text-slate-400/60">
-              {page.colophon}
-            </p>
-          ) : null}
         </div>
       ) : null}
     </>

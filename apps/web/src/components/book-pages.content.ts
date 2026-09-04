@@ -63,41 +63,53 @@ export type PageFigure = {
 };
 
 /**
- * The ledger beside an archive entry: one build, stated as facts.
+ * One project on the WORK stage: a plate, the facts under it, and the action
+ * a reader can honestly take next.
  *
- * WHY A RECORD AND NOT MORE PROSE
+ * WHY THE FIELDS ARE FIXED HERE AND WERE NOT ON THE REGISTER THIS REPLACED
  *
- * A catalogue entry is true by assertion -- "we build web applications" is a
- * claim about us. A register entry is a claim about a THING, so it has to
- * carry the facts that let a reader check it and compare it with the entry
- * below: what discipline it belongs to, whether it was actually built, and
- * when. Prose can hold all three and hides them; three fields cannot.
+ * 04 used to be a register -- five ledgers, three ruled rows each, labelled
+ * per entry. That setting answers "which of these exists"; this one answers
+ * "what does the work look like", and the difference is that a stage has ONE
+ * window and every project has to fill the same one. A window whose labels
+ * change with the project is not a window, so the fields are fixed: category,
+ * title, description, services, platform. That is the brief's own set, and it
+ * is the right one for a comparison a reader makes by clicking rather than by
+ * reading down a page.
  *
- * WHY `status` IS A FIELD AND NOT A TONE OF VOICE
+ * WHY `status` SURVIVED THE CHANGE, AND IS REQUIRED
  *
- * Most of this archive is our own studies rather than commissions. A portfolio
- * that lets a concept read as a shipped product is lying quietly, and the way
- * it does it is by never having anywhere to say which is which. This is that
- * place, it is required, and the page prints it at the same size as the
- * discipline so it cannot be skimmed past.
+ * None of these four is delivered client work; they are our own studies. A
+ * portfolio that lets a concept read as a shipped product is lying quietly,
+ * and the way it does it is by never having anywhere to say which is which.
+ * This is that place. It prints on the same line as the category, at the same
+ * size, so it cannot be skimmed past -- and `cta` is the same fact made
+ * operable: see the note on it below.
  */
-export type PageRecord = {
-  /** The series an entry belongs to, if any, printed beside its plate number. */
-  series?: string;
-  /** WEB, AI, SAAS, MOBILE, PRODUCT -- what kind of thing this is. */
-  discipline: string;
-  /** SELECTED BUILD, PROTOTYPE, CONCEPT. Stated, never implied. */
+export type PageProject = {
+  /** 01..04. On the index, and again over the plate. */
+  number: string;
+  /** The index's one word: WEB, AI, SAAS, MOBILE. Short enough for one line. */
+  label: string;
+  /** WEB APPLICATION, AI PLATFORM -- the kicker over the title. */
+  category: string;
+  /** NIVLAK LAB · CONCEPT. Stated, never implied. */
   status: string;
-  year: string;
+  /** Strategy · UX/UI · Engineering · Deployment. */
+  services: string;
+  /** Web, AI Platform, SaaS, Mobile. */
+  platform: string;
   /**
-   * The ruled rows, labelled per entry rather than by a fixed house set.
+   * The action, and the chapter of this book it turns to.
    *
-   * A thing that exists and a study that does not are not answering the same
-   * three questions: "The work" is a record of what was done and would be a
-   * promise on a concept, where the honest third row is what it would take.
-   * Fixing the labels here would have forced one of the two to lie.
+   * The brief asks for "VIEW PROJECT ->" and there is nothing to view: these
+   * are studies, no route exists, and inventing one would mean inventing the
+   * results to put on it -- which the same brief forbids two lines further
+   * down. So the action says what it actually does. It is a per-project field
+   * rather than one house string precisely so that the day one of these gains
+   * something a reader can open, that entry alone can say so.
    */
-  rows: { label: string; value: string }[];
+  cta: { label: string; chapter: number };
 };
 
 /**
@@ -136,7 +148,7 @@ export type PageStage = {
    * the 01-07 of the chapters. That mattered more on this chapter than
    * anywhere else -- "FIG. 04" printed inside chapter 03 reads as a pointer to
    * chapter 04, which is one tab away in the thumb index and is a real
-   * chapter. It also keeps these clear of the engraved Fig. 1-4, which are
+   * chapter. It also keeps these clear of the engraved Fig. 1-3, which are
    * diagrams rather than photographs and are a different series.
    */
   figure: string;
@@ -194,6 +206,10 @@ export type PageService = {
    * on 02 is set from photographs and gives its entries `image` instead, while
    * 05 has no photographs and stays with the engraved emblems. An entry
    * carrying both would print two pictures of the same idea side by side.
+   *
+   * 04 carries no emblems at all now. Its four projects are a photograph
+   * each, set one at a time on a stage that fills the recto, and an emblem
+   * beside one would be a second, smaller picture of the same thing.
    */
   emblem?: EmblemName;
   /** A photographic plate, set beside the entry rather than above it. */
@@ -202,11 +218,17 @@ export type PageService = {
   /** Optional: a plate grid of titles alone is a legitimate setting. */
   body?: string;
   /**
-   * The ledger, on an ARCHIVE entry. Its presence is what puts the whole
-   * chapter into the register setting -- see isArchive in book-sheets.tsx --
+   * The stage's facts, on a PROJECT entry. Its presence is what puts the whole
+   * chapter into the project setting -- see isProjects in book-sheets.tsx --
    * the same way `image` is what puts one into the illustrated setting.
+   *
+   * A project carries `image` too, and for the same reason a stage does: the
+   * plate IS the entry. isProjects is therefore asked before isIllustrated,
+   * or four 16:9 photographs would be cut into thumbnails beside sentences
+   * and stacked down two spreads, which is the layout this setting exists to
+   * replace.
    */
-  record?: PageRecord;
+  project?: PageProject;
   /**
    * The letterpress, on a PLATE-SECTION entry. Its presence is what puts the
    * chapter into the plate setting, the third of the three the data decides
@@ -218,6 +240,43 @@ export type PageService = {
    * description under it rather than as a 42% thumbnail beside a sentence.
    */
   stage?: PageStage;
+  /**
+   * The opinion, on a PERSPECTIVES entry. Its presence is what puts the
+   * chapter into that setting -- one of the four things the data decides,
+   * alongside `image`, `project` and `stage`.
+   *
+   * It does NOT make the chapter paginate: these entries carry no photograph
+   * at all, so expandChapter still hands 05 back as the one
+   * hand-composed spread it was authored as. The setting changes what the two
+   * halves print, not how many there are -- which is the whole point of it
+   * being compact.
+   */
+  perspective?: PagePerspective;
+};
+
+/**
+ * One entry in a run of PERSPECTIVES: an opinion, and the short label the
+ * index calls it by.
+ *
+ * WHY A `thesis` AND NOT JUST THE TITLE THAT WAS THERE
+ *
+ * 05 used to be six category names -- AI & Automation, Technology, Software
+ * Engineering, Design, Business, Future Insights -- each under a sentence
+ * saying it was interested in that category. "Tracking the latest technologies
+ * shaping the digital world" is a description of a topic, not a view of it,
+ * and a chapter called Perspectives whose entries hold no opinion is a
+ * contents page for writing that does not exist.
+ *
+ * The category stays as `title`, because it is how a reader finds the entry.
+ * The thesis is what the entry actually SAYS, and it is a claim someone could
+ * disagree with -- which is the test. It is the largest thing on the page for
+ * the same reason.
+ */
+export type PagePerspective = {
+  /** The short form the index prints: AI, TECHNOLOGY, ENGINEERING. */
+  label: string;
+  /** The opinion itself, set large. A sentence, with a full stop. */
+  thesis: string;
 };
 
 /** One numbered step of a procedure. */
@@ -400,8 +459,8 @@ export const BOOK_PAGES: BookPage[] = [
     // It carries no engraved plate. There is no room for one once the pictures
     // are on the spread, and a Baudot code table beside a screenshot of a
     // dashboard is two answers to the same question. Removing it also closed
-    // the gap in the figure numbering: the engravings on 03, 05 and 07 are now
-    // Fig. 2, 3 and 4, where 03 and 05 were both Fig. 3 before.
+    // the gap in the figure numbering; see the note above 03, which took the
+    // last of it out.
     facing: {
       headline: "What We Build.",
       // Set as an epigraph rather than a subtitle: this page is a chapter
@@ -494,8 +553,9 @@ export const BOOK_PAGES: BookPage[] = [
   // The chapter carries no engraved plate any more. There is no page left for
   // one, and a Baudot code table beside a photograph of a deployment pipeline
   // is two answers to the same question -- the reason 02 dropped its own.
-  // Retiring it closed the gap in the engraved numbering: 04, 05 and 07 are
-  // now Fig. 2, 3 and 4, where they were 3, 4 and 5.
+  // Retiring it, and then 05's when 05 became the perspectives, closed the gap
+  // in the engraved numbering twice over: the three that are left -- 01, 04 and
+  // 07 -- are Fig. 1, 2 and 3, where they were 1, 3 and 5.
   {
     number: "03",
     title: "Approach",
@@ -678,29 +738,59 @@ export const BOOK_PAGES: BookPage[] = [
       },
     },
   },
-  // 04 is the REGISTER, and it is the one chapter whose brief was to stop
-  // repeating another. It used to read Web Applications / AI Platforms / SaaS
-  // Products / Mobile Apps / Brand Experiences -- which is 02's five entries,
-  // one spread later, with the pictures and the sentences taken off. Two
-  // chapters said the same thing and the second said it worse.
+  // 04 is the PROJECT STAGE: four studies, one 16:9 window, and an index that
+  // changes which of them is in it. One spread, not two.
   //
-  // 02 says what we offer. This says what exists. Nothing here is a capability
-  // and every entry is a thing, which is why each one carries a status: one is
-  // built and four are studies, and the difference is printed rather than
-  // implied. The alternative -- five plausible project names with no status on
-  // them -- is what a portfolio does when it has nothing to show, and a reader
-  // who finds out later stops believing the rest of the book.
+  // WHY A STAGE AND NOT THE REGISTER IT REPLACED
+  //
+  // The register set five ledgers down two spreads -- a plate number, a title,
+  // a status line and three ruled rows each -- with the photographs printed at
+  // about 150px beside them. It answered "which of these exists" well and
+  // answered "what does the work look like" not at all, because at 150px an
+  // interface is a texture. These four images are pictures of SOFTWARE: panels,
+  // tables, charts, a workflow read left to right. Being able to see that is
+  // the only reason to print them, and it needs the full measure of a page.
+  //
+  // One window also costs one spread instead of two, which is 67vh of scroll
+  // off the document for a chapter that reads better shorter.
+  //
+  // WHY THE HONESTY DID NOT COME OFF WITH THE LEDGERS
+  //
+  // The register carried the status because a portfolio that lets a concept
+  // read as a shipped product is lying quietly. That is still true on a stage,
+  // and the stage has fewer places to say it -- so `status` prints on the
+  // category line, at the category's size, and the colophon under the index
+  // says it again in a sentence. The action says it a third time: see the note
+  // on PageProject.cta. Nothing here is client work and the page says so three
+  // times, because the picture is large and pictures are believed first.
+  //
+  // WHAT IS STILL WRONG WITH IT, AND IS NOT A BUG IN THIS FILE
+  //
+  // These four entries are 02's first four services -- web, AI, SaaS, mobile --
+  // named again two spreads later. That is the repetition the register was
+  // built to remove and it is back, because the brief asks for these four by
+  // name and in these words. It is survivable only because the two chapters are
+  // now set nothing like each other and because the status line says these are
+  // studies where 02's entries are offers. Give any of these four a specific
+  // identity -- a name, a thing that exists -- and the overlap goes.
   {
     number: "04",
     title: "Work",
     facing: {
       headline: "Ideas Brought to Life.",
       subtitle:
-        "One built, four on the bench. What each one is, and what it takes.",
-      epigraph: "A studio is what it has built, not what it offers.",
-      // The opening verso carries no entries -- see OPENER_ARCHIVE_VERSO_SLOTS
-      // -- so it takes the plate, and a code table is the right one for a
-      // register: it is itself a list of things standing for other things.
+        // Not "the plate opposite". Portrait collapses the spread onto one
+        // sheet and sets the stage BELOW this line rather than across the
+        // gutter from it, so "opposite" is wrong on every phone held upright.
+        "Four studies from the workshop. Choose one; the plate changes with it.",
+      // Not "a studio is what it has built", which is what this chapter said
+      // when one of its five entries was a delivered build. All four are
+      // studies now, and an epigraph arguing that only shipped work counts
+      // would be the page contradicting its own colophon two inches away.
+      epigraph: "Before a thing is built, it is drawn.",
+      // The verso is a half-title and takes the plate. A code table is the
+      // right engraving to face a stage of interfaces: it is itself a picture
+      // of a system, drawn when a system could still be drawn on one sheet.
       plate: {
         src: "/plates/plate-code.webp",
         ratio: "586 / 620",
@@ -709,188 +799,175 @@ export const BOOK_PAGES: BookPage[] = [
       },
     },
     colophon:
-      "Entries marked CONCEPT are our own studies, not client work. They are labelled so you can tell which is which.",
+      "All four are Nivlak Lab studies — our own concepts, built in-house. None is delivered client work, and the line under each plate says so.",
     services: [
       {
-        emblem: "book",
-        title: "This Book",
-        record: {
-          discipline: "Web",
-          status: "Selected build",
-          year: "2026",
-          rows: [
-            {
-              label: "What it is",
-              value:
-                "The site you are reading: a monograph that opens under the scroll, then turns a page at a time.",
-            },
-            {
-              label: "The work",
-              value:
-                "The type and the layout, the pipeline that renders the opening, and the geometry that lays each page onto the photograph.",
-            },
-            {
-              label: "Stack",
-              value: "Next.js · React · GSAP · Tailwind · Turborepo",
-            },
-          ],
+        title: "Digital Platforms, Engineered.",
+        body: "Fast, responsive web applications designed around real users, business goals and scalable technology.",
+        image: {
+          src: "/work/web-application.webp",
+          ratio: "16 / 9",
+          alt: "A project dashboard: a sidebar of projects, tasks, time tracking and invoices, over summary cards, a progress chart and a project list.",
+        },
+        project: {
+          number: "01",
+          label: "Web",
+          category: "Web Application",
+          status: "Nivlak Lab · Concept",
+          services: "Strategy · UX/UI · Engineering · Deployment",
+          platform: "Web",
+          cta: { label: "Enquire about this", chapter: 6 },
         },
       },
       {
-        emblem: "chip",
-        title: "AI Workflow",
-        record: {
-          series: "Nivlak Lab 01",
-          discipline: "AI",
-          status: "Concept",
-          year: "2026",
-          rows: [
-            {
-              label: "What it is",
-              value:
-                "A study in handing repetitive office work to a model without handing over the judgement.",
-            },
-            {
-              label: "The question",
-              value:
-                "Where does a person have to stay in the loop, and how do you make that step quick enough that they keep doing it?",
-            },
-            {
-              label: "What it takes",
-              value:
-                "A work queue, a model with a narrow brief, and a review screen that shows its working.",
-            },
-          ],
+        title: "Intelligence, Engineered.",
+        body: "AI-powered systems that transform data, automate workflows and turn complex processes into intelligent products.",
+        image: {
+          src: "/work/ai-platform.webp",
+          ratio: "16 / 9",
+          alt: "A workflow builder read left to right: data sources feeding model processing, then decision logic, then the actions each decision triggers.",
+        },
+        project: {
+          number: "02",
+          label: "AI",
+          category: "AI Platform",
+          status: "Nivlak Lab · Concept",
+          services: "AI · Automation · APIs · Engineering",
+          platform: "AI Platform",
+          cta: { label: "Enquire about this", chapter: 6 },
         },
       },
       {
-        emblem: "cloud",
-        title: "SaaS Product",
-        record: {
-          series: "Nivlak Lab 02",
-          discipline: "SaaS",
-          status: "Concept",
-          year: "2026",
-          rows: [
-            {
-              label: "What it is",
-              value:
-                "A subscription product cut back to the parts every one of them needs: accounts, billing, roles, an admin view.",
-            },
-            {
-              label: "The question",
-              value:
-                "How much of a SaaS is the same every time, and how much has to be built for the business it serves?",
-            },
-            {
-              label: "What it takes",
-              value:
-                "Sign-in, a tenant model, a billing hook, and a dashboard that is honest about what it knows.",
-            },
-          ],
+        title: "Built to Scale.",
+        body: "Connected software products built with scalable architecture, reliable infrastructure and thoughtful user experiences.",
+        image: {
+          src: "/work/saas-product.webp",
+          ratio: "16 / 9",
+          alt: "A subscription dashboard: revenue and customer panels beside a second screen of analytics and a customer list.",
+        },
+        project: {
+          number: "03",
+          label: "SaaS",
+          category: "SaaS Product",
+          status: "Nivlak Lab · Concept",
+          services: "Product · Architecture · Engineering · Cloud",
+          platform: "SaaS",
+          cta: { label: "Enquire about this", chapter: 6 },
         },
       },
       {
-        emblem: "chart",
-        title: "Intelligent Commerce",
-        record: {
-          series: "Nivlak Lab 03",
-          discipline: "Product",
-          status: "Concept",
-          year: "2026",
-          rows: [
-            {
-              label: "What it is",
-              value:
-                "A shop that arranges itself around what people actually buy, rather than around a category tree drawn once and left alone.",
-            },
-            {
-              label: "The question",
-              value:
-                "Can a catalogue rank itself without turning the storefront into a slot machine?",
-            },
-            {
-              label: "What it takes",
-              value:
-                "Event capture, a ranking pass you can read, and an override for the person who knows the stock.",
-            },
-          ],
+        title: "Designed for Everyday Use.",
+        body: "Mobile experiences that combine intuitive interaction, strong product thinking and reliable engineering.",
+        image: {
+          src: "/work/mobile-application.webp",
+          ratio: "16 / 9",
+          alt: "Three phone screens from one app: a dashboard, an overview with a shortcuts grid, and a reports view.",
         },
-      },
-      {
-        emblem: "mobile",
-        title: "Mobile Experience",
-        record: {
-          series: "Nivlak Lab 04",
-          discipline: "Mobile",
-          status: "Concept",
-          year: "2026",
-          rows: [
-            {
-              label: "What it is",
-              value:
-                "One codebase, two platforms, and an interface that still behaves the way each one expects.",
-            },
-            {
-              label: "The question",
-              value:
-                "Which parts of an app can be shared, and which have to be written twice to be worth using?",
-            },
-            {
-              label: "What it takes",
-              value:
-                "A shared core, a shell per platform, and storage that works with no signal.",
-            },
-          ],
+        project: {
+          number: "04",
+          label: "Mobile",
+          category: "Mobile Product",
+          status: "Nivlak Lab · Concept",
+          services: "Product · UX/UI · Mobile Engineering",
+          platform: "Mobile",
+          cta: { label: "Enquire about this", chapter: 6 },
         },
       },
     ],
   },
+  // 05 is the PERSPECTIVES setting: an index of six opinions on the verso, and
+  // whichever one the reader has chosen set large on the recto.
+  //
+  // WHAT IT WAS
+  //
+  // A lead entry and a five-cell modular grid, both set from category names --
+  // AI & Automation, Technology, Software Engineering -- each under a line
+  // saying the studio was interested in that category. It was a contents page
+  // for writing that does not exist, and the five-cell grid left a quarter of
+  // the recto empty because five does not divide by two.
+  //
+  // Every entry now carries a `thesis`: a claim someone could disagree with,
+  // which is the test a perspective has to pass. The categories stay, as the
+  // way a reader finds one.
+  //
+  // WHY THE PAGE CHANGES WHEN YOU CLICK IT, WHICH NOTHING ELSE IN THIS BOOK
+  // DOES
+  //
+  // A volvelle -- the rotating paper disc bound into astronomical and medical
+  // books for five centuries, where the reader turns a wheel and the page
+  // shows a different answer in the same window. It is the one printed device
+  // that swaps content in place without turning a leaf, and it is what this
+  // spread is: a fixed window on the recto, six settings on the verso.
+  //
+  // So the interaction is not a web pattern borrowed onto a book page; it is
+  // the book pattern the brief happened to be describing. It is also the only
+  // place in the whole monograph where the reader chooses rather than turns,
+  // which is the right place for it -- these are opinions, and you pick one.
+  //
+  // The engraved plate is gone. The verso is the index now and there is no
+  // room for it; a fractal antenna beside six opinions about software was
+  // never illustrating any of them.
   {
     number: "05",
     title: "Perspectives",
     facing: {
       headline: "Ideas Worth Exploring.",
       subtitle: "What we read, argue about, and write down.",
-      plate: {
-        src: "/plates/plate-antenna.webp",
-        ratio: "620 / 478",
-        caption: "Fig. 3 — Fractal antenna, 2002",
-        credit: "US 6,452,553 B1. Public domain.",
-      },
-      services: [
-        {
-          emblem: "chip",
-          title: "AI & Automation",
-          body: "Exploring how AI and automation create the future.",
-        },
-      ],
     },
     services: [
       {
+        emblem: "chip",
+        title: "AI & Automation",
+        perspective: {
+          label: "AI",
+          thesis: "The next interface is intelligence.",
+        },
+        body: "AI is moving beyond chat. The opportunity is building software that understands context, makes decisions and takes meaningful action.",
+      },
+      {
         emblem: "cloud",
         title: "Technology",
-        body: "Tracking the latest technologies shaping the digital world.",
+        perspective: {
+          label: "Technology",
+          thesis: "Technology should disappear into the experience.",
+        },
+        body: "The best technology is powerful beneath the surface while remaining simple for the people who use it.",
       },
       {
         emblem: "code",
         title: "Software Engineering",
-        body: "Insights on building scalable, secure and reliable systems.",
+        perspective: {
+          label: "Engineering",
+          thesis: "Good software is built for change.",
+        },
+        body: "Architecture should not only solve today's problem. It should give products room to evolve tomorrow.",
       },
       {
         emblem: "compass",
         title: "Design",
-        body: "Thoughts on design that creates meaningful human experiences.",
+        perspective: {
+          label: "Design",
+          thesis: "Design is how complexity becomes clear.",
+        },
+        body: "Great interfaces turn complicated systems into experiences that feel natural, understandable and purposeful.",
       },
       {
         emblem: "chart",
         title: "Business",
-        body: "Strategies and insights for sustainable business growth.",
+        perspective: {
+          label: "Business",
+          thesis: "Build technology around the problem.",
+        },
+        body: "The strongest digital products begin with a meaningful business problem rather than a technology looking for somewhere to be used.",
       },
       {
         emblem: "telescope",
         title: "Future Insights",
-        body: "Ideas and predictions for a smarter tomorrow.",
+        perspective: {
+          label: "Future",
+          thesis: "The future belongs to adaptive products.",
+        },
+        body: "Products that learn from users, data and changing environments will define the next generation of digital experiences.",
       },
     ],
   },
@@ -926,7 +1003,7 @@ export const BOOK_PAGES: BookPage[] = [
       plate: {
         src: "/plates/plate-telegraphy.webp",
         ratio: "431 / 620",
-        caption: "Fig. 4 — Telegraphy, 1876",
+        caption: "Fig. 3 — Telegraphy, 1876",
         credit: "A. G. Bell, US 174,465. Public domain.",
       },
     },
@@ -980,15 +1057,18 @@ export const BOOK_PAGES: BookPage[] = [
 // before -- means every addition is really three edits: the entry, the page it
 // moves onto, and the balance of everything after it.
 //
-// A chapter is COMPUTED when its entries carry something the page has to make
-// room for -- a photograph (02) or a ledger (04). 05 carries neither: its
-// entries are engraved titles, and its two halves were composed by hand as a
-// lead plate on the verso against a modular grid on the recto. Re-cutting that
-// on a slot count would throw away a layout that was designed.
+// A chapter is COMPUTED when its entries are a RUN the page has to make room
+// for one after another -- 02's photographs, each with its caption beside it.
+// A chapter is HAND-COMPOSED when its entries share one window: 04's four
+// projects and 05's six perspectives are each reachable from an index that has
+// to see all of them, so cutting them across spreads would put half the run
+// where the index cannot send you. 05 also carries no photographs at all,
+// which is the older half of the same test.
 //
 // Which is why the test is a question about the ENTRIES and not a list of
-// chapter numbers. 04 used to be on the hand-composed side of it and moved
-// across by gaining records, without this file learning its number.
+// chapter numbers. 04 has now crossed it twice -- onto the computed side by
+// gaining records, and back off it by gaining a stage -- without this file
+// ever learning its number.
 
 /**
  * How many illustrated entries fit on a page, measured at 1440x900.
@@ -1006,47 +1086,18 @@ const VERSO_SLOTS = PAGE_SLOTS;
 const RECTO_SLOTS = PAGE_SLOTS;
 
 /**
- * The same count for an ARCHIVE page, which is not the same object.
- *
- * A catalogue entry is a picture with a caption beside it. A register entry is
- * a ledger -- a plate number, a title, a status line and three ruled rows --
- * which measures ~150px against a catalogue entry's ~90 at 1440x900. Three to
- * a page fills the half with the rows still open; four closes them tighter
- * than the body text they sit beside, which is what makes a page of a book
- * read as a spreadsheet.
+ * The slots a paginated chapter gets. One shape, because the catalogue is the
+ * only setting left that is cut by slot count at all: the plate section counts
+ * pages instead (expandPlateChapter), and the project stage and the
+ * perspectives are each one hand-composed spread.
  */
-const ARCHIVE_SLOTS = 3;
+const SLOTS = {
+  opener: OPENER_VERSO_SLOTS,
+  verso: VERSO_SLOTS,
+  recto: RECTO_SLOTS,
+};
 
-/**
- * The register's opening verso takes NO entries, and that is the setting
- * rather than an accident of the arithmetic.
- *
- * Every other chapter opener shares its verso with the run it introduces.
- * This one cannot afford to. The headpiece, the numeral, the title, the rule,
- * the epigraph, the subtitle and the sinkage above them come to ~260px of a
- * ~460px column at 1440x900, and one ledger needs ~150 of the ~200 that are
- * left -- so a single entry would sit marooned under the title while the recto
- * carried three, which is the lopsided spread OPENER_VERSO_SLOTS exists to
- * avoid on the catalogue.
- *
- * Giving the whole verso to the chapter opening and its plate instead is a
- * setting a book already has a name for: a half-title facing the first page of
- * the register.
- */
-const OPENER_ARCHIVE_VERSO_SLOTS = 0;
-
-/** The slots a chapter gets, which depend on which setting it is in. */
-function slotsFor(archive: boolean) {
-  return archive
-    ? {
-        opener: OPENER_ARCHIVE_VERSO_SLOTS,
-        verso: ARCHIVE_SLOTS,
-        recto: ARCHIVE_SLOTS,
-      }
-    : { opener: OPENER_VERSO_SLOTS, verso: VERSO_SLOTS, recto: RECTO_SLOTS };
-}
-
-type PageSlots = ReturnType<typeof slotsFor>;
+type PageSlots = typeof SLOTS;
 
 /**
  * How many entries land on each spread of a chapter `total` entries long.
@@ -1190,8 +1241,19 @@ function expandChapter(page: BookPage, chapter: number): BookSpread[] {
   if (run.some((service) => service.stage)) {
     return expandPlateChapter(page, chapter);
   }
-  const archive = run.some((service) => service.record);
-  if (!archive && !run.some((service) => service.image)) {
+  // One hand-composed spread, uncut. Two settings land here and for the same
+  // reason: a run that shares ONE window is not a run to be spread over pages.
+  // The project stage keeps its four projects together because the index has
+  // to reach all four from wherever it is printed; the perspectives keep their
+  // six for the same reason. A run of bare engraved titles falls in too, and
+  // keeps the halves it was authored with.
+  //
+  // The project test comes before the `image` test, not after: its entries
+  // carry photographs, and the catalogue would have claimed them.
+  if (
+    run.some((service) => service.project) ||
+    !run.some((service) => service.image)
+  ) {
     return [
       {
         ...page,
@@ -1203,7 +1265,7 @@ function expandChapter(page: BookPage, chapter: number): BookSpread[] {
     ];
   }
 
-  const slots = slotsFor(archive);
+  const slots = SLOTS;
   let cursor = 0;
   const plan = planSpreads(run.length, slots);
   return plan.map((count, spread) => {

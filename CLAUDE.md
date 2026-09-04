@@ -285,12 +285,32 @@ Consequences worth knowing before touching it:
   click — a blank frame in the window, which is the one thing a window may not
   do. The first is `loading="eager"`; the other three are behind a click that
   has not happened.
-- **The index is horizontal and 05's is a column, on purpose.** They are one
-  spread apart and share a mechanism (see `bindWindow` below). Two adjacent
-  chapters that both put a numbered vertical list on the verso and a window on
-  the recto stop reading as two chapters — the same failure that collapsed 04
-  into 02 when both were catalogues. Here the index is a running head above its
-  own plate, on the recto, and the verso is a plain half-title.
+- **The index is on the verso, where an engraving used to be, and it changes
+  shape at `lg`.** It was a running head above the plate — four tracked words,
+  WEB AI SAAS MOBILE — which is a tab strip's worth of information: a reader
+  choosing between four studies wants to know what each one *is*, and those
+  words only existed on the plate they had to choose first. So it took the
+  page, and took the room to name things: category as a label, the project's
+  own title under it.
+
+  Below `lg` it collapses back to that one compact row, and that is not a
+  preference. Portrait puts the whole spread on one 844px sheet, and four
+  two-line rows measure 143px there against 30 for one strip — keeping them
+  printed the metadata, the action and the colophon through each other. The
+  titles are also the one thing on that page that repeats itself: the current
+  project's title is already set under the plate a few inches down.
+
+  Two more measurements from the same page. The strip's current mark is an
+  underline on the button below `lg`, not the inline rule the spread uses,
+  because the rule costs width and there is none — the four items needed 335px
+  of a 284px column and MOBILE ran 51px past the page edge. And the list is
+  `flex-wrap`, as the backstop for a phone narrower than 390.
+- **It is not 05's index, though both sit on a verso and share a mechanism.**
+  05's rows are one line of tracked capitals; these are two, with a display
+  line under each label. One is a list of subjects, this is a table of contents
+  with titles in it. Two adjacent chapters running the same mechanism read as
+  one repeated page unless the settings differ, which is the same failure that
+  collapsed 04 into 02 when both were catalogues.
 - **The epigraph is not "a studio is what it has built".** It was, when one of
   the five entries was a delivered build. With four concepts it would be the
   page arguing against its own colophon two inches away.
@@ -347,12 +367,14 @@ Consequences worth knowing before touching it:
   why that rule earns its keep rather than merely being a convention. Its plate
   labels read `PLATE IV`, not the `FIG. 04` the brief asked for: an arabic 04
   printed inside chapter 03 reads as a pointer to chapter 04, which is one tab
-  away in the thumb index and is a real chapter. The engraved `Fig. 1`–`Fig. 3`
+  away in the thumb index and is a real chapter. The engraved `Fig. 1`–`Fig. 2`
   are a separate series — diagrams, not photographs — and stay sentence-case.
-  03's own engraving was retired when it gained six photographs (the reason 02
-  has none), and 05's went with the fractal antenna when 05 became the
-  perspectives, which closed the gap behind them twice: the three engravings
-  left — 01, 04 and 07 — are Fig. 1, 2 and 3.
+  Three of the five engravings have now been retired — 03's when it gained six
+  photographs (the reason 02 has none), 05's when it became the perspectives,
+  and 04's when its verso took the index of projects — and the numbering closed
+  up behind each one. That is the whole reason the engraved series is numbered
+  separately from the plates. The two left, 01's flow chart and 07's
+  telegraphy, are `Fig. 1` and `Fig. 2`.
 - **Geometry comes from the camera, never from CSS.** Sheets sit on the real
   gutter because `spreadAt()` runs the same arithmetic the painter runs. A
   hardcoded `50%` will drift apart from the photograph on resize.

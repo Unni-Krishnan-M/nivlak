@@ -148,7 +148,7 @@ export type PageStage = {
    * the 01-07 of the chapters. That mattered more on this chapter than
    * anywhere else -- "FIG. 04" printed inside chapter 03 reads as a pointer to
    * chapter 04, which is one tab away in the thumb index and is a real
-   * chapter. It also keeps these clear of the engraved Fig. 1-3, which are
+   * chapter. It also keeps these clear of the engraved Fig. 1-2, which are
    * diagrams rather than photographs and are a different series.
    */
   figure: string;
@@ -553,9 +553,13 @@ export const BOOK_PAGES: BookPage[] = [
   // The chapter carries no engraved plate any more. There is no page left for
   // one, and a Baudot code table beside a photograph of a deployment pipeline
   // is two answers to the same question -- the reason 02 dropped its own.
-  // Retiring it, and then 05's when 05 became the perspectives, closed the gap
-  // in the engraved numbering twice over: the three that are left -- 01, 04 and
-  // 07 -- are Fig. 1, 2 and 3, where they were 1, 3 and 5.
+  //
+  // Three of the five engravings have gone this way now: 03's when it gained
+  // photographs, 05's when it became the perspectives, and 04's when its verso
+  // took the index of projects. Each time the numbering closed up behind them,
+  // which is the whole reason the engraved series is numbered separately from
+  // the plates. The two left -- 01's flow chart and 07's telegraphy -- are
+  // Fig. 1 and Fig. 2, where they began as Fig. 1 and Fig. 5.
   {
     number: "03",
     title: "Approach",
@@ -788,15 +792,12 @@ export const BOOK_PAGES: BookPage[] = [
       // studies now, and an epigraph arguing that only shipped work counts
       // would be the page contradicting its own colophon two inches away.
       epigraph: "Before a thing is built, it is drawn.",
-      // The verso is a half-title and takes the plate. A code table is the
-      // right engraving to face a stage of interfaces: it is itself a picture
-      // of a system, drawn when a system could still be drawn on one sheet.
-      plate: {
-        src: "/plates/plate-code.webp",
-        ratio: "586 / 620",
-        caption: "Fig. 2 — Printing telegraph code table, 1888",
-        credit: "J. M. E. Baudot, US 388,244. Public domain.",
-      },
+      // No engraving. The verso carries the INDEX of the four projects -- see
+      // ProjectIndex -- and a page cannot hold both: the index is what a
+      // reader uses, and an 1888 code table under it was a good picture with
+      // nothing to say about the four opposite it. The index moved here off
+      // the recto, where it was four tracked words above the plate they were
+      // meant to help you choose.
     },
     colophon:
       "All four are Nivlak Lab studies — our own concepts, built in-house. None is delivered client work, and the line under each plate says so.",
@@ -1003,7 +1004,7 @@ export const BOOK_PAGES: BookPage[] = [
       plate: {
         src: "/plates/plate-telegraphy.webp",
         ratio: "431 / 620",
-        caption: "Fig. 3 — Telegraphy, 1876",
+        caption: "Fig. 2 — Telegraphy, 1876",
         credit: "A. G. Bell, US 174,465. Public domain.",
       },
     },

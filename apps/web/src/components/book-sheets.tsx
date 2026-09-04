@@ -682,6 +682,41 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
         </p>
       ) : null}
 
+      {intro ? (
+        <p
+          data-ink
+          className="mt-[1.6em] max-w-[44ch] text-[clamp(0.76rem,1.02vw,0.94rem)] leading-relaxed text-slate-300/75 first-letter:float-left first-letter:me-[0.08em] first-letter:mt-[0.04em] first-letter:text-[3.4em] first-letter:leading-[0.82] first-letter:font-light first-letter:text-[#dce7f7]"
+        >
+          <span className="[font-variant-caps:all-small-caps] tracking-[0.08em] text-slate-200">
+            {intro.lead}
+          </span>
+          {note ? (
+            <sup className="ms-[0.15em] text-[0.62em] align-super text-slate-400/70 tabular-nums">
+              1
+            </sup>
+          ) : null}{" "}
+          {intro.body}
+        </p>
+      ) : null}
+
+      {figure ? <Figure figure={figure} /> : null}
+
+      {/* The index of perspectives. It reads page.services rather than
+          facing.services because the run belongs to the CHAPTER and both
+          halves of this spread need all six of it -- the verso to list them,
+          the recto to hold a window on each. */}
+      {isPerspective(page.services) ? (
+        <PerspectiveIndex services={page.services ?? []} />
+      ) : null}
+
+      {/* The index of projects, on the half-title facing the stage. Same reason
+          the perspectives' index reads page.services and not facing.services:
+          the run belongs to the CHAPTER, and both halves of the spread need all
+          four of it -- the verso to name them, the recto to hold the window. */}
+      {isProjects(page.services) ? (
+        <ProjectIndex services={page.services ?? []} />
+      ) : null}
+
       {/* The chapter's qualification, on the half-title -- but ONLY below 480px
           of viewport height, where its twin at the foot of the stage cannot
           fit. Measured at 844x390: the recto there runs index 26 + plate 172 +
@@ -708,33 +743,6 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             {(page as BookPage).colophon}
           </p>
         </div>
-      ) : null}
-
-      {intro ? (
-        <p
-          data-ink
-          className="mt-[1.6em] max-w-[44ch] text-[clamp(0.76rem,1.02vw,0.94rem)] leading-relaxed text-slate-300/75 first-letter:float-left first-letter:me-[0.08em] first-letter:mt-[0.04em] first-letter:text-[3.4em] first-letter:leading-[0.82] first-letter:font-light first-letter:text-[#dce7f7]"
-        >
-          <span className="[font-variant-caps:all-small-caps] tracking-[0.08em] text-slate-200">
-            {intro.lead}
-          </span>
-          {note ? (
-            <sup className="ms-[0.15em] text-[0.62em] align-super text-slate-400/70 tabular-nums">
-              1
-            </sup>
-          ) : null}{" "}
-          {intro.body}
-        </p>
-      ) : null}
-
-      {figure ? <Figure figure={figure} /> : null}
-
-      {/* The index of perspectives. It reads page.services rather than
-          facing.services because the run belongs to the CHAPTER and both
-          halves of this spread need all six of it -- the verso to list them,
-          the recto to hold a window on each. */}
-      {isPerspective(page.services) ? (
-        <PerspectiveIndex services={page.services ?? []} />
       ) : null}
 
       {/* The chapter's own contents, on its half-title. A plate section is the
@@ -773,24 +781,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
         </div>
       ) : null}
 
-      {page.facing.plate ? (
-        isProjects(page.services) ? (
-          // Portrait collapses the spread onto ONE full-bleed page, so 04's
-          // half-title has to share 844px with the whole stage -- the index,
-          // a 16:9 plate and its letterpress -- and they do not fit. The
-          // engraving is the only thing there carrying no information a reader
-          // needs, so it is the one that goes.
-          //
-          // lg:contents rather than lg:block: the figure hangs off the foot of
-          // the page with mt-auto, which only works while it is a child of the
-          // page's own flex column.
-          <div className="hidden lg:contents">
-            <EngravedPlate plate={page.facing.plate} />
-          </div>
-        ) : (
-          <EngravedPlate plate={page.facing.plate} />
-        )
-      ) : null}
+      {page.facing.plate ? <EngravedPlate plate={page.facing.plate} /> : null}
       {page.founder ? <Portrait founder={page.founder} /> : null}
       {page.contact && !page.facing.plate ? (
         <MarkPlate caption="NIVLAK TECHNOLOGIES" />
@@ -1643,6 +1634,108 @@ function isProjects(services: PageService[] | undefined) {
 }
 
 /**
+ * The index of projects, printed on the VERSO where the engraving used to be.
+ *
+ * WHY IT MOVED OFF THE RECTO
+ *
+ * It was a running head above the plate -- four tracked words, WEB AI SAAS
+ * MOBILE -- and that is a tab strip's worth of information. A reader deciding
+ * which of four studies to look at wants to know what each one IS, and the
+ * only place those words existed was on the plate they had to choose first.
+ * The verso was carrying an 1888 code table instead: a good engraving with
+ * nothing to say about the four pictures opposite it.
+ *
+ * So the index takes the page, and it takes the room to name things: the
+ * category as a label and the project's own title under it. That is a contents
+ * list for the plates, which is what a half-title facing a stage should hold.
+ *
+ * WHY IT IS NOT 05'S INDEX, WHICH ALSO SITS ON A VERSO
+ *
+ * Because 05's rows are ONE line of tracked capitals -- a category and nothing
+ * else -- and these are two, with a display line under each label. One is a
+ * list of subjects; this is a table of contents with titles in it. The two
+ * chapters are a spread apart and share a mechanism, and the whole reason to
+ * spend the second line here is that a shared mechanism reads as a repeated
+ * page unless the settings differ. The second line goes below 480px of
+ * viewport height, where the page cannot afford it and the labels alone still
+ * navigate.
+ */
+function ProjectIndex({ services }: { services: PageService[] }) {
+  const entries = services.filter((service) => service.project);
+  if (!entries.length) return null;
+  return (
+    <nav
+      // Its own name. <BookIndex>, 03's contents list and 05's index are all
+      // landmarks too, and four landmarks announced the same way go to four
+      // different places.
+      aria-label="Projects"
+      data-ink
+      className="mt-[1.6em] border-b border-white/12 lg:border-t lg:border-b-0"
+    >
+      {/* Two shapes, and the breakpoint is not decoration.
+          At `lg` this is the verso of a spread with a page to itself: four
+          ruled rows, each naming a category and setting the project's own
+          title under it -- a contents list for the four plates opposite.
+          Below `lg` the spread has collapsed onto ONE sheet and this list is
+          sharing 844px with a 16:9 plate and its whole letterpress. Measured
+          at 390x844: four two-line rows are 143px, and keeping them printed
+          the metadata, the action and the colophon through each other at the
+          foot. One row of short labels is 30px and navigates just as well --
+          it is also exactly what the brief draws for mobile. */}
+      <ul className="m-0 flex list-none flex-wrap items-baseline gap-x-[clamp(0.7em,3.2vw,1.4em)] gap-y-[0.5em] p-0 pb-[0.7em] lg:block lg:gap-0 lg:pb-0">
+        {entries.map((service, i) => (
+          <li key={service.title} className="lg:border-b lg:border-white/12">
+            <button
+              type="button"
+              data-project={i}
+              data-current={i === 0 ? "true" : "false"}
+              aria-current={i === 0 ? "true" : undefined}
+              // Below `lg` the current mark is an UNDERLINE on the button, not
+              // the inline rule the spread uses, because the inline rule costs
+              // width and there is none: measured at 390x844 the four items
+              // needed 335px of a 284px column and MOBILE ran 51px past the
+              // page. A border costs nothing and says the same thing. flex-wrap
+              // on the list is the backstop for a narrower phone still.
+              className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[0.7em] lg:pb-[0.7em] motion-reduce:transition-none"
+            >
+              <span className="shrink-0 text-[clamp(0.44rem,0.6vw,0.55rem)] tracking-[0.24em] tabular-nums opacity-70">
+                {service.project!.number}
+              </span>
+
+              {/* The short label, below `lg` only. WEB / AI / SAAS / MOBILE --
+                  four words that fit one line at 390px. */}
+              <span className="text-[clamp(0.52rem,2.4vw,0.66rem)] tracking-[0.22em] uppercase lg:hidden">
+                {service.project!.label}
+              </span>
+
+              {/* The named row, on the full spread only. */}
+              <span className="hidden min-w-0 flex-1 lg:block">
+                <span className="block text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.26em] uppercase">
+                  {service.project!.category}
+                </span>
+                <span className="mt-[0.35em] block font-[family-name:var(--font-display)] text-[clamp(0.78rem,1.06vw,0.98rem)] leading-[1.15] font-light text-balance text-slate-200/90 group-data-[current=true]:text-white">
+                  {service.title}
+                </span>
+              </span>
+
+              {/* The active mark: a rule that grows against the fore-edge.
+                  <BookIndex>'s own device and 05's, so the book answers "which
+                  one is this" the same way at every level. Focus is the same
+                  rule at half length, so a keyboard reader sees where they are
+                  before they commit. */}
+              <span
+                aria-hidden
+                className="hidden h-px w-[0.6em] shrink-0 self-center bg-current opacity-40 transition-all duration-200 group-focus-visible:w-[1.4em] group-focus-visible:opacity-100 group-data-[current=true]:w-[2.2em] group-data-[current=true]:opacity-100 lg:block motion-reduce:transition-none"
+              />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+/**
  * The WORK stage: a selectable index, one 16:9 plate, and the facts under it.
  *
  * WHY ONE WINDOW AND NOT FOUR ENTRIES
@@ -1697,45 +1790,10 @@ function ProjectStage({
     // line saying these are studies into the part nobody can see, which is the
     // same trap the register fell into on the same viewport.
     <div className="flex min-h-0 flex-col lg:flex-1 [@media(max-height:480px)]:flex-none [@media(max-height:480px)]:pt-[4%]">
-      {/* The index. `nav` with its own name: <BookIndex> and the contents list
-          on 03 are both landmarks too, and three landmarks announced the same
-          way go to three different places. */}
-      <nav
-        aria-label="Projects"
-        className="flex shrink-0 items-baseline gap-[clamp(0.9em,2.4vw,2.2em)] border-b border-white/15 pb-[0.7em]"
-      >
-        {entries.map((service, i) => (
-          <button
-            key={service.title}
-            type="button"
-            data-project={i}
-            data-current={i === 0 ? "true" : "false"}
-            aria-current={i === 0 ? "true" : undefined}
-            className="group flex items-baseline gap-[0.5em] text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:text-white motion-reduce:transition-none"
-          >
-            <span className="text-[clamp(0.44rem,0.6vw,0.55rem)] tracking-[0.24em] tabular-nums opacity-70">
-              {service.project!.number}
-            </span>
-            <span className="text-[clamp(0.52rem,0.72vw,0.66rem)] tracking-[0.26em] uppercase">
-              {service.project!.label}
-            </span>
-            {/* The active mark. <BookIndex>'s own device and the volvelle's --
-                a rule that grows under the current item -- so the book answers
-                "which one is this" the same way at every level. Focus is the
-                same rule at half strength, so a keyboard reader can see where
-                they are before they commit. */}
-            <span
-              aria-hidden
-              className="h-px w-0 self-center bg-current transition-all duration-200 group-focus-visible:w-[0.9em] group-data-[current=true]:w-[1.4em] motion-reduce:transition-none"
-            />
-          </button>
-        ))}
-      </nav>
-
       {/* The window. aspect-ratio reserves the box before a byte of image has
           landed, so nothing below it moves on load or on a swap. */}
       <div
-        className="relative mt-[1em] grid w-full shrink-0 overflow-hidden border border-white/12"
+        className="relative grid w-full shrink-0 overflow-hidden border border-white/12"
         style={{ aspectRatio: "16 / 9" }}
       >
         {entries.map((service, i) => (

@@ -101,28 +101,39 @@ plate() { # name url [prep...]
   echo "    -> public/plates/$name.webp  ($(stat -c%s "$OUT/$name.webp") bytes)"
 }
 
-# 1888, J. M. E. Baudot -- printing telegraph code table, US 388,244.
-plate plate-code \
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Baudot_Code_-_from_1888_patent.png/1280px-Baudot_Code_-_from_1888_patent.png'
-
-# 2002, Vicsek fractal antenna, US 6,452,553 B1.
-plate plate-antenna \
-  'https://upload.wikimedia.org/wikipedia/commons/4/4e/6452553_Vicsek_Fractal_Antenna.png'
+# RETIRED, and deliberately not fetched any more.
+#
+#   plate-code       1888 Baudot printing telegraph code table, US 388,244.
+#                    Faced 04 until 04's verso took the index of its projects.
+#   plate-antenna    2002 Vicsek fractal antenna, US 6,452,553 B1.
+#                    Was 05's until 05 became the perspectives.
+#   plate-process    1920 Gilman flow chart of materials through a works.
+#                    Was 03's until 03 gained six photographs of its own.
+#
+# Their stanzas, their URLs and the argument for each choice are in this file's
+# history -- `git log -p tools/fetch-plates.sh`. They are out of the fetch
+# rather than merely unreferenced because this script writes into public/, and
+# a plate nothing prints is 20KB served to every visitor for a year (frames and
+# plates are immutable, max-age=31536000). The long note below about why 03's
+# was NOT a patent drawing is kept as written: it is the reasoning that would
+# be needed again to pick a replacement.
 
 # 1876, A. G. Bell -- telegraphy, US 174,465.
 plate plate-telegraphy \
   'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Patent_Drawing_of_Telegraphy_by_Alexander_Graham_Bell_-_NARA_-_6120306_%28page_1%29.jpg/1280px-Patent_Drawing_of_Telegraphy_by_Alexander_Graham_Bell_-_NARA_-_6120306_%28page_1%29.jpg'
 
-# 1920, Stephen Gilman -- flow chart of materials through a works, from
-# "Graphic Charts for the Business Man"; the figure itself is reprinted from
-# Industrial Management, January 1917.
+# WHAT 03'S PLATE WAS, AND WHY IT WAS NOT A PATENT DRAWING
 #
-# WHY THIS ONE IS NOT A PATENT DRAWING
+# Kept because it is the reasoning that would be needed again, not because
+# anything fetches it: 1920, Stephen Gilman, flow chart of materials through a
+# works, from "Graphic Charts for the Business Man" (the figure itself
+# reprinted from Industrial Management, January 1917). The URL and its prep
+# arguments are in this file's history.
 #
-# The three above are patents because their pages are about things we build --
-# a code table, an antenna, a telephone. Chapter 03 is not about a thing, it is
+# The others were patents because their pages are about things we build -- a
+# code table, an antenna, a telephone. Chapter 03 is not about a thing, it is
 # about HOW THE WORK RUNS, and no patent draws that: a patent draws an
-# apparatus. The candidates that did were all charts of process, and this is
+# apparatus. The candidates that did were all charts of process, and this was
 # the most legible of them at plate size, which is the only test that matters
 # for a picture printed 200px wide:
 #
@@ -135,26 +146,6 @@ plate plate-telegraphy \
 #                                   outcome even when the words are too small
 #                                   to read, which is the whole job here
 #
-# The last box is the argument. Six steps that end in something shipped is what
-# the chapter claims, and the plate shows it before the copy is read.
-#
-# The crop takes the scan's own printed caption off the foot. The other three
-# keep their sheet headers because a patent form's header is furniture -- a
-# number and a date in the corner of the drawing. This one's is a full
-# figcaption in body type, and the page sets its own directly beside it; at
-# plate size the printed one resolves to an illegible grey band under the
-# chart and reads as a smudge, not as provenance. Row 962 is the white gutter
-# between the SHIPPING box and the first caption line. The trim then pulls in
-# the scan's white margin, which is what let the chart itself be small.
-#
-# The white threshold is for the facing page printing through the sheet. Down
-# the left edge, over the same column as the SQUARING and CASING boxes, the
-# scan carries a ghost of another figure -- too faint to read, bright enough to
-# survive the negate, and on the page it looked like dirt on the plate rather
-# than part of the drawing. It cannot be cropped off because the real boxes are
-# in that column too, but it separates cleanly by tone: measured over the
-# ghost, the darkest pixel is 0.90, while the line work reaches 0.11. Anything
-# above 0.88 is therefore paper, whatever it looks like.
-plate plate-process \
-  'https://upload.wikimedia.org/wikipedia/commons/5/5d/Flow_Chart_Showing_Flow_of_Materials_through_Various_Processes%2C_1920.jpg' \
-  -crop 676x962+0+0 +repage -white-threshold 88% -fuzz 22% -trim +repage
+# The last box was the argument. Six steps that end in something shipped is
+# what the chapter claims, and the plate showed it before the copy was read.
+# 03 says it with six photographs now.

@@ -471,13 +471,43 @@ percentages and unlabelled charts.** Money hides in axis labels — both revenue
 charts label theirs in lakhs and both needed a box of their own.
 
 The 560px output used to be the backstop that made the redaction true rather
-than merely covered. It is not any more: a full-measure stage needs 1200px
-against crops of 1100-1434, so the resize is about 1:1 and destroys nothing.
+than merely covered. It is not any more: a full-measure stage needs 1240px
+against crops of 828–1337, so the resize is about 1:1 and destroys nothing.
 **The blur is now the whole redaction**, which is why every box has to be proved
 by looking at the OUTPUT at 100%, not by reading the list. Read the header
 before changing a crop or a box; the first run measured the boxes against the
 crop instead of the source and put a smear over a chart while leaving every
 client name legible.
+
+**Two things about the crops are load-bearing and neither is composition.**
+Immediately *below* three of them, still inside the source, sit a table of
+named clients against progress and dates and a paid invoice — they do not ship
+because the crop ends above them, not because anything blurs them. Extending a
+crop downward for a better picture puts them back. And every crop *starts*
+below the browser chrome: 03's plates are photographs of screens in a room and
+carry none, and a window frame with traffic lights is the one thing in these
+pictures that says "export from a mockup tool" rather than "software".
+
+**The tone is 03's, exactly** — same SHADOW, HIGHLIGHT, SATURATION, SIGMOIDAL
+and width, copied from `build-process-plates.sh`, because two sets of plates in
+one book toned by different arithmetic read as two books. Getting there needed
+the *opposite* operator from the one this file first used. Gamma cannot touch
+these at all (a light-mode UI is clipped white, a dark one clipped black —
+there are no midtones to move). `+level`, which compresses each source into a
+narrower range, does land the medians together and is what shipped for one
+revision; the number that says it was wrong is the standard deviation, 0.05
+against 03's 0.12–0.22. That is a wash, not a photograph. `-level` **expands**
+instead — it stretches the band where each source's information actually lives
+out to full, and the shared `+level-colors` then puts it back inside the book's
+ink. For the light interfaces the white point runs *above* 100% (180%, 165%),
+which is how a white dashboard comes down to the page without being flattened
+onto it.
+
+**Every crop keeps its dark sidebar**, and that is not framing either: it is
+the only dark thing in a light-mode screenshot and it is carrying the contrast.
+Cropping past WEB's sidebar measured std 0.050; the same crop with it in
+measures 0.152. Cropping *into* it is worse than either — truncated nav labels
+down the edge read as a mis-crop rather than as an interface.
 
 `tools/build-process-plates.sh` turns the six process photographs into the
 plates of chapter 03. They arrive as finished pictures with no ground to key,

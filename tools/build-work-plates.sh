@@ -79,58 +79,71 @@
 # has to be proved by looking at the OUTPUT at 100%, not by reading this list.
 #
 #
-# WHY THE INK BAND IS NARROWER THAN 03'S, WHICH IS THE WHOLE TONE STORY
+# THE TONE IS 03'S, EXACTLY, AND THAT IS THE POINT
 #
-# Measured on the crops, not the full frames:
+# SHADOW, HIGHLIGHT, SATURATION, SIGMOIDAL and WIDTH below are copied from
+# build-process-plates.sh. Both chapters now print full-measure photographs on
+# navy paper, and two sets of plates in one book that were toned by different
+# arithmetic read as two books. This file used to run a much narrower band --
+# 04's plates were 150px specimens beside a ledger then, and a specimen that
+# competes with the type it annotates is the wrong kind of loud. That argument
+# retired with the ledger.
 #
-#   WEB_APPLICATION   median 0.976     a light-mode interface
-#   SAAS_PRODUCT      median 0.864     light content, dark chrome
+# WHY -level AND NOT GAMMA, AND NOT +level EITHER
+#
+# Measured on the crops:
+#
+#   WEB_APPLICATION   median 0.989     a light-mode interface
+#   SAAS_PRODUCT      median 0.878     light content, dark chrome
 #   AI_PLATFORM       median 0.116     a dark-mode interface
 #   MOBILE            median 0.084     a dark-mode interface
 #
-# Against paper at 0.205 that is a hole of light and a hole of dark in the same
-# chapter, and nothing about it is meaningful: 03's plates run 13x apart too,
-# but there the spread IS the content -- paper by daylight becoming screens at
-# night is the arc of that chapter. Here it is only that one mockup was drawn
-# in light mode and three in dark.
+# GAMMA cannot touch these. It moves midtones, and a light-mode UI is clipped
+# white while a dark one is clipped black -- there are no midtones to move.
+# Solving for the gamma that lands each median on a common target gives 0.03
+# for WEB and 2.96 for MOBILE, values that do not adjust an image, they
+# obliterate it.
 #
-# WHY NOT GAMMA, WHICH IS WHAT 03 USES
+# +level lo,hi -- COMPRESSING each input into a narrower output range -- does
+# land the medians together, and that is what this file did for one revision.
+# It is wrong, and the number that says so is the standard deviation:
 #
-# Because it cannot do this. Solving for the gamma that lands each median on a
-# common target gives 0.03 for WEB and 2.96 for MOBILE -- values that do not
-# adjust an image, they obliterate it. Gamma closes a gap between exposures of
-# the same kind of thing; this is a gap between two colour schemes.
+#                    +level (compress)      -level (expand)
+#   AI_PLATFORM      median 0.48 std 0.05   median 0.50 std 0.13
+#   MOBILE           median 0.47 std 0.07   median 0.45 std 0.20
 #
-# The band does it instead. +level-colors compresses every input into the range
-# between SHADOW and HIGHLIGHT, so how far apart two plates END is the input gap
-# times the band's width -- narrow the band and the gap narrows with it, whatever
-# the sources looked like:
+# Against 03's plates at std 0.12-0.22, a std of 0.05 is not a photograph, it
+# is a wash. Compression is the wrong direction: these sources have all their
+# information inside a NARROW band already, and squeezing that band flattens
+# what little separation the picture had.
 #
-#   band 0.235..0.895 (03's)   plates land 0.29..0.93, 3.2x apart
-#   band 0.300..0.620 (this)   plates land 0.38..0.61, 1.6x apart   <- this
+# -level lo,hi EXPANDS instead -- it stretches the range where each source's
+# information actually lives out to full, and then the shared +level-colors
+# band puts that back inside the book's ink. Contrast first, placement second.
+# For the dark interfaces lo is near 0 and hi is around 0.2-0.26, which is
+# where their pixels are. For the light ones hi runs ABOVE 100% (180%, 165%),
+# which is the same operator saying "map 1.8 to white", and is how a white
+# dashboard is brought down to the page without being flattened onto it.
 #
-# A narrow band is also low contrast, and that is the second reason to want it
-# here rather than a cost of getting it. 03's plates are full-page photographs
-# and carry their pages; these are 150px specimens set beside a ledger, and a
-# specimen that competes with the type it annotates is the wrong size of loud.
-# The sigmoidal puts the local snap back without moving either end.
+# WHY EVERY CROP KEEPS ITS DARK SIDEBAR
 #
-# The gammas are what is left: a nudge in each direction, closing the last of
-# the gap without touching a colour scheme.
+# It is the only dark thing in a light-mode screenshot, and it is carrying the
+# contrast. A crop of WEB past its sidebar measured std 0.050; the same crop
+# with the sidebar in measures 0.152. Cropping into the sidebar and leaving a
+# sliver is worse than either -- truncated nav labels down the edge read as a
+# mis-crop rather than as an interface.
 #
+# WHY 1240x697
 #
-# WHY 1200x675
+# 1240 and the 16:9 box are 03's too. The plate is the whole measure of a
+# recto: ~460px at 1440x900, ~610 on a wide desktop, so 1240 lands exactly on
+# a 2x display. Two of the crops are narrower than that and are upscaled by
+# 10-15%, which is a little soft at 1:1 and invisible at the size it prints.
 #
-# The plate used to set at ~30% of a ledger's column -- 140px at 1440 -- and
-# 560 was 2x that with headroom. It is the whole measure of a recto now: ~460px
-# at 1440x900, ~610 on a wide desktop, so 1200 is 2x the larger of those and
-# lands exactly on a 2x display. Beyond that it is only a better copy of data
-# this file exists to destroy.
-#
-# 675 is not a rounding. The page reserves a strict 16:9 box and the image is
+# 697 is not a rounding. The page reserves a strict 16:9 box and the image is
 # object-fit: cover, so a file that is not 16:9 is silently cropped by the
-# browser -- and what it crops is an edge of an interface. The four crops below
-# are 16:9 to within 0.13%, so the resize is forced exact (`!`) and the last
+# browser -- and what it crops is an edge of an interface. The crops below are
+# 16:9 to within 0.1%, so the resize is forced exact (`!`) and the last
 # fraction of a pixel is taken by the resampler rather than by the layout.
 
 set -euo pipefail
@@ -141,12 +154,12 @@ OUT="$ROOT/apps/web/public/work"
 # The two ends of the book's ink. The same navy and the same silver
 # build-process-plates.sh works between, but a much narrower reach of it -- see
 # the header for why a small specimen wants a short band.
-SHADOW='#28405f'
-HIGHLIGHT='#bccfe8'
-SATURATION=58
+SHADOW='#233c58'
+HIGHLIGHT='#dfe9f8'
+SATURATION=62
 SIGMOIDAL=5
-WIDTH=1200
-QUALITY=80
+WIDTH=1240
+QUALITY=82
 # Enough to take 10px type to a smear at source scale -- sigma 8 spreads a
 # glyph over ~24px -- and no more than that. The downscale is what makes the
 # redaction true; this pass only has to survive being looked at in the file, so
@@ -156,14 +169,28 @@ BLUR='0x12'
 command -v magick >/dev/null || { echo "ImageMagick 7 (magick) is required" >&2; exit 1; }
 mkdir -p "$OUT"
 
-# name|source|slug|range|crop|blur boxes (space separated, WxH+X+Y in SOURCE px)
+# name|source|slug|level|crop|blur boxes (space separated, WxH+X+Y in SOURCE px)
 #
-# `range` is the per-image `+level lo%,hi%` that runs BEFORE the shared band --
-# see WHY NOT GAMMA above for why it is an endpoint knob and not a midtone one.
+# `level` is the per-image `-level lo%,hi%` that runs BEFORE the shared band --
+# see WHY -level AND NOT GAMMA above.
 #
 # Crops are the interface panel of each composition, measured off the source at
-# 1100px wide and scaled by 1.52. Every one is 16:9 to within a pixel, so the
-# page's reserved box never has to letterbox or crop again.
+# half scale (836px wide, so displayed x2 = source), and every one is 16:9 to
+# within 0.1% so the page's reserved box never has to crop again.
+#
+# THE BOTTOM EDGE OF EVERY CROP IS LOAD-BEARING. Immediately below three of
+# them, still inside the source, sit a table of named clients against progress
+# and dates (WEB: Vertex Industries, Bright Future Pvt. Ltd., Studio Moksha)
+# and a paid invoice (SAAS: Studio Moksha, Nivlak Connect, Rs 15,000, Paid).
+# They do not ship because the crop ends above them, not because anything
+# blurs them. Extending a crop downward for a better composition puts them
+# back. Check what is under an edge before you move it.
+#
+# The TOP edge is a separate job: all three desktop crops start below the
+# browser chrome -- the traffic lights, the URL bar, the app title bar. 03's
+# plates are photographs of screens in a room and carry no chrome at all, and
+# a window frame is the one thing in these pictures that says "export from a
+# mockup tool" rather than "software".
 #
 # The blur boxes are in the SAME frame -- full source pixels, not offsets into
 # the crop. They are applied before the crop, so a box measured relative to the
@@ -171,10 +198,10 @@ mkdir -p "$OUT"
 # exactly that, and the proof came back with every client name still legible
 # and a smear over the revenue chart instead. Measure against the source.
 PLATES=(
-"WEB_APPLICATION|WEB_APPLICATION.png|web-application|0%,50%|1160x652+255+122|889x140+479+666 219x88+1167+304"
-"AI_PLATFORM|AI_PLATFORM.png|ai-platform|40%,100%|1434x807+119+84|1216x144+312+692"
-"SAAS_PRODUCT|SaaS Product.png|saas-product|0%,56%|1099x619+280+38|651x82+456+146 247x161+863+283 651x167+456+464 380x197+1216+441 380x83+1216+122 58x140+462+292"
-"MOBILE_APPLICATION|MOBILE_APPLICATION.png|mobile-application|42%,100%|1337x752+274+105|282x495+380+255 300x92+749+372 265x75+1152+272 265x200+1152+525 44x140+1148+338"
+"WEB_APPLICATION|WEB_APPLICATION.png|web-application|25%,180%|1120x630+262+176|889x140+479+666 219x88+1167+304"
+"AI_PLATFORM|AI_PLATFORM.png|ai-platform|2%,26%|976x549+314+144|"
+"SAAS_PRODUCT|SaaS Product.png|saas-product|22%,165%|828x466+286+84|651x82+456+146 247x161+863+283 651x167+456+464 58x140+462+292"
+"MOBILE_APPLICATION|MOBILE_APPLICATION.png|mobile-application|2%,20%|1337x752+274+105|284x120+376+244 140x80+518+484 288x60+374+696 300x92+749+372 265x75+1152+272 265x200+1152+525 44x140+1148+338"
 )
 
 missing=0
@@ -187,9 +214,9 @@ done
 paper=$(magick "$ROOT/apps/web/public/frames/v5/hd/frame-091.webp" \
   -crop 1x1+1200+400 +repage -colorspace Gray -format "%[fx:mean]" info:)
 
-printf '%-20s %10s  %8s  %8s  %s\n' SOURCE RANGE MEDIAN MEAN FILE
+printf '%-20s %10s  %8s  %8s  %s\n' SOURCE LEVEL MEDIAN STDDEV FILE
 for spec in "${PLATES[@]}"; do
-  IFS='|' read -r name src slug range crop boxes <<<"$spec"
+  IFS='|' read -r name src slug level crop boxes <<<"$spec"
   dst="$OUT/$slug.webp"
 
   # Crop first, so the blur boxes are measured in the same frame the header
@@ -204,21 +231,21 @@ for spec in "${PLATES[@]}"; do
     "${args[@]}" -flatten \
     -crop "$crop" +repage \
     -resize "${WIDTH}x$((WIDTH * 9 / 16))!" \
-    +level "$range" \
+    -level "$level" \
     -modulate "100,$SATURATION,100" \
     +level-colors "$SHADOW","$HIGHLIGHT" \
     -sigmoidal-contrast "$SIGMOIDAL,50%" \
     -strip -quality "$QUALITY" \
     "$dst"
 
-  read -r median mean w h < <(magick "$dst" -colorspace Gray \
-    -format "%[fx:median] %[fx:mean] %w %h\n" info:)
+  read -r median stddev w h < <(magick "$dst" -colorspace Gray \
+    -format "%[fx:median] %[fx:standard_deviation] %w %h\n" info:)
   printf '%-20s %10s  %8.3f  %8.3f  %s (%sx%s, %s)\n' \
-    "$name" "$range" "$median" "$mean" "$slug.webp" "$w" "$h" \
+    "$name" "$level" "$median" "$stddev" "$slug.webp" "$w" "$h" \
     "$(du -h "$dst" | cut -f1)"
 
   # The one thing this script must never ship, same as the 03 plates: a plate
-  # below the paper is a hole in the page. Fix that image's `range`, never
+  # below the paper is a hole in the page. Fix that image's `level`, never
   # the SHADOW -- moving the floor moves all four.
   awk -v m="$median" -v p="$paper" 'BEGIN { if (m <= p) exit 1 }' || {
     echo "  ^ FAILS: median $median is at or below the paper ($paper)" >&2

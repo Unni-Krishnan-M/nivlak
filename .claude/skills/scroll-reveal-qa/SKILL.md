@@ -43,7 +43,7 @@ looks wrong — the montage is for finding the suspect frame, not for judging it
 ## What to check, every time
 
 1. **Document height.** The tool prints it. One section, one pin, so it is
-   `1 + SCROLL_LENGTH` viewports — 11.2 at nine sheets (`+=1034%`), and it grows
+   `1 + SCROLL_LENGTH` viewports — 8.8 at six sheets (`+=779%`), and it grows
    by one page's worth every time a spread is added, so check it against
    `BOOK_SPREADS.length` rather than against a number written here. Reduced
    motion does not pin and is much shorter.

@@ -315,18 +315,16 @@ export function Book() {
       const headNav = section.querySelector<HTMLElement>("[data-book-nav]");
       const thumbIndex = section.querySelector<HTMLElement>("[data-book-index]");
       let goTo = (_index: number) => {};
-      // A nav item usually carries a CHAPTER, which is what the running head
-      // and the thumb index deal in. The process index on 03's half-title
-      // carries a SPREAD instead, because its six entries are six PAGES of one
-      // chapter and a chapter number cannot tell them apart -- every one of
-      // them would land on the half-title the reader is already looking at.
-      let goToSpread = (_index: number, _anchor?: string) => {};
+      // Every nav item carries a CHAPTER, which is what the running head and
+      // the thumb index deal in. There was a second currency until 03 stopped
+      // paginating: its process index carried a SPREAD, because its six
+      // entries were six PAGES of one chapter and a chapter number sent all
+      // six to the half-title the reader was already looking at. Those six are
+      // a window now and carry `data-approach`, which bindWindow handles and
+      // which never scrolls anything -- so `data-spread` and the seek that
+      // served it are gone, and a nav item is one thing again.
       const onNavClick = (event: Event) => {
         const el = (event.currentTarget ?? event.target) as HTMLElement;
-        if (el.dataset.spread !== undefined) {
-          goToSpread(Number(el.dataset.spread), el.dataset.anchor);
-          return;
-        }
         goTo(Number(el.dataset.index));
       };
       for (const el of navItems) el.addEventListener("click", onNavClick);
@@ -442,6 +440,7 @@ export function Book() {
           }
         });
       };
+      bindWindow("approach");
       bindWindow("project");
       bindWindow("perspective");
       const dropWindows = () => {
@@ -467,17 +466,6 @@ export function Book() {
               : document.getElementById(`section-${BOOK_PAGES[index]?.number}`);
           if (target) target.scrollIntoView();
           else window.scrollTo(0, 0);
-        };
-        // There are no spreads under reduced motion -- the column sets a whole
-        // chapter as one article -- so a stage is addressed by the anchor
-        // <StagePlate> prints on itself, and the chapter is the fallback.
-        goToSpread = (index, anchor) => {
-          const target =
-            (anchor ? document.getElementById(anchor) : null) ??
-            document.getElementById(
-              `section-${BOOK_SPREADS[index]?.number ?? ""}`,
-            );
-          target?.scrollIntoView();
         };
         return () => {
           dropNav();
@@ -676,7 +664,6 @@ export function Book() {
       // contextSafe is optional in the hook's types, so fall back to the bare
       // function rather than asserting it is there.
       goTo = contextSafe ? contextSafe(seek) : seek;
-      goToSpread = contextSafe ? contextSafe(seekSpread) : seekSpread;
 
       // Which page is face up. This runs on every scrubbed frame, so it only
       // writes to the DOM when the answer actually changes.

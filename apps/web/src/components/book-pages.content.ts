@@ -184,25 +184,35 @@ export type PageStage = {
  * stages rather than written here, for the same reason nothing in this file
  * says which page an entry is on: a seventh stage should change one place.
  */
+/**
+ * What is left of the page that used to close 03.
+ *
+ * It had four parts: an arc (the six stage names run on with arrows), a value
+ * list (the six deliverables), this note, and a call to action with two ruled
+ * buttons. Three of the four went when the chapter stopped paginating and
+ * became a window, and each for its own reason.
+ *
+ * The ARC and the VALUE LIST were always restatements -- and the index that
+ * now sits on the verso IS the six stage names, printed larger and clickable,
+ * so the arc would have been the same list twice on one page.
+ *
+ * The CALL TO ACTION went for 05's reason, written out under the volvelle in
+ * CLAUDE.md: a chapter that is a window has no closing page, and an ornament
+ * with a way out under a page that is about to change is signing off
+ * something that has not finished. 07 is four sheets later and is the whole
+ * of that argument anyway. `git log` has the copy if the chapter ever gets a
+ * closing page back.
+ *
+ * The note stays because it is the only one of the four that is not a
+ * restatement of the pages around it.
+ */
 export type PageTailpiece = {
-  arcTitle: string;
-  valueTitle: string;
-  /** What the process buys, in the client's words rather than ours. */
-  value: string[];
   /**
    * The qualification a reader needs once they have counted six stages: that
    * they do not have to start at the first one. Set where a footnote goes,
    * doing a footnote's job -- see `colophon`.
    */
   note: string;
-  cta: {
-    eyebrow: string;
-    headline: string;
-    body: string;
-    /** Both seek the timeline by CHAPTER index, the way the thumb index does. */
-    primary: { label: string; chapter: number };
-    secondary: { label: string; chapter: number };
-  };
 };
 
 /** One entry in an illustrated catalogue: a plate and what it is. */
@@ -548,13 +558,17 @@ export const BOOK_PAGES: BookPage[] = [
   // a texture. The whole reason to use these photographs rather than emblems
   // is that a client can look at one and see the actual artefact.
   //
-  // SO: ONE STAGE PER PAGE, PLATE ABOVE ITS LETTERPRESS
+  // SO: ONE STAGE IN A WINDOW, PLATE ABOVE ITS LETTERPRESS
   //
-  // The plate takes the full measure of the page and the three questions a
+  // The plate takes the full measure of the recto and the three questions a
   // client is actually asking are answered under it in order -- what happens,
-  // what you get, what is true afterwards. Eight pages: a half-title, the six
-  // stages, and a tailpiece. The pagination at the foot of this file derives
-  // that from the run; nothing here says which page a stage is on.
+  // what you get, what is true afterwards.
+  //
+  // This chapter used to PAGINATE: a half-title, one stage to a page, and a
+  // tailpiece, over four spreads. It is one spread now, with the six stages
+  // behind an index on the verso, the way 04's four projects and 05's six
+  // perspectives are. Six stages were six page turns to compare two of them,
+  // and a procedure is a thing a reader compares.
   //
   // The chapter carries no engraved plate any more. There is no page left for
   // one, and a Baudot code table beside a photograph of a deployment pipeline
@@ -725,27 +739,7 @@ export const BOOK_PAGES: BookPage[] = [
       },
     ],
     tailpiece: {
-      arcTitle: "The whole of it",
-      valueTitle: "What you get",
-      value: [
-        "Clarity",
-        "Strategy",
-        "Design",
-        "Technology",
-        "Launch",
-        "Continuous improvement",
-      ],
       note: "Not every project starts at the same stage. We can carry an idea from discovery through to launch, or step in at the one where your product is stuck.",
-      cta: {
-        eyebrow: "Ready when you are",
-        headline: "Have an idea worth building?",
-        body: "Whether you are starting from an idea, improving a product that already exists, or scaling one that is growing faster than it was built for, we will help you turn the next step into something real.",
-        // Chapter indices into BOOK_PAGES, the same currency the thumb index
-        // spends: 6 is 07 Connect, 3 is 04 Work. <Book> resolves both through
-        // FIRST_SPREAD_OF_CHAPTER, so neither survives a chapter moving.
-        primary: { label: "Start a project", chapter: 6 },
-        secondary: { label: "Explore our work", chapter: 3 },
-      },
     },
   },
   // 04 is the PROJECT STAGE: four studies, one 16:9 window, and an index that
@@ -1094,9 +1088,9 @@ const RECTO_SLOTS = PAGE_SLOTS;
 
 /**
  * The slots a paginated chapter gets. One shape, because the catalogue is the
- * only setting left that is cut by slot count at all: the plate section counts
- * pages instead (expandPlateChapter), and the project stage and the
- * perspectives are each one hand-composed spread.
+ * only setting left that is cut by slot count at all: the plate section, the
+ * project stage and the perspectives are each ONE spread with a window on it,
+ * and a run behind one window is never cut.
  */
 const SLOTS = {
   opener: OPENER_VERSO_SLOTS,
@@ -1159,105 +1153,34 @@ export type BookSpread = BookPage & {
    * carry across the gutter and across spreads rather than restarting.
    */
   servicesFrom: number;
-  /**
-   * Which half of this spread the chapter's closing page takes, on a PLATE
-   * SECTION. Undefined everywhere else.
-   *
-   * Two values because the answer depends on the stage count and there is no
-   * third option that is not a blank page. Six stages plus a half-title is
-   * seven pages, so the tailpiece takes the eighth and the spread is full:
-   * "recto". Seven stages would leave it opening a spread of its own, and a
-   * closing page facing a blank one is the lopsided ending the catalogue's
-   * even distribution exists to avoid -- so it takes both halves instead:
-   * "spread", the arc on the verso and the way out on the recto.
-   */
-  tail?: "recto" | "spread";
 };
-
-/**
- * A PLATE SECTION, cut into spreads: one stage per page.
- *
- * There is no slot count here and no distribution to choose, which is the
- * difference between this and the catalogue. A catalogue entry is a picture
- * beside a paragraph and three of them share a page; a stage is a full-measure
- * plate over its own description and there is room for exactly one. So the
- * pagination is arithmetic rather than a policy:
- *
- *   page 0        the half-title -- the chapter head, its opening paragraph,
- *                 and the six stages listed in order, which is the contents of
- *                 the chapter and doubles as its navigation
- *   pages 1..n    the stages
- *   the last      the tailpiece
- *
- * Six stages make that eight pages, four spreads, no page left over. An ODD
- * stage count would leave the tailpiece opening a spread with a blank facing
- * it, so it takes the whole closing spread instead -- see `tail`. Both cases
- * are here because the second one is what happens the first time someone adds
- * a seventh stage, and a blank page is not a thing this book should be able to
- * print by accident.
- */
-function expandPlateChapter(page: BookPage, chapter: number): BookSpread[] {
-  const run = page.services ?? [];
-  // The half-title, then the stages. The tailpiece takes what is left of the
-  // last spread, which is one page when that lands on a recto and two when it
-  // does not.
-  const pagesBeforeTail = 1 + run.length;
-  const tail: "recto" | "spread" = pagesBeforeTail % 2 === 1 ? "recto" : "spread";
-  const spreads = Math.ceil((pagesBeforeTail + (tail === "recto" ? 1 : 2)) / 2);
-
-  // Which stage a page carries, or none for the half-title and the tailpiece.
-  const stageOn = (pageIndex: number) =>
-    pageIndex >= 1 && pageIndex < pagesBeforeTail
-      ? run.slice(pageIndex - 1, pageIndex)
-      : [];
-
-  return Array.from({ length: spreads }, (_, spread) => {
-    const versoPage = spread * 2;
-    const verso = stageOn(versoPage);
-    const recto = stageOn(versoPage + 1);
-    return {
-      ...page,
-      chapter,
-      // The half-title is on spread 0 and nowhere else, so every later spread
-      // is a continuation and takes none of the opener furniture -- the same
-      // rule the catalogue follows, for the same reason.
-      continued: spread > 0,
-      lastOfChapter: spread === spreads - 1,
-      // The chapter's run is one stage per page, so the first entry of a
-      // spread is at its verso's page index minus the half-title. Clamped for
-      // spread 0, whose verso carries no entry at all.
-      servicesFrom: Math.max(0, versoPage - 1),
-      tail: spread === spreads - 1 ? tail : undefined,
-      facing: { ...(page.facing ?? { headline: page.title }), services: verso },
-      services: recto,
-    };
-  });
-}
 
 function expandChapter(page: BookPage, chapter: number): BookSpread[] {
   const run = page.services ?? [];
   // Which setting this chapter is in, and so whether it is cut at all. A run
   // of bare engraved titles keeps the halves it was authored with.
   //
-  // The plate section is asked FIRST, because its entries carry `image` too
-  // and would otherwise be cut as a catalogue -- three to a page, at 42% of a
-  // text column. Order here is the same claim isPlateSection makes in
-  // book-sheets.tsx and the two have to agree: the question a run answers is
-  // "what setting is this", and a run that answers it twice is a bug in one of
-  // the two places, not a chapter with two settings.
-  if (run.some((service) => service.stage)) {
-    return expandPlateChapter(page, chapter);
-  }
-  // One hand-composed spread, uncut. Two settings land here and for the same
-  // reason: a run that shares ONE window is not a run to be spread over pages.
-  // The project stage keeps its four projects together because the index has
-  // to reach all four from wherever it is printed; the perspectives keep their
-  // six for the same reason. A run of bare engraved titles falls in too, and
-  // keeps the halves it was authored with.
+  // One spread, uncut. THREE settings land here now and for the same reason: a
+  // run that shares ONE window is not a run to be spread over pages. The plate
+  // section keeps its six stages together, the project stage its four projects
+  // and the perspectives their six, because in each the index has to reach
+  // every entry from wherever it is printed. A run of bare engraved titles
+  // falls in too, and keeps the halves it was authored with.
   //
-  // The project test comes before the `image` test, not after: its entries
-  // carry photographs, and the catalogue would have claimed them.
+  // The plate section used to be the exception: it paginated one stage to a
+  // page over four spreads, with the half-title carrying a contents list that
+  // addressed a PAGE rather than a chapter -- the only navigation in the book
+  // that did. It is a window now, so there are no pages of it to address.
+  //
+  // The `stage` and `project` tests come before the `image` test, not after:
+  // their entries carry photographs and the catalogue would have claimed them,
+  // cutting six stages three to a page at 42% of a text column. This is the
+  // same claim isPlateSection and isProjects make in book-sheets.tsx, and the
+  // two places have to agree: the question a run answers is "what setting is
+  // this", and a run that answers it twice is a bug in one of them, not a
+  // chapter with two settings.
   if (
+    run.some((service) => service.stage) ||
     run.some((service) => service.project) ||
     !run.some((service) => service.image)
   ) {
@@ -1317,22 +1240,3 @@ export const FIRST_SPREAD_OF_CHAPTER: number[] = BOOK_PAGES.map((_, chapter) =>
   BOOK_SPREADS.findIndex((s) => s.chapter === chapter),
 );
 
-/**
- * Which spread an entry of a chapter's run landed on.
- *
- * The process index at the head of 03 lists the chapter's six stages and
- * scrolls to one, and a stage is a PAGE rather than a chapter -- so the thumb
- * index's currency, a chapter number, cannot address it. This is the other
- * direction of the same lookup FIRST_SPREAD_OF_CHAPTER does, and it is derived
- * from the pagination for the same reason: the index has to keep working when
- * a stage is added and the spreads re-cut underneath it.
- */
-export function spreadOfEntry(chapter: number, entry: number): number {
-  const found = BOOK_SPREADS.findIndex((spread) => {
-    if (spread.chapter !== chapter) return false;
-    const held =
-      (spread.facing?.services?.length ?? 0) + (spread.services?.length ?? 0);
-    return entry >= spread.servicesFrom && entry < spread.servicesFrom + held;
-  });
-  return found < 0 ? (FIRST_SPREAD_OF_CHAPTER[chapter] ?? 0) : found;
-}

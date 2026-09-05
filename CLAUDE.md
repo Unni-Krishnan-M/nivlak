@@ -228,6 +228,21 @@ Consequences worth knowing before touching it:
   `mt-auto` and lands exactly there: the verso printed `03 — APPROACH` through
   the last line of the outcome.
 
+**04 is a project stage: four studies, one window, one spread — and its recto
+is 03's page, part for part.** Head, rule, label and plate number, plate,
+headline, sentence, the run of work, and two ruled rows hung off the foot: that
+is `StagePlate`'s order exactly, and it is here because a reader arriving on
+either page asks the same three questions in the same sequence — what is this,
+what does it look like, and what would it involve. It also fills a page that
+was a third empty; with the plate at the very top and nothing above it the
+letterpress ran out two thirds down and the colophon sat alone at the foot with
+a hole between them.
+
+What keeps 04 from collapsing into 03 the way it once collapsed into 02 is
+that 03's page is FIXED and this one is a WINDOW — its plate, its head, its
+label and its whole letterpress change under a click, and 03's never do — and
+that 03 spends four spreads on six stages where this spends one on four.
+
 **04 is a project stage: four studies, one window, one spread.** It has been
 three things now — a catalogue, a register, and this — and the two rewrites are
 worth knowing because each fixed what the one before it could not say.
@@ -254,10 +269,12 @@ Consequences worth knowing before touching it:
   offers. Give any of these four a specific identity — a name, a thing that
   exists — and the overlap goes. It is recorded above the chapter in
   `book-pages.content.ts` so that nobody has to rediscover it.
-- **`status` is required, and the page says it three times.** None of these is
-  delivered client work. It prints on the category line at the category's size;
-  the colophon says it again in a sentence; and `cta` says it a third time by
-  being an enquiry rather than the brief's "VIEW PROJECT →" — there is nothing
+- **`status` is required, and the page says it four times.** None of these is
+  delivered client work. It prints on the label line under the head, at the
+  size 03 sets a stage's subject; the plate number beside it puts the picture
+  in a numbered series rather than presenting it as a record; the colophon says
+  it again in a sentence; and `cta` says it once more by being an enquiry
+  rather than the brief's "VIEW PROJECT →" — there is nothing
   to view, no route exists, and inventing one would mean inventing the results
   to put on it. A large photograph of an interface is believed the moment it is
   seen, which is why the label is not left to do the work alone.
@@ -276,7 +293,10 @@ Consequences worth knowing before touching it:
   thing in the chapter that may be dropped for space, so it moves rather than
   disappears.
 - **The description is the only thing that goes below `lg`-height**, and only
-  below 480px. Everything that is a *fact* — category, status, services,
+  below 480px — unlike `StagePlate`'s body, which also goes below `lg`. A stage
+  has to share a portrait sheet with the stage facing it; a project does not,
+  because only one of the four is showing. Measured at 390x844 the whole recto
+  ends ~100px short of the sheet with the paragraph in. Everything that is a *fact* — category, status, services,
   platform — stays at every size; the sentence that goes is the one the plate
   and the headline have already said.
 - **All four plates are in the markup and three are transparent**, sharing one
@@ -285,6 +305,20 @@ Consequences worth knowing before touching it:
   click — a blank frame in the window, which is the one thing a window may not
   do. The first is `loading="eager"`; the other three are behind a click that
   has not happened.
+- **There are TWO indices, and the second one is not redundant.** 03 needs its
+  `StageIndex` because a spread carries two stages and nothing else says which
+  you asked for; 04's window shows one project at a time, so `ProjectHeadIndex`
+  is not resolving an ambiguity. What it does is give the head the same shape
+  03's has — a name on the left, numbered notches on the right — and a second
+  place to change the plate for a reader whose eye is already on the recto
+  rather than back across the gutter. **One instance, not one per project**:
+  the heads are stacked four deep in one grid cell with three transparent, and
+  an index inside each would be sixteen buttons for four destinations, twelve
+  of them in an `aria-hidden` subtree. It is `hidden lg:flex`, because below
+  `lg` the verso's own index is a few inches up the same collapsed sheet.
+- **The status is the label line, on the left, where 03 sets its subject** —
+  because on this page it is the subject: what these four are is the first fact
+  about them. That is now the FOURTH place the chapter says it (see below).
 - **The index is on the verso, where an engraving used to be, and it changes
   shape at `lg`.** It was a running head above the plate — four tracked words,
   WEB AI SAAS MOBILE — which is a tab strip's worth of information: a reader
@@ -334,17 +368,27 @@ Consequences worth knowing before touching it:
   from the section, and sets every copy. There are three copies of the index —
   the verso, the hidden portrait duplicate inside `data-facing-inline`, and the
   reduced-motion column — and keeping them all in step is simpler than deciding
-  which one is live. Arrow keys move focus within the index's own
-  `aria-label` scope so it never jumps to the hidden duplicate.
-- **`bindWindow(group, landmark)` in `book.tsx` drives both this and 04.** One
-  factory called twice — `("project", "Projects")` and
-  `("perspective", "Perspectives")` — because the mechanism is identical and
-  the settings are not. It reads `[data-<group>]` for the index and both
+  which one is live. Arrow keys move focus within the copy they were
+  pressed in, so it never jumps to the hidden duplicate — see the scoping note
+  below.
+- **`bindWindow(group)` in `book.tsx` drives both this and 04.** One factory
+  called twice — `("project")` and `("perspective")` — because the mechanism is
+  identical and the settings are not. It reads `[data-<group>]` for the index and both
   `[data-<group>-panel]` (copy, which leaves the accessibility tree when it is
   not showing) and `[data-<group>-plate]` (pictures, which do not: their alt
   text is already reachable only through the current panel, and an
   `aria-hidden` `<img>` mid-fade reads as a flicker to some AT). Adding a third
   window is one more call, not another handler.
+- **Arrow-key focus is scoped to the enclosing `<nav>`, not to a landmark
+  name.** It was the name for as long as every copy of an index shared one —
+  04's verso list, its portrait duplicate and the reduced-motion column are all
+  "Projects" — and 04's head index broke that: a fourth copy driving the same
+  four plates under its own name, because two landmarks announced identically
+  while going to the same place is what those names exist to prevent. Keyed on
+  the name, an arrow press inside the head index matched nothing, fell back to
+  the document, and moved focus to the verso list a page away. Every index copy
+  is a `<nav>` and none nests inside another, so `el.closest("nav")` is the
+  scope that keeps working as copies are added.
 - **All six panels are in the markup and five are transparent.** They share one
   grid cell, so the window is as tall as the longest thesis from the first
   paint and does not resize on a click. `opacity` is safe here and nowhere near
@@ -375,6 +419,15 @@ Consequences worth knowing before touching it:
   up behind each one. That is the whole reason the engraved series is numbered
   separately from the plates. The two left, 01's flow chart and 07's
   telegraphy, are `Fig. 1` and `Fig. 2`.
+
+  **The plates restart per chapter**: 03's six photographs are `PLATE I`–`VI`
+  and 04's four are `PLATE I`–`IV` again, so `PLATE III` names two different
+  pictures in one book. That is a deliberate choice and not an oversight — a
+  chapter numbers its own plates from one, the way its stages and its projects
+  are numbered from one. The rule that still holds without exception is the
+  NUMERAL SYSTEM: plates roman, chapters arabic, engraved figures their own
+  sentence-case series. Nothing in the book ever refers to a plate from
+  outside the chapter it is in, which is what makes restarting safe.
 - **Geometry comes from the camera, never from CSS.** Sheets sit on the real
   gutter because `spreadAt()` runs the same arithmetic the painter runs. A
   hardcoded `50%` will drift apart from the photograph on resize.
@@ -495,6 +548,23 @@ crop downward for a better picture puts them back. And every crop *starts*
 below the browser chrome: 03's plates are photographs of screens in a room and
 carry none, and a window frame with traffic lights is the one thing in these
 pictures that says "export from a mockup tool" rather than "software".
+
+**MOBILE is the one crop that is PAINTED and not only cut, and it is the only
+place either plate script invents a pixel.** Its three phones occupy
+x 348–1444, y 68–866 of the source; the left-hand marketing copy ends at
+x=263, so a crop that excludes it cannot start further left than ~275, which
+caps the width at 1397 and the 16:9 height at 786 — 13px shorter than the
+phones. There is no 16:9 crop of that composition that both excludes the copy
+and contains the phones, and an evenly-margined one caps 100px short. So the
+copy is REMOVED instead of avoided: `fills` (`TO:FROM`, both in source pixels)
+stretches a 40px column of background over it and a 60px column over the
+right-hand registration bracket, which buys `1470x827+161+54` — centred on the
+phone group in both axes, all three whole, 187px of air at the sides. Only
+background is invented, and only where marketing furniture stood; the same
+thing every other crop achieves by cutting, done by painting because here
+cutting cannot reach. Take the left strip from x=270 and not from nearer the
+phone: at x=310 it catches phone 1's side buttons and smears three dark bars
+down the margin.
 
 **The tone is 03's, exactly** — same SHADOW, HIGHLIGHT, SATURATION, SIGMOIDAL
 and width, copied from `build-process-plates.sh`, because two sets of plates in

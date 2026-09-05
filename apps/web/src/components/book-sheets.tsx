@@ -1736,7 +1736,73 @@ function ProjectIndex({ services }: { services: PageService[] }) {
 }
 
 /**
- * The WORK stage: a selectable index, one 16:9 plate, and the facts under it.
+ * A compact index in the head of the stage, mirroring 03's <StageIndex>.
+ *
+ * WHY 04 HAS ONE WHEN ITS ARGUMENT FOR IT IS WEAKER THAN 03'S
+ *
+ * 03 needs its stage index because a spread carries TWO stages and nothing
+ * else on either page says which of the two you asked for. 04's window shows
+ * one project at a time, so there is no such ambiguity to resolve. What this
+ * one does instead is give the head the same shape 03's has -- a name on the
+ * left, a row of numbered notches on the right -- and a second place to change
+ * the plate for a reader whose eye is already on the recto rather than back
+ * across the gutter.
+ *
+ * ONE INSTANCE, NOT ONE PER PROJECT. The heads above are stacked four deep in
+ * a single grid cell and three of them are transparent; an index inside each
+ * would be sixteen buttons for four destinations, twelve of them in an
+ * aria-hidden subtree. It sits outside the stack and <Book> keeps its mark in
+ * step with everything else the index drives.
+ *
+ * Its landmark name is "Project index" and not "Projects", which is the verso
+ * list's: two landmarks with one accessible name are announced identically
+ * while going to the same four places by different routes, and the arrow-key
+ * scoping in bindWindow keys off exactly that name to decide which copy of the
+ * index focus should stay inside.
+ *
+ * Hidden below `lg`. There the spread has collapsed onto one sheet and the
+ * verso's own index -- already compacted to a single row of short labels for
+ * that viewport -- is a few inches up the same page. Two selectors for four
+ * things on one phone screen is the repetition the verso index was rewritten
+ * to remove.
+ */
+function ProjectHeadIndex({ entries }: { entries: PageService[] }) {
+  return (
+    <nav
+      aria-label="Project index"
+      className="hidden shrink-0 items-baseline gap-[clamp(0.5rem,1vw,0.9rem)] lg:flex"
+    >
+      {entries.map((service, i) => (
+        <button
+          key={service.title}
+          type="button"
+          data-project={i}
+          data-current={i === 0 ? "true" : "false"}
+          aria-current={i === 0 ? "true" : undefined}
+          // The visible text is a numeral; the name is the numeral and the
+          // category, so a screen reader is not offered "01 02 03 04".
+          aria-label={`${service.project!.number} ${service.project!.category}`}
+          className="group flex cursor-pointer flex-col items-center gap-[0.45em] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+        >
+          <span className="text-[clamp(0.46rem,0.6vw,0.55rem)] tracking-[0.2em] text-slate-400/45 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
+            {service.project!.number}
+          </span>
+          {/* The notch, cut deeper where you are. Driven by data-current
+              rather than by a render-time flag, because the current project
+              changes without React: <Book> sets the attribute. */}
+          <span
+            aria-hidden
+            className="block h-px w-[10px] bg-white/20 transition-all duration-300 group-hover:w-[14px] group-hover:bg-white/45 group-data-[current=true]:w-[18px] group-data-[current=true]:bg-white/75 motion-reduce:transition-none"
+          />
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+/**
+ * The WORK stage: one 16:9 window, and the letterpress of whichever of the
+ * four projects the index has chosen.
  *
  * WHY ONE WINDOW AND NOT FOUR ENTRIES
  *
@@ -1750,27 +1816,43 @@ function ProjectIndex({ services }: { services: PageService[] }) {
  * is the thing the brief asked to avoid and the reason this chapter went from
  * two spreads to one.
  *
- * WHY ALL FOUR PLATES ARE IN THE MARKUP AND THREE ARE TRANSPARENT
+ * WHY THE PAGE IS SHAPED LIKE 03'S AND NOT LIKE A CARD
  *
- * The same reason the volvelle on 05 keeps all six panels: they share one grid
- * cell, so the window is one fixed 16:9 box from the first paint and nothing
- * below it moves when the plate changes. Rendering only the current one would
- * mean a decode on every click -- a blank frame in the window, which is the one
- * thing a window must never do.
+ * Head, rule, label and plate number, plate, headline, sentence, the run of
+ * work, and two ruled rows hung off the foot: that is <StagePlate>'s order,
+ * part for part, and it is here because a reader arriving on either page is
+ * asking the same three questions in the same sequence -- what is this, what
+ * does it look like, and what would it involve.
+ *
+ * It also fills a page that was a third empty. With the plate at the very top
+ * and nothing above it, the letterpress ran out around two thirds down and the
+ * colophon sat alone at the foot with a hole between them. 03 does not have
+ * that hole because its foot rows are hung there deliberately, and 04 now
+ * hangs PLATFORM and the enquiry the same way.
+ *
+ * The risk this runs is the one CLAUDE.md names about 02 and 04: two chapters
+ * a spread apart, set the same way, stop reading as two chapters. What keeps
+ * them apart here is that 03's page is FIXED and this one is a window -- its
+ * plate, its head, its label and its whole letterpress change under a click,
+ * and 03's never do -- and that 03 spends four spreads on six stages where
+ * this spends one on four studies.
+ *
+ * WHY EVERYTHING IS STACKED IN GRID CELLS AND ONLY ONE COPY IS OPAQUE
+ *
+ * The same reason the volvelle on 05 keeps all six panels: each stack shares
+ * one grid cell, so every box is sized once from the first paint by its
+ * tallest member and NOTHING below it moves when the plate changes. Rendering
+ * only the current one would mean a decode on every click -- a blank frame in
+ * the window, which is the one thing a window must never do -- and a head that
+ * re-measured itself would shift the plate under the pointer.
+ *
+ * There are three stacks, not one: the head, the label row, and the
+ * letterpress. They are separate because the WINDOW sits between them and has
+ * to be a fixed 16:9 box of its own while the copy under it is sized by its
+ * longest member.
  *
  * `opacity` is safe here and is not on a sheet: these are inside a face, which
  * its own clip has already flattened. See the note in CLAUDE.md.
- *
- * WHY THE INDEX IS HORIZONTAL WHERE 05'S IS A COLUMN
- *
- * Partly because the brief draws it that way, and partly because 05 is one
- * spread later. Two adjacent chapters that both put a numbered vertical list
- * on the verso and a window on the recto stop reading as two chapters -- the
- * same failure that made 04 and 02 collapse into each other when both were
- * catalogues. Here the index is a running head ABOVE its own plate, on the
- * recto, and the verso is a plain half-title. Nothing about the two spreads
- * rhymes except that both answer to a click, which is a mechanism and not a
- * setting.
  */
 function ProjectStage({
   services,
@@ -1781,19 +1863,81 @@ function ProjectStage({
 }) {
   const entries = services.filter((service) => service.project);
   if (!entries.length) return null;
+  // Every stacked copy carries this. data-project-panel is what <Book> drives:
+  // it toggles data-current and takes the three that are not showing out of the
+  // accessibility tree, so a screen reader is not read four projects on a page
+  // that shows one.
+  const stacked =
+    "[grid-area:1/1] transition-opacity duration-300 ease-out data-[current=false]:pointer-events-none data-[current=false]:opacity-0 motion-reduce:transition-none";
   return (
-    // flex-1 so the colophon's mt-auto has a page to drop to -- EXCEPT below
-    // 480px of viewport height, where the foot of the page is not on screen.
-    // At 844x390 the sheet measures 475px in a 390px window (it is sized to
-    // the photographed page, which at that aspect is taller than the screen)
-    // and hangs 45px off the bottom. Filling the page there would push the
-    // line saying these are studies into the part nobody can see, which is the
-    // same trap the register fell into on the same viewport.
+    // flex-1 so the foot rows and the colophon have a page to drop to -- EXCEPT
+    // below 480px of viewport height, where the foot of the page is not on
+    // screen. At 844x390 the sheet measures 475px in a 390px window (it is
+    // sized to the photographed page, which at that aspect is taller than the
+    // screen) and hangs 45px off the bottom. Filling the page there would push
+    // the line saying these are studies into the part nobody can see.
     <div className="flex min-h-0 flex-col lg:flex-1 [@media(max-height:480px)]:flex-none [@media(max-height:480px)]:pt-[4%]">
+      {/* The head: the project's numeral, large, and its category beside it.
+          Same construction as <StagePlate>'s, one size down from the chapter
+          opening, because this is a page inside a chapter. */}
+      <div className="flex shrink-0 items-baseline justify-between gap-[0.9em]">
+        <div className="grid min-w-0">
+          {entries.map((service, i) => (
+            <div
+              key={service.title}
+              data-project-panel={i}
+              data-current={i === 0 ? "true" : "false"}
+              aria-hidden={i === 0 ? undefined : "true"}
+              className={`flex items-baseline gap-[0.6em] ${stacked}`}
+            >
+              <span
+                aria-hidden
+                className="font-[family-name:var(--font-display)] text-[clamp(1.7rem,3.4vw,3.2rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
+              >
+                {service.project!.number}
+              </span>
+              <h3 className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.7vw,1.55rem)] leading-none font-light text-white">
+                {service.project!.category}
+              </h3>
+            </div>
+          ))}
+        </div>
+        <ProjectHeadIndex entries={entries} />
+      </div>
+
+      {/* The status and the plate number, on one line against the rule that
+          closes the head -- 03's label line, carrying the one thing this
+          chapter cannot afford to set quietly. The status is on the LEFT,
+          where 03 sets the stage's subject, because on this page it is the
+          subject: what these four are is the first fact about them. The plate
+          number is set right because it belongs to the picture below rather
+          than to the project. */}
+      <div className="mt-[0.5em] grid shrink-0 border-t border-white/18 pt-[0.55em]">
+        {entries.map((service, i) => (
+          <div
+            key={service.title}
+            data-project-panel={i}
+            data-current={i === 0 ? "true" : "false"}
+            aria-hidden={i === 0 ? undefined : "true"}
+            className={`flex items-baseline justify-between gap-[1em] ${stacked}`}
+          >
+            <p className="text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/75 uppercase">
+              {service.project!.status}
+            </p>
+            {/* Roman, like every other illustration in this book, and
+                restarting at I for this chapter: 03's six are its own series.
+                Arabic here would read as a pointer to a chapter number. */}
+            <p className="shrink-0 text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/50">
+              PLATE {roman(i + 1)}
+            </p>
+          </div>
+        ))}
+      </div>
+
       {/* The window. aspect-ratio reserves the box before a byte of image has
           landed, so nothing below it moves on load or on a swap. */}
       <div
-        className="relative grid w-full shrink-0 overflow-hidden border border-white/12"
+        className="relative mt-[0.75em] grid w-full shrink-0 overflow-hidden border border-white/12 lg:mt-[0.9em]"
         style={{ aspectRatio: "16 / 9" }}
       >
         {entries.map((service, i) => (
@@ -1814,10 +1958,10 @@ function ProjectStage({
         ))}
       </div>
 
-      {/* The letterpress. One panel per project in one cell, like the plates
-          above, so the tallest description sets the height once and the CTA
-          never moves under the pointer. */}
-      <div className="mt-[1.1em] grid min-h-0">
+      {/* The letterpress. grid-rows-1 makes the single row fill the flexed
+          container rather than sit at its content height, which is what gives
+          the foot rows below something to hang from. */}
+      <div className="mt-[0.85em] grid min-h-0 lg:flex-1 lg:grid-rows-1">
         {entries.map((service, i) => {
           const project = service.project!;
           return (
@@ -1826,58 +1970,77 @@ function ProjectStage({
               data-project-panel={i}
               data-current={i === 0 ? "true" : "false"}
               aria-hidden={i === 0 ? undefined : "true"}
-              className="flex [grid-area:1/1] flex-col transition-opacity duration-300 ease-out data-[current=false]:pointer-events-none data-[current=false]:opacity-0 motion-reduce:transition-none"
+              className={`flex flex-col ${stacked}`}
             >
-              {/* Category and status on ONE line, at ONE size. The status is
-                  the load-bearing half -- none of these is client work -- and
-                  setting it smaller or lighter than the category is how a
-                  portfolio says it without saying it. */}
-              <p className="text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.3em] text-slate-400/75 uppercase">
-                {project.category}
-                <span aria-hidden className="mx-[0.9em] text-slate-500/60">
-                  ·
-                </span>
-                {project.status}
-              </p>
-              <h3 className="mt-[0.45em] font-[family-name:var(--font-display)] text-[clamp(1.1rem,2vw,1.85rem)] leading-[1.1] font-light text-balance text-white">
+              <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.62vw,1.5rem)] leading-tight font-light text-balance text-[#dce7f7]">
                 {service.title}
-              </h3>
+              </h4>
               {/* The description goes below 480px of viewport HEIGHT and
-                  nowhere else. At 844x390 the page has ~390px against a
-                  desktop half's ~620 and the plate alone takes 172 of it; the
-                  three lines this sets to are what the plate and the headline
-                  have already said. Everything that is a FACT -- category,
-                  status, services, platform -- stays at every size. */}
-              <p className="mt-[0.7em] max-w-[46ch] text-[clamp(0.7rem,0.95vw,0.86rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
+                  nowhere else -- unlike <StagePlate>'s body, which also goes
+                  below `lg`. A stage has to share a portrait sheet with the
+                  stage facing it; a project does not, because only one of the
+                  four is showing. Measured at 390x844 the whole recto ends
+                  ~100px short of the sheet with this paragraph in.
+                  Everything that is a FACT -- status, the work, the platform
+                  -- stays at every size. */}
+              <p className="mt-[0.55em] max-w-[46ch] shrink-0 text-[clamp(0.74rem,1.04vw,0.95rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
                 {service.body}
               </p>
-              <dl className="mt-[0.9em] grid grid-cols-[auto_1fr] gap-x-[1.4em] gap-y-[0.35em] border-t border-white/12 pt-[0.8em] text-[clamp(0.56rem,0.76vw,0.68rem)] leading-snug">
-                <dt className="tracking-[0.2em] text-slate-500/80 uppercase">
-                  Services
+              {/* What the work is. A `ul` because it is a list and a screen
+                  reader should say so; the separators are decorative and are
+                  drawn rather than typed into the copy, so nothing announces
+                  "middle dot" three times. Set as one wrapped run and not as
+                  bullets, for <StagePlate>'s reason: four bullets down a
+                  column would be the most prominent thing on a page whose
+                  picture is the point. */}
+              <ul className="mt-[0.95em] flex shrink-0 flex-wrap items-baseline gap-x-[0.75em] gap-y-[0.25em] text-[clamp(0.64rem,0.88vw,0.8rem)] leading-relaxed text-slate-300/65">
+                {project.services.map((item, k) => (
+                  <li key={item} className="flex items-baseline gap-[0.7em]">
+                    {k > 0 ? (
+                      <span aria-hidden className="text-slate-400/35">
+                        &middot;
+                      </span>
+                    ) : null}
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              {/* The two ruled rows, hung off the foot the way 03 hangs
+                  DELIVERABLE and OUTCOME, so they sit on the same line from
+                  project to project and can be read across the four. mt-auto
+                  only at lg: on the stacked portrait sheet there is no page
+                  foot to drop to, only the next block. */}
+              <dl className="mt-[1em] grid shrink-0 grid-cols-[auto_1fr] items-baseline gap-x-[1.2em] pt-[0.6em] lg:mt-auto lg:pt-[1.2em]">
+                <dt className="border-t border-white/18 pt-[0.6em] text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/70">
+                  PLATFORM
                 </dt>
-                <dd className="text-slate-300/85">{project.services}</dd>
-                <dt className="tracking-[0.2em] text-slate-500/80 uppercase">
-                  Platform
+                <dd className="border-t border-white/18 pt-[0.6em] text-[clamp(0.78rem,1.08vw,1rem)] leading-tight text-white">
+                  {project.platform}
+                </dd>
+                <dt className="border-t border-white/10 pt-[0.6em] text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/70">
+                  ACTION
                 </dt>
-                <dd className="text-slate-300/85">{project.platform}</dd>
+                <dd className="border-t border-white/10 pt-[0.6em]">
+                  {/* Tracked capitals over a rule with an arrow, which is what
+                      this book has instead of a button. It is an enquiry and
+                      not "VIEW PROJECT ->" because there is nothing to view --
+                      see the note on PageProject.cta. */}
+                  <button
+                    type="button"
+                    data-nav-item
+                    data-index={project.cta.chapter}
+                    className="group flex w-fit items-center gap-[0.7em] border-b border-white/25 pb-[0.3em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.28em] text-slate-200 uppercase transition-colors duration-200 outline-none hover:border-white/60 hover:text-white focus-visible:border-white focus-visible:text-white motion-reduce:transition-none"
+                  >
+                    {project.cta.label}
+                    <span
+                      aria-hidden
+                      className="transition-transform duration-200 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
+                    >
+                      →
+                    </span>
+                  </button>
+                </dd>
               </dl>
-              {/* The action, set the way 03's tailpiece sets its two: tracked
-                  capitals over a rule with an arrow, which is what this book
-                  has instead of a button. */}
-              <button
-                type="button"
-                data-nav-item
-                data-index={project.cta.chapter}
-                className="group mt-[1.1em] flex w-fit items-center gap-[0.7em] border-b border-white/25 pb-[0.4em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.28em] text-slate-200 uppercase transition-colors duration-200 outline-none hover:border-white/60 hover:text-white focus-visible:border-white focus-visible:text-white motion-reduce:transition-none"
-              >
-                {project.cta.label}
-                <span
-                  aria-hidden
-                  className="transition-transform duration-200 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
-                >
-                  →
-                </span>
-              </button>
             </div>
           );
         })}
@@ -1886,23 +2049,17 @@ function ProjectStage({
       {/* The chapter's qualification, at the foot of the page the four plates
           are on. It rode under the ornament at the end of the register, which
           is where a colophon goes -- but the stage has no end page, and the
-          half-title opposite is already carrying an engraving that ends in its
-          own caption and credit. Two footnotes at the foot of one verso
-          printed straight through each other.
+          half-title opposite is already carrying the index of the four.
 
           Under the plates is the better place regardless: this is a note about
           what the pictures are, and a large photograph of an interface is
-          believed the moment it is seen. mt-auto drops it to the foot however
-          tall the panel above turns out to be. */}
+          believed the moment it is seen. */}
       {/* Hidden below 480px of viewport HEIGHT, where the twin of this block
           on the half-title takes over -- see the note there. It is printed in
           both places and shown in one; display:none keeps the other out of the
           accessibility tree, so nothing is announced twice. */}
       {colophon ? (
-        <div
-          data-ink
-          className="mt-auto pt-[1.6em] [@media(max-height:480px)]:hidden"
-        >
+        <div data-ink className="pt-[1.6em] [@media(max-height:480px)]:hidden">
           <span
             aria-hidden
             className="mb-[0.9em] block h-px w-[26%] bg-white/15"

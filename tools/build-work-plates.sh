@@ -188,10 +188,15 @@ BLUR='0x12'
 command -v magick >/dev/null || { echo "ImageMagick 7 (magick) is required" >&2; exit 1; }
 mkdir -p "$OUT"
 
-# name|source|slug|level|crop|blur boxes (space separated, WxH+X+Y in SOURCE px)
+# name|source|slug|level|crop|fills|blur boxes  (all geometry in SOURCE px)
 #
 # `level` is the per-image `-level lo%,hi%` that runs BEFORE the shared band --
 # see WHY -level AND NOT GAMMA above.
+#
+# `fills` is a space-separated list of `TO:FROM`, both plain WxH+X+Y in source
+# pixels: take the FROM region, stretch it to the TO box, and stamp it there.
+# It runs before the blur boxes and before the crop, and only MOBILE uses it --
+# see WHY MOBILE IS PAINTED AND NOT ONLY CUT below.
 #
 # Crops are the interface panel of each composition, measured off the source at
 # half scale (836px wide, so displayed x2 = source), and every one is 16:9 to
@@ -211,28 +216,45 @@ mkdir -p "$OUT"
 # a window frame is the one thing in these pictures that says "export from a
 # mockup tool" rather than "software".
 #
-# MOBILE's crop is the one that had to be SOLVED rather than chosen, and the
-# arithmetic is worth keeping because the same trap is in the other three.
+# WHY MOBILE IS PAINTED AND NOT ONLY CUT
+#
+# Its crop is the one that had to be SOLVED rather than chosen, and it is
+# the only place in this file that PAINTS pixels rather than choosing them.
+#
 # Measured by max-projection, its three phones occupy x 348-1444, y 68-866 --
-# 1097 wide by 799 tall. The left-hand copy block ends at x=263, so the crop
-# cannot start further left than ~275, which caps the width at ~1240 and
-# therefore the 16:9 height at ~697. That is 100px SHORTER than the phones.
-# So a crop of this composition cannot both exclude the copy and contain the
-# phones: something bleeds, and the only question is whether it looks decided.
+# 1097 wide by 799 tall. The left-hand copy block ends at x=263, so a crop that
+# excludes it cannot start further left than ~275, which caps the width at
+# 1397 and therefore the 16:9 height at 786. That is 13px SHORTER than the
+# phones. There is NO 16:9 crop of this composition that both excludes the
+# marketing copy and contains the phones; and long before that limit, an
+# evenly-margined one caps at 1243x699, which clips 100px of phone.
 #
-# The first crop (1337x752+274+105) answered that badly in both axes: 74px of
-# margin on the left against 166 on the right, so the group sat visibly left
-# of centre with a hole beside it, and a top edge 37px BELOW the middle
-# phone's, so that phone was clipped by a hair at both ends -- the amount that
-# reads as a mistake rather than as a frame.
+# Two crops came before this one and each was wrong in its own way. The first
+# (1337x752+274+105) had 74px of margin on the left against 166 on the right,
+# so the group sat visibly left of centre with a hole beside it, and a top edge
+# 37px BELOW the middle phone's, clipping it by a hair at both ends -- the
+# amount that reads as a mistake rather than as a frame. The second
+# (1237x696+278+100) fixed the alignment by taking the widest evenly-margined
+# 16:9 box available, and in doing so had to let all three phones bleed off the
+# bottom. Aligned, but tighter than 03's plates, which are photographs with
+# room around their subject.
 #
-# 1237x696+278+100 is even margins (70px each side of the group) with the
-# bleed pushed entirely to the BOTTOM: all three status bars are intact, the
-# outer two keep their whole nav bar and lose only the bezel below it, and the
-# middle phone -- nearer the camera, and taller in frame for that reason --
-# runs off the bottom edge. Shifting down to save its nav bar cuts the outer
-# two's status bars; shifting up to clear it cuts their nav bars in half. This
-# is the window between those.
+# So the copy is REMOVED instead of avoided. `fills` rebuilds two strips of
+# background from the source's own: a 40px column at x=270 stretched across
+# x 0..270 (over the wordmark, the paragraph, the feature list and the dot
+# grid) and a 60px column at x=1500 stretched across x 1500..1672 (over the
+# right-hand registration bracket). Both are pure background in the source and
+# the vignette varies slowly enough horizontally that a stretched column reads
+# as the same wall. The left strip is taken from x=270 and not from nearer the
+# phone: at x=310 it catches phone 1's side buttons, and stretching those over
+# 270px smears three dark bars down the margin, visible under a level stretch.
+#
+# That buys a crop of 1470x827+161+54: centred on the phone group in BOTH axes
+# (its centre is 896,467 and so is the crop's), all three phones whole, 187px
+# of air at the sides and ~14px top and bottom. Only the background is
+# invented, and only where marketing furniture stood -- the same thing every
+# other crop in this file achieves by cutting, done by painting because here
+# cutting cannot reach.
 #
 # The blur boxes are in the SAME frame -- full source pixels, not offsets into
 # the crop. They are applied before the crop, so a box measured relative to the
@@ -240,15 +262,15 @@ mkdir -p "$OUT"
 # exactly that, and the proof came back with every client name still legible
 # and a smear over the revenue chart instead. Measure against the source.
 PLATES=(
-"WEB_APPLICATION|WEB_APPLICATION.png|web-application|25%,180%|1120x630+262+176|889x140+479+666 219x88+1167+304"
-"AI_PLATFORM|AI_PLATFORM.png|ai-platform|2%,26%|976x549+314+144|"
-"SAAS_PRODUCT|SaaS Product.png|saas-product|22%,165%|828x466+286+84|651x82+456+146 247x161+863+283 651x167+456+464 58x140+462+292"
-"MOBILE_APPLICATION|MOBILE_APPLICATION.png|mobile-application|2%,20%|1237x696+278+100|96x28+422+720"
+"WEB_APPLICATION|WEB_APPLICATION.png|web-application|25%,180%|1120x630+262+176||889x140+479+666 219x88+1167+304"
+"AI_PLATFORM|AI_PLATFORM.png|ai-platform|2%,26%|976x549+314+144||"
+"SAAS_PRODUCT|SaaS Product.png|saas-product|22%,165%|828x466+286+84||651x82+456+146 247x161+863+283 651x167+456+464 58x140+462+292"
+"MOBILE_APPLICATION|MOBILE_APPLICATION.png|mobile-application|2%,20%|1470x827+161+54|270x941+0+0:40x941+270+0 172x941+1500+0:60x941+1500+0|96x28+422+720"
 )
 
 missing=0
 for spec in "${PLATES[@]}"; do
-  IFS='|' read -r _ src _ _ _ _ <<<"$spec"
+  IFS='|' read -r _ src _ _ _ _ _ <<<"$spec"
   [ -f "$ROOT/$src" ] || { echo "missing source: $ROOT/$src" >&2; missing=1; }
 done
 [ "$missing" -eq 0 ] || { echo "put the four mockups at the repo root and re-run" >&2; exit 1; }
@@ -258,13 +280,26 @@ paper=$(magick "$ROOT/apps/web/public/frames/v5/hd/frame-091.webp" \
 
 printf '%-20s %10s  %8s  %8s  %s\n' SOURCE LEVEL MEDIAN STDDEV FILE
 for spec in "${PLATES[@]}"; do
-  IFS='|' read -r name src slug level crop boxes <<<"$spec"
+  IFS='|' read -r name src slug level crop fills boxes <<<"$spec"
   dst="$OUT/$slug.webp"
 
   # Crop first, so the blur boxes are measured in the same frame the header
   # quotes -- the SOURCE, not some intermediate. -page +X+Y places each blurred
   # patch back where it came from.
   args=()
+  # Background BEFORE redaction, so a fill can never sit over a blurred region
+  # and undo it. Nothing in the table has them overlapping, and this ordering
+  # is what keeps that true if one is ever moved.
+  for fill in $fills; do
+    # to="$to" from="$from" and NOT dst/src: those two name the output file and
+    # the source file in the enclosing loop, and shadowing them here wrote the
+    # finished plate to a file called "172x941+1500+0" while the measurement
+    # read it back and reported a plate nobody had made.
+    to="${fill%%:*}"
+    from="${fill#*:}"
+    args+=( \( -clone 0 -crop "$from" +repage \
+                -resize "${to%%+*}!" -repage "+${to#*+}" \) )
+  done
   for box in $boxes; do
     args+=( \( -clone 0 -crop "$box" +repage -blur "$BLUR" -repage "+${box#*+}" \) )
   done

@@ -350,7 +350,7 @@ export function Book() {
       // fallback, and again in the column. Setting them all keeps every copy in
       // step, which is simpler than deciding which is live.
       const windowTeardowns: (() => void)[] = [];
-      const bindWindow = (group: string, landmark: string) => {
+      const bindWindow = (group: string) => {
         const buttons = [
           ...document.querySelectorAll<HTMLElement>(`[data-${group}]`),
         ];
@@ -413,9 +413,21 @@ export function Book() {
           event.preventDefault();
           next = (next + count) % count;
           show(next);
-          // Focus the same index on whichever COPY of the index this key came
-          // from, so focus does not jump to the hidden portrait duplicate.
-          const scope = el.closest(`[aria-label='${landmark}']`) ?? document;
+          // Focus the same index on whichever COPY of the index this key
+          // came from, so focus does not jump to another one.
+          //
+          // Scoped to the enclosing <nav> and NOT to a landmark name. It was
+          // the name for as long as every copy of an index shared one -- the
+          // verso, the portrait duplicate and the reduced-motion column are
+          // all "Projects" -- and 04's head index broke that: it is a fourth
+          // copy driving the same four plates under its own name, "Project
+          // index", because two landmarks announced identically while going to
+          // the same place by different routes is the thing that name exists
+          // to prevent. Keyed on the name, an arrow press inside the head
+          // index matched nothing, fell back to the document, and moved focus
+          // to the verso list a page away. Every copy is a <nav>; none of them
+          // nests inside another.
+          const scope = el.closest("nav") ?? document;
           scope.querySelector<HTMLElement>(`[data-${group}="${next}"]`)?.focus();
         };
 
@@ -430,8 +442,8 @@ export function Book() {
           }
         });
       };
-      bindWindow("project", "Projects");
-      bindWindow("perspective", "Perspectives");
+      bindWindow("project");
+      bindWindow("perspective");
       const dropWindows = () => {
         for (const drop of windowTeardowns) drop();
         windowTeardowns.length = 0;

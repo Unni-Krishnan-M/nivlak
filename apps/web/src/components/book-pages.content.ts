@@ -95,8 +95,14 @@ export type PageProject = {
   category: string;
   /** NIVLAK LAB · CONCEPT. Stated, never implied. */
   status: string;
-  /** Strategy · UX/UI · Engineering · Deployment. */
-  services: string;
+  /**
+   * The work, as a run: Strategy · UX/UI · Engineering · Deployment.
+   *
+   * A list and not a joined string, because the page sets it the way 03 sets
+   * a stage's `work` -- one <li> each, with the separators drawn rather than
+   * typed, so nothing announces "middle dot" three times.
+   */
+  services: string[];
   /** Web, AI Platform, SaaS, Mobile. */
   platform: string;
   /**
@@ -815,7 +821,7 @@ export const BOOK_PAGES: BookPage[] = [
           label: "Web",
           category: "Web Application",
           status: "Nivlak Lab · Concept",
-          services: "Strategy · UX/UI · Engineering · Deployment",
+          services: ["Strategy", "UX/UI", "Engineering", "Deployment"],
           platform: "Web",
           cta: { label: "Enquire about this", chapter: 6 },
         },
@@ -833,7 +839,7 @@ export const BOOK_PAGES: BookPage[] = [
           label: "AI",
           category: "AI Platform",
           status: "Nivlak Lab · Concept",
-          services: "AI · Automation · APIs · Engineering",
+          services: ["AI", "Automation", "APIs", "Engineering"],
           platform: "AI Platform",
           cta: { label: "Enquire about this", chapter: 6 },
         },
@@ -851,7 +857,7 @@ export const BOOK_PAGES: BookPage[] = [
           label: "SaaS",
           category: "SaaS Product",
           status: "Nivlak Lab · Concept",
-          services: "Product · Architecture · Engineering · Cloud",
+          services: ["Product", "Architecture", "Engineering", "Cloud"],
           platform: "SaaS",
           cta: { label: "Enquire about this", chapter: 6 },
         },
@@ -869,7 +875,7 @@ export const BOOK_PAGES: BookPage[] = [
           label: "Mobile",
           category: "Mobile Product",
           status: "Nivlak Lab · Concept",
-          services: "Product · UX/UI · Mobile Engineering",
+          services: ["Product", "UX/UI", "Mobile Engineering"],
           platform: "Mobile",
           cta: { label: "Enquire about this", chapter: 6 },
         },

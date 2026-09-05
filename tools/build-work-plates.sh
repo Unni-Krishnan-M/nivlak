@@ -211,6 +211,29 @@ mkdir -p "$OUT"
 # a window frame is the one thing in these pictures that says "export from a
 # mockup tool" rather than "software".
 #
+# MOBILE's crop is the one that had to be SOLVED rather than chosen, and the
+# arithmetic is worth keeping because the same trap is in the other three.
+# Measured by max-projection, its three phones occupy x 348-1444, y 68-866 --
+# 1097 wide by 799 tall. The left-hand copy block ends at x=263, so the crop
+# cannot start further left than ~275, which caps the width at ~1240 and
+# therefore the 16:9 height at ~697. That is 100px SHORTER than the phones.
+# So a crop of this composition cannot both exclude the copy and contain the
+# phones: something bleeds, and the only question is whether it looks decided.
+#
+# The first crop (1337x752+274+105) answered that badly in both axes: 74px of
+# margin on the left against 166 on the right, so the group sat visibly left
+# of centre with a hole beside it, and a top edge 37px BELOW the middle
+# phone's, so that phone was clipped by a hair at both ends -- the amount that
+# reads as a mistake rather than as a frame.
+#
+# 1237x696+278+100 is even margins (70px each side of the group) with the
+# bleed pushed entirely to the BOTTOM: all three status bars are intact, the
+# outer two keep their whole nav bar and lose only the bezel below it, and the
+# middle phone -- nearer the camera, and taller in frame for that reason --
+# runs off the bottom edge. Shifting down to save its nav bar cuts the outer
+# two's status bars; shifting up to clear it cuts their nav bars in half. This
+# is the window between those.
+#
 # The blur boxes are in the SAME frame -- full source pixels, not offsets into
 # the crop. They are applied before the crop, so a box measured relative to the
 # cropped window lands somewhere else entirely: the first run of this file did
@@ -220,7 +243,7 @@ PLATES=(
 "WEB_APPLICATION|WEB_APPLICATION.png|web-application|25%,180%|1120x630+262+176|889x140+479+666 219x88+1167+304"
 "AI_PLATFORM|AI_PLATFORM.png|ai-platform|2%,26%|976x549+314+144|"
 "SAAS_PRODUCT|SaaS Product.png|saas-product|22%,165%|828x466+286+84|651x82+456+146 247x161+863+283 651x167+456+464 58x140+462+292"
-"MOBILE_APPLICATION|MOBILE_APPLICATION.png|mobile-application|2%,20%|1337x752+274+105|96x28+422+720"
+"MOBILE_APPLICATION|MOBILE_APPLICATION.png|mobile-application|2%,20%|1237x696+278+100|96x28+422+720"
 )
 
 missing=0

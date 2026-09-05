@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Turn the four interface mockups into the register's plates on chapter 04.
+# Turn the four interface mockups into the plates on chapter 04's project stage.
 #
 # Sources are NOT in the repo -- they are expected at the repo root as
 # WEB_APPLICATION.png, AI_PLATFORM.png, "SaaS Product.png" (the name really
@@ -41,42 +41,61 @@
 #   MOBILE            revenue 12,45,000, "New Customer -- Acme Corporation"
 #   AI_PLATFORM       24,980 requests, 96.7% success, 0.21% error
 #
-# Chapter 04 is a register, and the whole argument for that setting is that a
-# reader can tell which work exists and which is a study -- see the note above
-# it in book-pages.content.ts. Four of its five entries are labelled CONCEPT.
-# A picture of a named client paying an invoice, printed beside an entry that
-# says CONCEPT, does not read as a contradiction; the picture wins and the
-# label becomes decoration. That is precisely the quiet lie the register was
-# built to make impossible, arriving through the one door the setting left open.
-#
-# So the regions carrying names and figures are blurred to illegibility BEFORE
-# the downscale, and the plate keeps only the shape of the interface -- which
-# is all a 150px plate beside a ledger was ever going to show.
+# Every entry on chapter 04 is labelled CONCEPT, and the whole argument for
+# the stage is that a reader can tell a study from a build -- see the note
+# above the chapter in book-pages.content.ts. A picture of a named client
+# paying an invoice, printed beside an entry that says CONCEPT, does not read
+# as a contradiction; the picture wins and the label becomes decoration.
 #
 # WHAT IS BLURRED AND WHAT IS NOT, WHICH IS ONE RULE
 #
-#   Blur anything that names a PARTY or states MONEY.
-#   Keep counts, hours, percentages and unlabelled charts.
+#   Blur where a THIRD PARTY IS NAMED. Money goes only when it is attached
+#   to one. Everything the app shows about itself stays.
 #
-# Those are the two things that make a picture read as delivered client work: a
-# company that could be phoned, and an amount that could have been paid.
-# "Acme Corporation" against 12,45,000 is a claim about a client. "128 tasks
-# completed, up 24% from last week" is a screenshot of sample data, and no
-# reader takes it for Nivlak's results -- the same reader is looking at a line
-# that says NIVLAK LAB, CONCEPT. Redacting that too ends with a plate that is a
-# grey smear, which fails the only reason these are photographs.
+# The thing that makes a picture read as delivered client work is a company
+# that could be phoned against an amount that could have been paid. Both
+# halves are needed. "Acme Corporation -- Nivlak Pro -- Rs 78,000 -- Paid" is
+# a claim about a client. A KPI card reading "Total Revenue Rs 12,45,000"
+# inside a dashboard mockup is the demo app's sample data, the same kind of
+# thing as "128 tasks completed, up 24% from last week", and no reader takes
+# either for Nivlak's books -- the same reader is looking at a line that says
+# NIVLAK LAB, CONCEPT.
 #
-# Money hides in axis labels. Both revenue charts label theirs in lakhs and
-# both needed a box of their own -- the last two in each list below.
+# The rule used to be the disjunction -- names OR money -- and MOBILE is what
+# proved that too broad. Seven boxes covered both revenue cards, the axis
+# labels, the sales chart and the Top Products table, and once the tone came
+# up to 03's contrast (below) the result read as a censored phone rather than
+# as software: a third of the picture was smear, and a plate you cannot read
+# fails the only reason these are photographs and not emblems. Six of those
+# seven boxes were over the app talking about itself. What is left is 96x28
+# over the only proper noun on the plate that is not Nivlak's: the second
+# line of one activity row, where "New Customer" is followed by "Acme
+# Corporation". The row's own label and its timestamp stay legible, because
+# a customer arriving is a thing an app does and only the customer's NAME is
+# a claim about the world.
+#
+# Two things that look like they need a box and do not. "Top Products: Nivlak
+# Pro / Analytics / Automate / Connect" names Nivlak's OWN products, not a
+# customer, and the figures beside them are the mockup's, not a claim of
+# sales. And revenue axis labels in lakhs are money with nobody attached, so
+# they go the same way -- they only ever needed boxes under the old rule.
 #
 # WHY THE DOWNSCALE IS NO LONGER THE BACKSTOP
 #
-# It was, at 560px: a source glyph 10px tall came out under 3.4px, which is not
-# small type but no type, and the boxes only had to make the intent reviewable.
-# 04 is a full-measure stage now and the file is 1200px against crops of
-# 1100-1434, so the resize is about 1:1 and destroys nothing. The blur is the
-# whole redaction, which is why the radius went 8 -> 12 and why every box below
-# has to be proved by looking at the OUTPUT at 100%, not by reading this list.
+# It was, at 560px: a source glyph 10px tall came out under 3.4px, which is
+# not small type but no type, and the boxes only had to make the intent
+# reviewable. 04 is a full-measure stage now and the file is 1240px against
+# crops of 828-1337, so the resize is about 1:1 and destroys nothing. The blur
+# is the whole redaction, which is why the radius went 8 -> 12 and why every
+# box below has to be proved by looking at the OUTPUT at 100%, not by reading
+# this list.
+#
+# WEB and SAAS still carry a box each on money with no party attached -- WEB's
+# "Invoices Paid" card (219x88+1167+304) and SAAS's KPI strip, Top Products
+# and axis labels. The refined rule above no longer requires them. They are
+# small and they are not costing either plate the way MOBILE's seven cost it,
+# so they stay until somebody decides otherwise; the two client TABLES on
+# those plates are a different matter and never come off.
 #
 #
 # THE TONE IS 03'S, EXACTLY, AND THAT IS THE POINT
@@ -151,19 +170,19 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$ROOT/apps/web/public/work"
 
-# The two ends of the book's ink. The same navy and the same silver
-# build-process-plates.sh works between, but a much narrower reach of it -- see
-# the header for why a small specimen wants a short band.
+# The two ends of the book's ink -- the same navy and the same silver
+# build-process-plates.sh works between, and the same reach of it. See THE
+# TONE IS 03'S above for why these are copied rather than tuned.
 SHADOW='#233c58'
 HIGHLIGHT='#dfe9f8'
 SATURATION=62
 SIGMOIDAL=5
 WIDTH=1240
 QUALITY=82
-# Enough to take 10px type to a smear at source scale -- sigma 8 spreads a
-# glyph over ~24px -- and no more than that. The downscale is what makes the
-# redaction true; this pass only has to survive being looked at in the file, so
-# a heavier radius buys nothing and reads as a censor's smudge at 560px.
+# Sigma 12 spreads a 10px source glyph over ~36px, and the resize is about
+# 1:1, so this pass IS the redaction -- there is no downscale behind it to
+# finish the job (see WHY THE DOWNSCALE IS NO LONGER THE BACKSTOP). Proved at
+# 180% zoom on the output, not on the intermediate.
 BLUR='0x12'
 
 command -v magick >/dev/null || { echo "ImageMagick 7 (magick) is required" >&2; exit 1; }
@@ -201,7 +220,7 @@ PLATES=(
 "WEB_APPLICATION|WEB_APPLICATION.png|web-application|25%,180%|1120x630+262+176|889x140+479+666 219x88+1167+304"
 "AI_PLATFORM|AI_PLATFORM.png|ai-platform|2%,26%|976x549+314+144|"
 "SAAS_PRODUCT|SaaS Product.png|saas-product|22%,165%|828x466+286+84|651x82+456+146 247x161+863+283 651x167+456+464 58x140+462+292"
-"MOBILE_APPLICATION|MOBILE_APPLICATION.png|mobile-application|2%,20%|1337x752+274+105|284x120+376+244 140x80+518+484 288x60+374+696 300x92+749+372 265x75+1152+272 265x200+1152+525 44x140+1148+338"
+"MOBILE_APPLICATION|MOBILE_APPLICATION.png|mobile-application|2%,20%|1337x752+274+105|96x28+422+720"
 )
 
 missing=0

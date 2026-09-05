@@ -466,9 +466,17 @@ against amounts paid, MRR, churn. Chapter 04's whole argument is that a reader
 can tell a study from a build, and a picture of a named client paying an invoice
 printed beside an entry that says CONCEPT does not read as a contradiction — the
 picture wins and the label becomes decoration. Those regions are blurred, under one rule the header
-states: **blur anything that names a party or states money; keep counts, hours,
-percentages and unlabelled charts.** Money hides in axis labels — both revenue
-charts label theirs in lakhs and both needed a box of their own.
+states: **blur where a third party is named; money goes only when it is
+attached to one.** Both halves of the claim are needed — a company that could
+be phoned *against* an amount that could have been paid. The rule used to be
+the disjunction, names OR money, and 04's mobile plate is what proved that too
+broad: seven boxes covered both revenue cards, the axis labels, the sales chart
+and a Top Products table listing Nivlak's OWN products, and once the tone came
+up to 03's contrast the plate read as a censored phone. Six of the seven were
+over the app talking about itself. What is left is 96x28 over one customer
+name. A KPI card in a dashboard mockup is the demo app's sample data, the same
+kind of thing as "128 tasks completed, up 24%"; the two client TABLES on the
+web and SaaS plates are the other kind and never come off.
 
 The 560px output used to be the backstop that made the redaction true rather
 than merely covered. It is not any more: a full-measure stage needs 1240px

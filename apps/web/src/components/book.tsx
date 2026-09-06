@@ -354,7 +354,17 @@ export function Book() {
       // fallback, and again in the column. Setting them all keeps every copy in
       // step, which is simpler than deciding which is live.
       const windowTeardowns: (() => void)[] = [];
-      const bindWindow = (group: string) => {
+      const bindWindow = (
+        group: string,
+        // PREVIEW: hovering or focusing a row shows it without choosing it,
+        // and leaving the index puts back the one that was chosen. 05 asks for
+        // it and 04 does not, which is why it is an option rather than the
+        // behaviour: 04's four projects are things to compare deliberately,
+        // where 05's six are positions to skim, and a plate that changed under
+        // the pointer on the way to somewhere else would make 04's window
+        // twitch for no reason.
+        { preview = false }: { preview?: boolean } = {},
+      ) => {
         const buttons = [
           ...document.querySelectorAll<HTMLElement>(`[data-${group}]`),
         ];
@@ -397,9 +407,15 @@ export function Book() {
           }
         };
 
+        // What the reader CHOSE, as against what they are merely looking at.
+        // Without the distinction, previewing would overwrite the choice and
+        // moving the pointer away would leave the window on whatever the
+        // pointer passed over last.
+        let pinned = 0;
         const onClick = (event: Event) => {
           const el = (event.currentTarget ?? event.target) as HTMLElement;
-          show(Number(el.dataset[group]));
+          pinned = Number(el.dataset[group]);
+          show(pinned);
         };
         // Arrow keys move between entries and carry focus with them, which is
         // what a reader who is not using a mouse expects of a list that changes
@@ -416,6 +432,8 @@ export function Book() {
           else return;
           event.preventDefault();
           next = (next + count) % count;
+          // An arrow press is a choice, not a glance: it pins.
+          pinned = next;
           show(next);
           // Focus the same index on whichever COPY of the index this key
           // came from, so focus does not jump to another one.
@@ -439,15 +457,68 @@ export function Book() {
           el.addEventListener("click", onClick);
           el.addEventListener("keydown", onKey);
         }
+
+        // The preview handlers, and the scope they are torn down with.
+        //
+        // Restoring is bound to the enclosing <nav> rather than to each button
+        // because moving BETWEEN two rows of one index would otherwise fire a
+        // leave and an enter on every row crossed, putting the pinned panel
+        // back for a frame each time -- the window flickering all the way down
+        // the list. Same reason focusout checks relatedTarget: arrow keys move
+        // focus from one row to the next inside the same nav, and that is not
+        // leaving the index.
+        //
+        // Mouse only. A touch pointerenter fires once, immediately before the
+        // click that pins the same row, and there is no pointerleave to undo
+        // it -- so on a phone the preview is at best redundant and at worst a
+        // panel that stays previewed with nothing chosen.
+        const onPreview = (event: Event) => {
+          if ((event as PointerEvent).pointerType === "touch") return;
+          const el = (event.currentTarget ?? event.target) as HTMLElement;
+          show(Number(el.dataset[group]));
+        };
+        const restore = () => show(pinned);
+        const onNavLeave = (event: Event) => {
+          const nav = event.currentTarget as HTMLElement;
+          const to = (event as FocusEvent).relatedTarget as Node | null;
+          if (to && nav.contains(to)) return;
+          restore();
+        };
+        const navs = preview
+          ? [
+              ...new Set(
+                buttons
+                  .map((el) => el.closest("nav"))
+                  .filter((el): el is HTMLElement => Boolean(el)),
+              ),
+            ]
+          : [];
+        if (preview) {
+          for (const el of buttons) {
+            el.addEventListener("pointerenter", onPreview);
+            el.addEventListener("focus", onPreview);
+          }
+          for (const nav of navs) {
+            nav.addEventListener("pointerleave", restore);
+            nav.addEventListener("focusout", onNavLeave);
+          }
+        }
+
         windowTeardowns.push(() => {
           for (const el of buttons) {
             el.removeEventListener("click", onClick);
             el.removeEventListener("keydown", onKey);
+            el.removeEventListener("pointerenter", onPreview);
+            el.removeEventListener("focus", onPreview);
+          }
+          for (const nav of navs) {
+            nav.removeEventListener("pointerleave", restore);
+            nav.removeEventListener("focusout", onNavLeave);
           }
         });
       };
       bindWindow("project");
-      bindWindow("perspective");
+      bindWindow("perspective", { preview: true });
       const dropWindows = () => {
         for (const drop of windowTeardowns) drop();
         windowTeardowns.length = 0;

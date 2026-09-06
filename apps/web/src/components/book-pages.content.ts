@@ -55,6 +55,30 @@ export type PagePlate = {
  * needed the keyline-and-caption treatment the engravings get; a cut-out does
  * not, and sits on the page the way the mark at the foot of 01 does.
  */
+/**
+ * A STRUCK plate: a greyscale mask the page paints in its own silver.
+ *
+ * The third kind of picture in this book, and the distinction is not a detail
+ * of the file format -- it is what the picture is made of. A PageFigure is a
+ * photograph, printed in its own colour on transparency. A PagePlate is an
+ * antique engraving, scanned. This is neither: 05's artwork is line work on a
+ * flat pale ground, so it is keyed the way the engravings are -- negate the
+ * luminance, ship the negative, let the page paint the ink and use the file as
+ * a CSS mask. What lands on the paper is the drawing and the page's own
+ * photograph shows through everywhere else.
+ *
+ * It carries no `caption` or `credit`, which is what separates it from
+ * PagePlate: those two are historical documents and are cited. This is
+ * commissioned artwork for the chapter it sits in, so it needs an accessible
+ * name and nothing else.
+ */
+export type PageMask = {
+  src: string;
+  /** width/height of the crop, so the box reserves the right space. */
+  ratio: string;
+  alt: string;
+};
+
 export type PageFigure = {
   src: string;
   /** width/height of the trimmed file, so the row reserves the right space. */
@@ -304,7 +328,39 @@ export type PagePerspective = {
   label: string;
   /** The opinion itself, set large. A sentence, with a full stop. */
   thesis: string;
+  /**
+   * The plate's number, in roman, restarting at I for this chapter.
+   *
+   * Roman for the reason the note above ROMAN_PARTS gives: illustrations are
+   * numbered in roman so they cannot be read as pointers to the 01-07 of the
+   * chapters. That matters more here than anywhere -- an arabic "FIG. 05"
+   * inside chapter 05 names either the chapter or the picture and there is no
+   * way to tell which.
+   */
+  figure: string;
+  /**
+   * What the perspective is ABOUT, as four short nouns.
+   *
+   * They are the one thing on this spread that is not an opinion. A thesis is
+   * a claim someone could disagree with, which is what makes it worth
+   * printing; these say what territory the claim covers, which is what a
+   * reader needs in order to decide whether they care about it. Four, because
+   * the window sets them two by two and an odd list leaves a hole.
+   */
+  themes: string[];
+  /**
+   * This perspective's crop of the chapter artwork.
+   *
+   * Six crops of one drawing and not six drawings: see the header of
+   * tools/build-perspective-plates.sh. Each is chosen for its subject and all
+   * six are cut 16:9, so the window is one box at every setting and nothing
+   * under it moves on a click.
+   */
+  plate: PageMask;
 };
+
+/** The chapter's artwork, as a single tall crop for the verso's outer margin. */
+export type PageColumnPlate = PageMask;
 
 /** One numbered step of a procedure. */
 export type PageStep = {
@@ -388,6 +444,17 @@ export type BookPage = {
    * just finished counting the entries it qualifies.
    */
   colophon?: string;
+  /**
+   * A tall STRUCK plate, printed down the outer margin of the verso.
+   *
+   * Its own field and not `plate`, which is a PagePlate -- an engraving with a
+   * caption and a credit, set in the empty lower quarter of a page. This is
+   * neither: it is a crop of the chapter's own artwork, it stands beside the
+   * copy rather than under it, and it is cited to nobody because we
+   * commissioned it. Two different objects with one field name is how a page
+   * ends up printing a credit line for artwork that has no source to credit.
+   */
+  columnPlate?: PageMask;
   /** The second half of a numbered procedure. */
   steps?: PageStep[];
   /**
@@ -911,100 +978,195 @@ export const BOOK_PAGES: BookPage[] = [
     ],
   },
   // 05 is the PERSPECTIVES setting: an index of six opinions on the verso, and
-  // whichever one the reader has chosen set large on the recto.
-  //
-  // WHAT IT WAS
-  //
-  // A lead entry and a five-cell modular grid, both set from category names --
-  // AI & Automation, Technology, Software Engineering -- each under a line
-  // saying the studio was interested in that category. It was a contents page
-  // for writing that does not exist, and the five-cell grid left a quarter of
-  // the recto empty because five does not divide by two.
-  //
-  // Every entry now carries a `thesis`: a claim someone could disagree with,
-  // which is the test a perspective has to pass. The categories stay, as the
-  // way a reader finds one.
-  //
-  // WHY THE PAGE CHANGES WHEN YOU CLICK IT, WHICH NOTHING ELSE IN THIS BOOK
-  // DOES
-  //
-  // A volvelle -- the rotating paper disc bound into astronomical and medical
-  // books for five centuries, where the reader turns a wheel and the page
-  // shows a different answer in the same window. It is the one printed device
-  // that swaps content in place without turning a leaf, and it is what this
-  // spread is: a fixed window on the recto, six settings on the verso.
-  //
-  // So the interaction is not a web pattern borrowed onto a book page; it is
-  // the book pattern the brief happened to be describing. It is also the only
-  // place in the whole monograph where the reader chooses rather than turns,
-  // which is the right place for it -- these are opinions, and you pick one.
-  //
-  // The engraved plate is gone. The verso is the index now and there is no
-  // room for it; a fractal antenna beside six opinions about software was
-  // never illustrating any of them.
+// whichever one the reader has chosen set large on the recto.
+//
+// WHAT IT WAS
+//
+// A lead entry and a five-cell modular grid, both set from category names --
+// AI & Automation, Technology, Software Engineering -- each under a line
+// saying the studio was interested in that category. It was a contents page
+// for writing that does not exist, and the five-cell grid left a quarter of
+// the recto empty because five does not divide by two.
+//
+// Every entry now carries a `thesis`: a claim someone could disagree with,
+// which is the test a perspective has to pass. The categories stay, as the
+// way a reader finds one.
+//
+// WHY THE PAGE CHANGES WHEN YOU CLICK IT, WHICH NOTHING ELSE IN THIS BOOK
+// DOES
+//
+// A volvelle -- the rotating paper disc bound into astronomical and medical
+// books for five centuries, where the reader turns a wheel and the page
+// shows a different answer in the same window. It is the one printed device
+// that swaps content in place without turning a leaf, and it is what this
+// spread is: a fixed window on the recto, six settings on the verso.
+//
+// So the interaction is not a web pattern borrowed onto a book page; it is
+// the book pattern the brief happened to be describing. It is also the only
+// place in the whole monograph where the reader chooses rather than turns,
+// which is the right place for it -- these are opinions, and you pick one.
+//
+// WHY IT HAS PICTURES NOW, HAVING HAD NONE
+//
+// It carried a struck EMBLEM per entry -- a chip, a compass, a telescope --
+// and the reason was written down at the time: no artwork had been supplied
+// for this chapter, and the brief that asked for a picture also forbade stock
+// photography, which is the same answer twice. Artwork has now been supplied.
+// PERSPECTIVES_VISUAL.png is cut into six crops and a column by
+// tools/build-perspective-plates.sh, and the emblems have gone: an emblem and
+// a plate are two pictures of one idea on one page, and the emblem is the one
+// that was standing in for the other.
+//
+// They are MASKS rather than photographs, which is why this chapter needed a
+// third kind of picture (PageMask). The artwork is line work on a pale ground,
+// so it is keyed the way the engravings are and struck in the page's own
+// silver -- see the script's header for why that sidesteps the toning problem
+// 03's and 04's plates each needed a script to solve.
+//
+// WHY THERE IS NO "READ PERSPECTIVE" ACTION
+//
+// The brief asks for one and there is nothing to read. These six are
+// positions, not articles; no route exists, and inventing one would mean
+// inventing the writing to put behind it -- which is the exact failure this
+// chapter was rebuilt to escape, and the same argument that took "VIEW
+// PROJECT" off 04. The thesis IS the perspective, printed at the largest size
+// on the page. A link promising more would be the page describing writing that
+// does not exist, one revision after it stopped doing precisely that.
   {
     number: "05",
     title: "Perspectives",
     facing: {
       headline: "Ideas Worth Exploring.",
-      subtitle: "What we read, argue about, and write down.",
+      subtitle:
+        "Thoughts on technology, design and the ideas shaping what comes next.",
     },
     services: [
       {
-        emblem: "chip",
         title: "AI & Automation",
+        body: "AI is moving beyond features and becoming part of how people interact with products, services and information.",
         perspective: {
           label: "AI",
           thesis: "The next interface is intelligence.",
+          figure: "I",
+          themes: [
+            "AI agents",
+            "Automation",
+            "Human + AI collaboration",
+            "Ethical AI",
+          ],
+          plate: {
+            src: "/perspectives/ai.webp",
+            ratio: "16 / 9",
+            alt: "A radial dial of concentric measured arcs at the centre of the chapter's drawing, with a struck panel beside it.",
+          },
         },
-        body: "AI is moving beyond chat. The opportunity is building software that understands context, makes decisions and takes meaningful action.",
       },
       {
-        emblem: "cloud",
         title: "Technology",
+        body: "The best technology does its job quietly, making complex systems feel simple, useful and natural.",
         perspective: {
           label: "Technology",
           thesis: "Technology should disappear into the experience.",
+          figure: "II",
+          themes: [
+            "Product technology",
+            "Infrastructure",
+            "Digital experiences",
+            "Emerging tools",
+          ],
+          plate: {
+            src: "/perspectives/technology.webp",
+            ratio: "16 / 9",
+            alt: "An interface panel drawn in outline, linked by fine rules to a node diagram and a segmented dial.",
+          },
         },
-        body: "The best technology is powerful beneath the surface while remaining simple for the people who use it.",
       },
       {
-        emblem: "code",
         title: "Software Engineering",
+        body: "Strong architecture creates systems that can adapt as products, users and businesses grow.",
         perspective: {
           label: "Engineering",
           thesis: "Good software is built for change.",
+          figure: "III",
+          themes: [
+            "Architecture",
+            "Scalability",
+            "Maintainability",
+            "Engineering practices",
+          ],
+          plate: {
+            src: "/perspectives/engineering.webp",
+            ratio: "16 / 9",
+            alt: "An isometric wireframe of a structure drawn on a measured grid, beside a plotted panel.",
+          },
         },
-        body: "Architecture should not only solve today's problem. It should give products room to evolve tomorrow.",
       },
       {
-        emblem: "compass",
         title: "Design",
+        body: "Good design gives complicated products structure, direction and a sense of simplicity.",
         perspective: {
           label: "Design",
           thesis: "Design is how complexity becomes clear.",
+          figure: "IV",
+          themes: [
+            "UX",
+            "UI systems",
+            "Information architecture",
+            "Product design",
+          ],
+          plate: {
+            src: "/perspectives/design.webp",
+            ratio: "16 / 9",
+            alt: "Ruled dot grids and a measured frame above an interface panel, with a segmented dial at the edge.",
+          },
         },
-        body: "Great interfaces turn complicated systems into experiences that feel natural, understandable and purposeful.",
       },
       {
-        emblem: "chart",
         title: "Business",
+        body: "Technology creates value when it solves a meaningful business problem rather than simply adding another feature.",
         perspective: {
           label: "Business",
           thesis: "Build technology around the problem.",
+          figure: "V",
+          themes: [
+            "Business problems",
+            "Product strategy",
+            "Digital transformation",
+            "Growth",
+          ],
+          plate: {
+            src: "/perspectives/business.webp",
+            ratio: "16 / 9",
+            alt: "A struck plate carrying a faint world map, with a globe and a dotted register beside it.",
+          },
         },
-        body: "The strongest digital products begin with a meaningful business problem rather than a technology looking for somewhere to be used.",
       },
       {
-        emblem: "telescope",
         title: "Future Insights",
+        body: "Products that learn, respond and evolve will have an advantage as technology and user expectations continue to change.",
         perspective: {
           label: "Future",
           thesis: "The future belongs to adaptive products.",
+          figure: "VI",
+          themes: [
+            "Future products",
+            "Adaptive systems",
+            "Emerging technology",
+            "Digital transformation",
+          ],
+          plate: {
+            src: "/perspectives/future.webp",
+            ratio: "16 / 9",
+            alt: "A growth curve plotted on a fine grid, beside a textured field and a list panel.",
+          },
         },
-        body: "Products that learn from users, data and changing environments will define the next generation of digital experiences.",
       },
     ],
+    columnPlate: {
+      src: "/perspectives/column.webp",
+      ratio: "420 / 760",
+      alt: "The chapter's drawing in the outer margin: a network of nodes and connecting rules running down the page.",
+    },
   },
   {
     number: "06",

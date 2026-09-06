@@ -529,6 +529,33 @@ attaches to 04 alone, which is the only window left in the book.
 **What was measured, and what it cost.** The spread is over-subscribed on a
 phone and the cuts are in the brief's own priority order:
 
+- **The type is set at the book's own body size, not a caption size.** It was
+  11-12px at 1440 against the 16.5 the prose pages use, which is the mistake
+  `<StageWindow>`'s note warned about in another chapter: copy a size down from
+  the page it is on reads as a caption block rather than as the page's text.
+  Raising it cost 27px on the verso and 55 on the recto, and all of it was
+  found rather than taken out of the content:
+  - **The opener's sinkage drops to 9%.** 18% of the page WIDTH is 130px of the
+    887 it has, which an opener can spend on air and a page carrying a whole
+    chapter cannot. 03 takes 8% for the same reason.
+  - **The margin plate narrows to 138px.** At 166 the index had 374px of
+    measure and two of the six summaries wrapped to a second line — 38px. The
+    width came off the PICTURE rather than off the type, which is the right way
+    round on a page whose job is reading.
+  - **Two paragraphs were measured narrower than their own column.** The
+    recto's opening sentence was capped at 48ch and its call to action at 44ch
+    inside a 434px page, so each ran a line longer than it needed to. A `max-w`
+    that is tighter than the column it sits in costs height for nothing.
+  - **The recto reserves the drop folio.** Its call to action is hung off the
+    foot with `mt-auto`, so unlike every page that stops short of its own
+    padding this one lands exactly where the folio is: the buttons reached 835
+    against a folio whose top edge is 820.
+- **The clamp MINIMUMS are what a phone gets, and they were left alone.** At
+  390px viewport `0.98vw` is 3.8px, so every size on this spread sits on its
+  floor there. Raising the floors along with the rest grew the type on a sheet
+  that is already carrying the entire chapter and put the call to action off
+  the foot. **Only the `vw` term and the maximum went up**, so the spread grows
+  from about 1100px of viewport width and is unchanged below it.
 - **The chapter subtitle is not the house subtitle.** Everywhere else it is
   30ch of 1.05rem, which is right on a page introducing one thing and wrong on
   a page that also carries six rows: at 1440x900 it ran to five lines and

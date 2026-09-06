@@ -1469,11 +1469,11 @@ function PerspectiveIndex({
         // It is the right one to lose because two other things on the same
         // sheet do its job -- the headline directly above says it in six
         // words, and "Why it matters" a few inches down says it in full.
-        <p className="mb-[1.2em] hidden max-w-[46ch] text-[clamp(0.7rem,0.98vw,0.9rem)] leading-relaxed text-slate-300/80 lg:block">
+        <p className="mb-[1.2em] hidden max-w-[46ch] text-[clamp(0.7rem,1.14vw,1.04rem)] leading-relaxed text-slate-300/80 lg:block">
           {intro}
         </p>
       ) : null}
-      <p className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+      <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
         What we think about
       </p>
       <ol className="mt-[0.7em] border-t border-white/18">
@@ -1486,16 +1486,16 @@ function PerspectiveIndex({
             >
               <span
                 aria-hidden
-                className="font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.2vw,1.15rem)] leading-none font-light text-slate-400/45 tabular-nums"
+                className="font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.36vw,1.3rem)] leading-none font-light text-slate-400/45 tabular-nums"
               >
                 {number}
               </span>
               <span className="min-w-0">
-                <span className="block text-[clamp(0.48rem,0.64vw,0.58rem)] tracking-[0.26em] text-white uppercase">
+                <span className="block text-[clamp(0.48rem,0.74vw,0.66rem)] tracking-[0.26em] text-white uppercase">
                   {service.title}
                 </span>
                 {service.perspective ? (
-                  <span className="mt-[0.3em] block text-[clamp(0.6rem,0.84vw,0.76rem)] leading-snug text-slate-300/65">
+                  <span className="mt-[0.3em] block text-[clamp(0.6rem,0.98vw,0.88rem)] leading-snug text-slate-300/65">
                     {service.perspective.summary}
                   </span>
                 ) : null}
@@ -1528,7 +1528,11 @@ function PerspectiveColumn({ plate }: { plate: PageMask }) {
   return (
     <StruckPlate
       plate={plate}
-      className="hidden w-[clamp(96px,11.5vw,166px)] shrink-0 opacity-85 lg:block"
+      // Narrower than it was, and the width came off the PLATE rather than off
+      // the type. At 166px the index had 374px of measure and two of the six
+      // summaries wrapped to a second line at the larger sizes -- 38px of a
+      // page that has none. At 138 the widest of them sets on one line.
+      className="hidden w-[clamp(88px,9.5vw,138px)] shrink-0 opacity-85 lg:block"
     />
   );
 }
@@ -1556,7 +1560,7 @@ function IdeaFlow({
 }) {
   return (
     <section data-ink className="shrink-0">
-      <h4 className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+      <h4 className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
         {title}
       </h4>
       <div aria-hidden className="mt-[1.1em] flex items-center gap-[0.35em]">
@@ -1571,10 +1575,10 @@ function IdeaFlow({
               aria-hidden
               className="absolute top-[-1px] left-0 block h-[9px] w-px bg-white/45"
             />
-            <p className="text-[clamp(0.5rem,0.68vw,0.62rem)] tracking-[0.22em] text-white uppercase">
+            <p className="text-[clamp(0.5rem,0.78vw,0.7rem)] tracking-[0.22em] text-white uppercase">
               {node.label}
             </p>
-            <p className="mt-[0.4em] text-[clamp(0.56rem,0.78vw,0.7rem)] leading-snug text-slate-300/65">
+            <p className="mt-[0.4em] text-[clamp(0.56rem,0.9vw,0.8rem)] leading-snug text-slate-300/65">
               {node.note}
             </p>
           </li>
@@ -1601,7 +1605,7 @@ function Benefits({
 }) {
   return (
     <section data-ink className="shrink-0">
-      <h4 className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+      <h4 className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
         {title}
       </h4>
       <ul className="mt-[0.7em] border-t border-white/18">
@@ -1612,19 +1616,19 @@ function Benefits({
           >
             <span
               aria-hidden
-              className="text-[clamp(0.42rem,0.56vw,0.5rem)] tracking-[0.24em] text-slate-400/45 tabular-nums"
+              className="text-[clamp(0.42rem,0.62vw,0.56rem)] tracking-[0.24em] text-slate-400/45 tabular-nums"
             >
               {item.number}
             </span>
             <span className="min-w-0">
-              <span className="block text-[clamp(0.56rem,0.76vw,0.68rem)] tracking-[0.2em] text-white uppercase">
+              <span className="block text-[clamp(0.56rem,0.86vw,0.78rem)] tracking-[0.2em] text-white uppercase">
                 {item.title}
               </span>
               {/* Dropped below `lg`, on both phone orientations. The TITLES
                   stay at every size: three of them are still the answer to
                   "what do I get", where the sentence under each elaborates a
                   heading that is already printed. */}
-              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.74vw,0.66rem)] leading-snug text-slate-300/60 lg:block">
+              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 lg:block">
                 {item.body}
               </span>
             </span>
@@ -1665,13 +1669,13 @@ function PerspectiveCta({
       data-ink
       className="mt-auto shrink-0 border-t border-white/18 pt-[0.9em]"
     >
-      <h3 className="font-[family-name:var(--font-display)] text-[clamp(0.92rem,1.35vw,1.25rem)] leading-tight font-light text-balance text-white">
+      <h3 className="font-[family-name:var(--font-display)] text-[clamp(0.92rem,1.55vw,1.45rem)] leading-tight font-light text-balance text-white">
         {cta.headline}
       </h3>
       {/* Dropped below `lg`. The headline and the two actions are the whole
           of what this block has to do; the sentence between them is the one
           part a reader can act without. */}
-      <p className="mt-[0.5em] hidden max-w-[44ch] text-[clamp(0.58rem,0.8vw,0.72rem)] leading-relaxed text-slate-300/70 lg:block">
+      <p className="mt-[0.5em] hidden max-w-[52ch] text-[clamp(0.58rem,0.94vw,0.85rem)] leading-relaxed text-slate-300/70 lg:block">
         {cta.body}
       </p>
       <div className="mt-[0.8em] flex flex-wrap items-center gap-x-[1.6em] gap-y-[0.5em]">
@@ -1681,7 +1685,7 @@ function PerspectiveCta({
             type="button"
             data-nav-item
             data-index={action.chapter}
-            className={`group flex w-fit cursor-pointer items-center gap-[0.6em] border-b pb-[0.28em] text-[clamp(0.48rem,0.66vw,0.58rem)] tracking-[0.26em] uppercase transition-colors duration-200 outline-none focus-visible:border-white focus-visible:text-white motion-reduce:transition-none ${
+            className={`group flex w-fit cursor-pointer items-center gap-[0.6em] border-b pb-[0.28em] text-[clamp(0.48rem,0.76vw,0.68rem)] tracking-[0.26em] uppercase transition-colors duration-200 outline-none focus-visible:border-white focus-visible:text-white motion-reduce:transition-none ${
               // The first action is the one the chapter is asking for, so it
               // is the one set in the page's ink. The second is a way to keep
               // reading rather than a second request, and is ruled quieter.
@@ -1720,18 +1724,23 @@ function RationalePage({
   rationale: NonNullable<BookPage["rationale"]>;
 }) {
   return (
-    <div className="flex min-h-0 flex-col gap-[0.75em] lg:flex-1 lg:gap-[clamp(0.7em,2.5vh,1.9em)] [@media(max-height:480px)]:pt-[6%]">
+    <div // Reserving the drop folio. The call to action is hung off the foot with
+      // mt-auto, so unlike every page that stops short of its own padding this
+      // one lands exactly where the folio is: measured at 1440x900 the buttons
+      // reached 835 against a folio whose top edge is 820. In vh because the
+      // folio is placed in vh.
+      className="flex min-h-0 flex-col gap-[0.75em] lg:flex-1 lg:gap-[clamp(0.6em,1.9vh,1.5em)] lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:pt-[6%]">
       <div data-ink className="shrink-0">
-        <p className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.34em] text-slate-400/60 uppercase">
+        <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.34em] text-slate-400/60 uppercase">
           {rationale.label}
         </p>
-        <h3 className="mt-[0.6em] font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.75vw,1.65rem)] leading-[1.1] font-light text-balance text-white">
+        <h3 className="mt-[0.6em] font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.98vw,1.85rem)] leading-[1.1] font-light text-balance text-white">
           {rationale.headline}
         </h3>
         {/* Dropped below `lg`: the headline above says the same thing in six
             words, and this page has a diagram, three benefits and a way out to
             fit onto a sheet that is already carrying the six domains. */}
-        <p className="mt-[0.6em] hidden max-w-[48ch] text-[clamp(0.6rem,0.84vw,0.76rem)] leading-relaxed text-slate-300/70 lg:block">
+        <p className="mt-[0.6em] hidden max-w-[56ch] text-[clamp(0.6rem,0.98vw,0.88rem)] leading-relaxed text-slate-300/70 lg:block">
           {rationale.intro}
         </p>
       </div>
@@ -2834,22 +2843,31 @@ function VersoPage({ page }: { page: BookPage | BookSpread }) {
   // line across the gutter. A continuation spread opens nothing, so it starts
   // where any ordinary page does and gets the space back for entries.
   const continued = (page as Partial<BookSpread>).continued === true;
-  // A chapter opener starts low on the page -- except this one. The process
-  // spread prints six stages where an opener prints a title, and 18% of the
-  // page WIDTH is 130px of the 887 it has. Measured: with the opener's sinkage
-  // the four slots divide 699px, a stage row needs 182 of them, and the three
-  // rows plus the chapter head come to 801. At 8% they divide 771 and it fits.
-  // Both halves take the same drop, which is the part that actually matters --
-  // the first lines still sit on one line across the gutter.
+  // A chapter opener starts low on the page -- except the two that print a
+  // chapter's worth of content on one spread. 18% of the page WIDTH is 130px
+  // of the 887 it has, which an opener can spend on air and these two cannot.
+  //
+  // 03 takes 8%: with the opener's sinkage its four slots divide 699px, a
+  // stage row needs 182 of them, and three rows plus the chapter head come to
+  // 801. 05 takes 9%: its type was set at 11-12px against the 16.5 the prose
+  // pages use at 1440, which reads as a caption block rather than as the
+  // page's text, and the 50px this returns to each half is what paid for the
+  // larger sizes.
+  //
+  // Both halves of a spread take the SAME drop, which is the part that
+  // actually matters -- the first lines still sit on one line across the
+  // gutter.
   const plateSpread = spreadIsPlates(page);
+  const denseSpread = isPerspective(page.services);
+  const sinkage = plateSpread
+    ? "pt-[8%]"
+    : denseSpread
+      ? "pt-[8%] lg:pt-[9%]"
+      : "pt-[8%] lg:pt-[18%]";
   return (
     <div
       className={`relative flex h-full w-full flex-col justify-start pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200 ${
-        continued
-          ? "pt-[7%] lg:pt-[11%]"
-          : plateSpread
-            ? "pt-[8%]"
-            : "pt-[8%] lg:pt-[18%]"
+        continued ? "pt-[7%] lg:pt-[11%]" : sinkage
       }`}
     >
       <FacingCopy page={page} />
@@ -2960,14 +2978,27 @@ function PageFoot({ page }: { page: BookPage }) {
 
 function PageBody({ page }: { page: BookPage | BookSpread }) {
   const continued = (page as Partial<BookSpread>).continued === true;
-  // A chapter opener starts low on the page -- except this one. The process
-  // spread prints six stages where an opener prints a title, and 18% of the
-  // page WIDTH is 130px of the 887 it has. Measured: with the opener's sinkage
-  // the four slots divide 699px, a stage row needs 182 of them, and the three
-  // rows plus the chapter head come to 801. At 8% they divide 771 and it fits.
-  // Both halves take the same drop, which is the part that actually matters --
-  // the first lines still sit on one line across the gutter.
+  // A chapter opener starts low on the page -- except the two that print a
+  // chapter's worth of content on one spread. 18% of the page WIDTH is 130px
+  // of the 887 it has, which an opener can spend on air and these two cannot.
+  //
+  // 03 takes 8%: with the opener's sinkage its four slots divide 699px, a
+  // stage row needs 182 of them, and three rows plus the chapter head come to
+  // 801. 05 takes 9%: its type was set at 11-12px against the 16.5 the prose
+  // pages use at 1440, which reads as a caption block rather than as the
+  // page's text, and the 50px this returns to each half is what paid for the
+  // larger sizes.
+  //
+  // Both halves of a spread take the SAME drop, which is the part that
+  // actually matters -- the first lines still sit on one line across the
+  // gutter.
   const plateSpread = spreadIsPlates(page);
+  const denseSpread = isPerspective(page.services);
+  const sinkage = plateSpread
+    ? "pt-[8%]"
+    : denseSpread
+      ? "pt-[8%] lg:pt-[9%]"
+      : "pt-[8%] lg:pt-[18%]";
   return (
     // --page-index-inset reserves the thumb index. It is measured rather than
     // guessed, and it lives on the recto only, because <BookIndex> is pinned to
@@ -2980,11 +3011,7 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         // lines sit on one line across the gutter.
         page.facing
           ? `justify-start pb-[8%] ${
-              continued
-                ? "pt-[7%] lg:pt-[11%]"
-                : plateSpread
-                  ? "pt-[8%]"
-                  : "pt-[8%] lg:pt-[18%]"
+              continued ? "pt-[7%] lg:pt-[11%]" : sinkage
             }`
           : "justify-center py-[8%]"
       }`}

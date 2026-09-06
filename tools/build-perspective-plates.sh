@@ -104,13 +104,22 @@ key() {
 # Every crop is 640x360 so the six arrive at one ratio. 900px out: the window
 # is ~430px on a 1440 recto and ~620px in the reduced-motion column, so this is
 # about 1.5x the largest place any of them is printed.
-echo "  plates (16:9, one per perspective)"
-key 640x360+585+266  900x  ai
-key 640x360+265+145  900x  technology
-key 640x360+880+178  900x  engineering
-key 640x360+380+120  900x  design
-key 640x360+900+400  900x  business
-key 640x360+300+430  900x  future
+# RETIRED, and deliberately not built any more.
+#
+#   ai           640x360+585+266    the radial dial
+#   technology   640x360+265+145    the interface panel and its network
+#   engineering  640x360+880+178    the isometric wireframe
+#   design       640x360+380+120    the ruled frame and dot grids
+#   business     640x360+900+400    the world-map plate and the globe
+#   future       640x360+300+430    the growth curve on its grid
+#
+# Six 16:9 crops, one per perspective, shown one at a time in a window on the
+# recto. The window is gone -- the chapter prints all six domains at once and
+# spends its recto on the argument for them instead -- and six pictures on one
+# spread would be six things competing with that argument. They are listed
+# rather than deleted because the crops were measured against ink coverage and
+# proofed on the real paper, which is work nobody should repeat: restoring one
+# is a `key` line.
 
 # The verso's column. Tall rather than wide because it stands beside the index
 # in the outer margin of the left-hand page, which is the one part of that page

@@ -726,7 +726,12 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       {/* Guarded: an opener set with an epigraph and no subtitle -- which is
           what a chapter title page is -- otherwise printed an empty paragraph
           and its margin, dropping everything below it by a line for nothing. */}
-      {subtitle ? (
+      {/* Not on the perspectives verso, which sets its own -- see below. The
+          house subtitle is 30ch of 1.05rem, which is right on a page whose job
+          is to introduce one thing and wrong on a page that also has to carry
+          six rows: measured at 1440x900 it ran to five lines and pushed
+          perspective 06 down through the drop folio. */}
+      {subtitle && !isPerspective(page.services) ? (
         <p
           data-ink
           className="mt-[1em] max-w-[30ch] text-[clamp(0.82rem,1.18vw,1.05rem)] leading-relaxed text-balance text-slate-300/85"
@@ -770,8 +775,11 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
         // two-line rows, a chapter head and this margin came to 410px of a
         // page that shows 365 of them, and perspective 06's thesis was cut in
         // half by the foot of the window.
-        <div className="mt-[1.2em] flex min-h-0 items-start gap-[clamp(0.7em,1.6vw,1.5em)] [@media(max-height:480px)]:mt-[0.6em]">
-          <PerspectiveIndex services={page.services ?? []} />
+        <div className="mt-[1em] flex min-h-0 items-start gap-[clamp(0.7em,1.6vw,1.5em)] [@media(max-height:480px)]:mt-[0.5em]">
+          <PerspectiveIndex
+            services={page.services ?? []}
+            intro={subtitle}
+          />
           {(page as BookPage).columnPlate ? (
             <PerspectiveColumn plate={(page as BookPage).columnPlate!} />
           ) : null}
@@ -1421,123 +1429,100 @@ function StruckPlate({
   );
 }
 
-/** The arrow on an index row: drawn, so nothing reads out "rightwards arrow". */
-function IndexArrow() {
-  return (
-    <svg
-      viewBox="0 0 14 8"
-      aria-hidden
-      focusable="false"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1"
-      strokeLinecap="square"
-      className="h-[0.55em] w-[0.95em] shrink-0"
-    >
-      <path d="M0 4h11M8.4 1.2 11.4 4 8.4 6.8" />
-    </svg>
-  );
-}
-
 /**
  * The index of perspectives, printed on the verso.
  *
- * Six rows, each a numeral, the category, and the thesis under it. <Book> owns
- * what a click does: these carry data-perspective and nothing more, because
- * the element they change is on the OTHER SHEET -- a spread's verso is the
- * back of the sheet before it -- and nothing on this side of the gutter can
- * reach across to it.
+ * Six rows: a numeral, the domain, and one line saying what that domain is
+ * for. **Nothing here is a control.** They were buttons driving a window on
+ * the recto for two revisions; the window is gone and so are they, because a
+ * row that changes something somewhere else is a row a reader has to operate
+ * before the page will tell them anything. Everything this chapter has to say
+ * is now printed on the spread at once.
  *
- * WHY THE THESIS IS PRINTED HERE AND NOT ONLY IN THE WINDOW
- *
- * It was six category names alone, which told a reader the TOPIC of each
- * perspective and not the view -- and a chapter called Perspectives whose
- * index holds no opinion is a contents page again, which is the thing this
- * chapter was rebuilt to stop being. With the thesis on the row, all six
- * positions are readable without touching anything, and the window becomes
- * where you go to read one properly rather than the only place to find out
- * what it says.
- *
- * WHAT THAT COSTS, AND IT IS NOT NOTHING
- *
- * 04's index is also on a verso, also drives a window one spread away, and is
- * also two lines per row. The standing warning in CLAUDE.md is that two
- * chapters set the same way one spread apart stop reading as two chapters, and
- * this moves them closer. What holds them apart is the shape of the row and
- * the kind of picture: 04 leads with a small tracked category over a display
- * title and its window is a photograph of software; this leads with a LARGE
- * SERIF NUMERAL over a tracked category and a sentence, and its window is a
- * struck drawing. The verso also carries the column plate, which 04's has no
- * equivalent of. **If either of those two things is levelled, they collapse.**
+ * That also settles the 04/05 collapse this file has warned about through
+ * three revisions. They are no longer the same kind of object: 04 is an index
+ * driving a window, and this is a list.
  */
-function PerspectiveIndex({ services }: { services: PageService[] }) {
+function PerspectiveIndex({
+  services,
+  intro,
+}: {
+  services: PageService[];
+  intro?: string;
+}) {
   return (
-    <nav
-      data-ink
-      aria-label="Perspectives"
-      className="min-w-0 flex-1 border-t border-white/18"
-    >
-      <ul>
+    <div data-ink className="min-w-0 flex-1">
+      {/* Wider and a size down from the house subtitle, and that is a
+          measurement rather than a preference: at 30ch of 1.05rem this ran to
+          five lines, and the six rows below it then finished 30px past the
+          foot of the page. At 46ch it is three. */}
+      {intro ? (
+        // Dropped below `lg`, on both phone orientations, and it is the
+        // largest single thing this chapter gives up on a phone.
+        //
+        // At 844x390 the verso shows about 365px and perspective 06 fell off
+        // the foot with it in. At 390x844 the whole spread is on ONE sheet:
+        // the six domains, the argument, the diagram, three benefits and the
+        // way out came to 920px of the 781 the face will show, and this
+        // paragraph is 90 of them.
+        //
+        // It is the right one to lose because two other things on the same
+        // sheet do its job -- the headline directly above says it in six
+        // words, and "Why it matters" a few inches down says it in full.
+        <p className="mb-[1.2em] hidden max-w-[46ch] text-[clamp(0.7rem,0.98vw,0.9rem)] leading-relaxed text-slate-300/80 lg:block">
+          {intro}
+        </p>
+      ) : null}
+      <p className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+        What we think about
+      </p>
+      <ol className="mt-[0.7em] border-t border-white/18">
         {services.map((service, i) => {
           const number = String(i + 1).padStart(2, "0");
           return (
-            <li key={service.title} className="border-b border-white/10">
-              <button
-                type="button"
-                data-perspective={i}
-                // The opening state, set in the markup rather than by script:
-                // the page has to be right in the HTML that arrives, and the
-                // recto's first panel is printed current for the same reason.
-                data-current={i === 0 ? "true" : "false"}
-                aria-current={i === 0 ? "true" : undefined}
-                className="group grid w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-[clamp(0.6em,1.1vw,0.95em)] py-[0.5em] text-start outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 lg:py-[0.7em] [@media(max-height:480px)]:py-[0.15em]"
+            <li
+              key={service.title}
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.95em)] border-b border-white/10 py-[0.34em] lg:py-[0.55em] [@media(max-height:480px)]:py-[0.18em]"
+            >
+              <span
+                aria-hidden
+                className="font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.2vw,1.15rem)] leading-none font-light text-slate-400/45 tabular-nums"
               >
-                {/* The brief's "large refined serif" numeral, and the one
-                    thing on this row 04's does not have. */}
-                <span
-                  aria-hidden
-                  className="font-[family-name:var(--font-display)] text-[clamp(0.85rem,1.3vw,1.25rem)] leading-none font-light text-slate-400/45 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-[#dce7f7] motion-reduce:transition-none"
-                >
-                  {number}
+                {number}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[clamp(0.48rem,0.64vw,0.58rem)] tracking-[0.26em] text-white uppercase">
+                  {service.title}
                 </span>
-                <span className="min-w-0">
-                  <span className="block text-[clamp(0.48rem,0.64vw,0.58rem)] tracking-[0.26em] text-slate-400/60 uppercase transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
-                    {service.title}
+                {service.perspective ? (
+                  <span className="mt-[0.3em] block text-[clamp(0.6rem,0.84vw,0.76rem)] leading-snug text-slate-300/65">
+                    {service.perspective.summary}
                   </span>
-                  {/* The position itself. Every one of the six is readable
-                      with nothing hovered, clicked or scrolled. */}
-                  {service.perspective ? (
-                    <span className="mt-[0.3em] block text-[clamp(0.62rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-slate-100 motion-reduce:transition-none">
-                      {service.perspective.thesis}
-                    </span>
-                  ) : null}
-                </span>
-                <span
-                  aria-hidden
-                  className="self-center text-slate-400/25 transition-all duration-300 group-hover:translate-x-[2px] group-hover:text-slate-200 group-data-[current=true]:text-[#dce7f7] motion-reduce:transition-none"
-                >
-                  <IndexArrow />
-                </span>
-              </button>
+                ) : null}
+              </span>
             </li>
           );
         })}
-      </ul>
-    </nav>
+      </ol>
+    </div>
   );
 }
 
 /**
  * The chapter's artwork, struck down the outer margin of the verso.
  *
- * It stands BESIDE the index rather than under it, which is the only place on
- * this page with room: the verso's height is spoken for by the head and six
- * rows, and its outer margin is the one column with nothing in it. That is
- * also what makes it a tall crop rather than a wide one -- see the script.
+ * The last of seven crops still printed. The other six were one per
+ * perspective, shown one at a time in a window; with the window gone, six
+ * pictures on one spread would be six things competing with the argument
+ * opposite, which is the one thing this chapter is now for. This one stays
+ * because every other chapter carries a picture and a chapter with none would
+ * be the only one -- and because at 166px in a margin it is a mark, not an
+ * illustration. tools/build-perspective-plates.sh has the six in a retired
+ * block if they are ever wanted back.
  *
- * Hidden below `lg`. The spread collapses onto one sheet there, the index and
- * the window are already stacked on it, and a decorative column would be the
- * third thing competing for a width that has none.
+ * Hidden below `lg`, where the spread collapses onto one sheet and a
+ * decorative column would be the third thing competing for a width that has
+ * none.
  */
 function PerspectiveColumn({ plate }: { plate: PageMask }) {
   return (
@@ -1549,179 +1534,212 @@ function PerspectiveColumn({ plate }: { plate: PageMask }) {
 }
 
 /**
- * The window on the recto: every perspective, one visible.
+ * IDEA -> INSIGHT -> DECISION -> PRODUCT, drawn as a drafting diagram.
  *
- * WHY ALL SIX ARE IN THE MARKUP AND FIVE ARE TRANSPARENT
+ * One continuous rule with a tick dropped at each stage, which is how a
+ * measured drawing marks a station -- not four boxes joined by arrows, which
+ * is how a slide does it. The chevron at the end is the only thing saying
+ * which way it is read, and it is the same one 03's arc uses, because a book
+ * that invents a second arrowhead has stopped being one book.
  *
- * They share one grid cell, so the box is as tall as the longest of them from
- * the first paint and stays that height whichever is showing. Rendering only
- * the current one would resize the window on every click -- the thesis lines
- * run to two lines or three -- and a window that changes size is not a window.
- * It would also mean decoding a mask on every click, which is a blank frame in
- * the window: the one thing a window may never do.
- *
- * It also means the sheets can stay what they are: static markup that <Book>
- * drives by data attribute. Nothing here holds state.
- *
- * WHY opacity IS SAFE HERE AND IS NOT ON A SHEET
- *
- * Per CSS Transforms 2 a fractional opacity forces transform-style: flat, which
- * is why nothing in this file ever fades a sheet -- it would drop the faces out
- * of the 3D context and stop them being separate planes. These panels are
- * inside a face, which its own overflow clip has already flattened, so there is
- * no 3D left to lose. Same reason the first page's ink may fade.
- *
- * WHY THE ORDER OF THE PARTS IS THE ORDER IT IS
- *
- * The metadata line says which of the six this is and numbers the plate; the
- * plate is what the perspective looks like; the category says what territory
- * it covers; the thesis is the claim, set largest because it is the only thing
- * on the page anyone could disagree with; the sentence is the argument; and
- * the themes say what the claim is about. Largest to smallest, claim first --
- * a page of opinions that buries its opinion under its evidence is a page
- * nobody finishes.
+ * The QUESTION under each label is doing the work. Four nouns in a row is
+ * decoration; the same four with the question each one answers is the whole
+ * argument of the chapter in a single line, which is what the brief means by
+ * this being a primary element rather than an ornament.
  */
-function PerspectivePanels({ services }: { services: PageService[] }) {
-  const total = services.filter((service) => service.perspective).length;
+function IdeaFlow({
+  title,
+  flow,
+}: {
+  title: string;
+  flow: { label: string; note: string }[];
+}) {
   return (
-    // The extra sinkage below 480px of viewport HEIGHT is not taste. At
-    // 844x390 the sheet measures 475px in a 390px window -- it is sized to the
-    // photographed page, which at that aspect is taller than the screen -- so
-    // the page's top 40px is off-screen, and its own 8% sinkage resolves
-    // against the page WIDTH to 33px, which does not clear it. Every other
-    // recto in the book leads with type, whose line box carries leading above
-    // the cap and hides the cut; this one leads with a ruled metadata line
-    // whose rule starts flush at the top of its box.
-    <div className="grid min-h-0 [@media(max-height:480px)]:pt-[8%]">
-      {services.map((service, i) => {
-        const perspective = service.perspective;
-        if (!perspective) return null;
-        const current = i === 0;
-        return (
-          <article
-            key={service.title}
-            data-ink
-            data-perspective-panel={i}
-            data-current={current ? "true" : "false"}
-            aria-hidden={current ? undefined : "true"}
-            // Every panel in the same cell, so the window is sized by the
-            // longest and never resizes.
-            className="flex flex-col [grid-area:1/1] transition-opacity duration-300 ease-out data-[current=false]:pointer-events-none data-[current=false]:opacity-0 motion-reduce:transition-none"
-          >
-            {/* Which of the six, and the plate's number. Not the brief's
-                "INDEX / 2026" and "FIG. 05": a year dates the page the moment
-                it turns over, and an arabic 05 inside chapter 05 names either
-                the chapter or the picture with no way to tell which. The book
-                already numbers both -- chapters in arabic, plates in roman
-                restarting per chapter -- so this says it in the book's own
-                currency. */}
-            <div className="flex shrink-0 items-baseline justify-between gap-[1em] border-b border-white/18 pb-[0.5em] text-[clamp(0.44rem,0.6vw,0.54rem)] tracking-[0.3em] text-slate-400/60">
-              <span>
-                PERSPECTIVE {String(i + 1).padStart(2, "0")} /{" "}
-                {String(total).padStart(2, "0")}
-              </span>
-              <span className="shrink-0">PLATE {perspective.figure}</span>
-            </div>
-
-            <StruckPlate
-              plate={perspective.plate}
-              className="mt-[0.9em] w-full shrink-0 opacity-90 lg:mt-[1.2em]"
+    <section data-ink className="shrink-0">
+      <h4 className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+        {title}
+      </h4>
+      <div aria-hidden className="mt-[1.1em] flex items-center gap-[0.35em]">
+        <span className="h-px flex-1 bg-white/22" />
+        <ArcArrow />
+      </div>
+      <ol className="grid grid-cols-4 gap-x-[clamp(0.35em,0.8vw,0.7em)]">
+        {flow.map((node) => (
+          <li key={node.label} className="relative pt-[0.85em]">
+            {/* The station mark, hanging up into the rule above. */}
+            <span
+              aria-hidden
+              className="absolute top-[-1px] left-0 block h-[9px] w-px bg-white/45"
             />
-
-            <p className="mt-[1.1em] shrink-0 text-[clamp(0.48rem,0.66vw,0.58rem)] tracking-[0.34em] text-slate-400/70 lg:mt-[1.6em]">
-              {service.title.toUpperCase()}
+            <p className="text-[clamp(0.5rem,0.68vw,0.62rem)] tracking-[0.22em] text-white uppercase">
+              {node.label}
             </p>
-            <h3 className="mt-[0.45em] shrink-0 font-[family-name:var(--font-display)] text-[clamp(1.3rem,2.5vw,2.4rem)] leading-[1.06] font-light text-balance text-white">
-              {perspective.thesis}
-            </h3>
-            <p className="mt-[0.95em] hidden max-w-[46ch] shrink-0 text-[clamp(0.66rem,0.9vw,0.84rem)] leading-relaxed text-slate-300/75 lg:block">
-              {service.body}
+            <p className="mt-[0.4em] text-[clamp(0.56rem,0.78vw,0.7rem)] leading-snug text-slate-300/65">
+              {node.note}
             </p>
-
-            {/* KEY THEMES, two by two. A `ul` because it is a list; the rules
-                are the grid made visible, which is what stops four short nouns
-                reading as a heap. */}
-            <div className="mt-[1.1em] shrink-0 lg:mt-[1.6em]">
-              <p className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.3em] text-slate-400/55">
-                KEY THEMES
-              </p>
-              <ul className="mt-[0.5em] grid grid-cols-2 gap-x-[1.2em]">
-                {perspective.themes.map((theme) => (
-                  <li
-                    key={theme}
-                    className="border-t border-white/12 py-[0.45em] text-[clamp(0.56rem,0.76vw,0.7rem)] leading-snug text-slate-300/70"
-                  >
-                    {theme}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </article>
-        );
-      })}
-    </div>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
 /**
- * The six plates in miniature, along the foot of the recto.
+ * What a client gets out of the thinking, as three ruled rows.
  *
- * WHY A SECOND INDEX IS NOT A REDUNDANT ONE
- *
- * The verso's index is TYPE -- six numerals, categories and theses. This is
- * PICTURES, and it is the only place in the chapter where all six drawings are
- * visible at once. A reader who has just looked at one plate and wants to know
- * what the others look like has nowhere else to find out, and crossing the
- * gutter to a list of words does not answer that question. 04 carries a second
- * index on its recto for the same reason and the same precedent.
- *
- * ONE INSTANCE, NOT ONE PER PANEL. The panels are stacked six deep in a single
- * grid cell with five transparent; a strip inside each would be thirty-six
- * buttons for six destinations, thirty of them in an aria-hidden subtree.
- *
- * Its landmark name is "Perspective plates" and not "Perspectives", which is
- * the verso list's: two navigation landmarks with one accessible name are
- * announced identically while going to the same six places by different
- * routes. bindWindow scopes arrow keys to the enclosing <nav>, so the two
- * copies never steal focus from each other.
+ * Rows and not cards, for the reason every other list in this book is rows:
+ * a card is a bounded object with its own ground, and three of them are three
+ * things on a page. The rule and the alignment do all the separating, which is
+ * also what keeps three benefits from outweighing the diagram above them.
  */
-function PerspectiveStrip({ services }: { services: PageService[] }) {
-  const entries = services.filter((service) => service.perspective);
-  if (!entries.length) return null;
+function Benefits({
+  title,
+  items,
+}: {
+  title: string;
+  items: { number: string; title: string; body: string }[];
+}) {
   return (
-    <nav
-      data-ink
-      aria-label="Perspective plates"
-      className="mt-auto hidden shrink-0 border-t border-white/12 pt-[0.8em] lg:block"
-    >
-      <ul className="grid grid-cols-6 gap-x-[clamp(0.3em,0.7vw,0.6em)]">
-        {entries.map((service, i) => (
-          <li key={service.title}>
-            <button
-              type="button"
-              data-perspective={i}
-              data-current={i === 0 ? "true" : "false"}
-              aria-current={i === 0 ? "true" : undefined}
-              // The visible text is a numeral; the name is the numeral and the
-              // category, so a screen reader is not offered "01 02 03 04 05 06".
-              aria-label={`${String(i + 1).padStart(2, "0")} ${service.title}`}
-              className="group block w-full cursor-pointer text-start outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+    <section data-ink className="shrink-0">
+      <h4 className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+        {title}
+      </h4>
+      <ul className="mt-[0.7em] border-t border-white/18">
+        {items.map((item) => (
+          <li
+            key={item.number}
+            className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.9em)] border-b border-white/10 py-[0.55em] [@media(max-height:480px)]:py-[0.25em]"
+          >
+            <span
+              aria-hidden
+              className="text-[clamp(0.42rem,0.56vw,0.5rem)] tracking-[0.24em] text-slate-400/45 tabular-nums"
             >
-              <StruckPlate
-                plate={service.perspective!.plate}
-                className="w-full opacity-55 transition-opacity duration-300 group-hover:opacity-90 group-data-[current=true]:opacity-100 motion-reduce:transition-none"
-              />
-              <span
-                aria-hidden
-                className="mt-[0.5em] block text-[clamp(0.4rem,0.52vw,0.48rem)] tracking-[0.2em] text-slate-400/60 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none"
-              >
-                {String(i + 1).padStart(2, "0")}
+              {item.number}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[clamp(0.56rem,0.76vw,0.68rem)] tracking-[0.2em] text-white uppercase">
+                {item.title}
               </span>
-            </button>
+              {/* Dropped below `lg`, on both phone orientations. The TITLES
+                  stay at every size: three of them are still the answer to
+                  "what do I get", where the sentence under each elaborates a
+                  heading that is already printed. */}
+              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.74vw,0.66rem)] leading-snug text-slate-300/60 lg:block">
+                {item.body}
+              </span>
+            </span>
           </li>
         ))}
       </ul>
-    </nav>
+    </section>
+  );
+}
+
+/**
+ * The way out, at the foot of the recto.
+ *
+ * This chapter had no call to action for three revisions, and the note said
+ * why: a chapter that is a WINDOW has no closing page, and an ornament with a
+ * way out under a page that is about to change is signing off something that
+ * has not finished. Nothing on this spread changes any more, so the argument
+ * has expired -- the page finishes where the reader finishes reading it, and
+ * that is exactly where an action belongs.
+ *
+ * Both actions turn to a chapter that exists. That is not a detail: it is the
+ * same rule that took "VIEW PROJECT" off 04 and "READ PERSPECTIVE" off this
+ * chapter one revision ago. `data-nav-item` and `data-index` are what <Book>
+ * binds, so these are the book's own navigation rather than a second kind of
+ * link that happens to look like it.
+ */
+function PerspectiveCta({
+  cta,
+}: {
+  cta: {
+    headline: string;
+    body: string;
+    actions: { label: string; chapter: number }[];
+  };
+}) {
+  return (
+    <section
+      data-ink
+      className="mt-auto shrink-0 border-t border-white/18 pt-[0.9em]"
+    >
+      <h3 className="font-[family-name:var(--font-display)] text-[clamp(0.92rem,1.35vw,1.25rem)] leading-tight font-light text-balance text-white">
+        {cta.headline}
+      </h3>
+      {/* Dropped below `lg`. The headline and the two actions are the whole
+          of what this block has to do; the sentence between them is the one
+          part a reader can act without. */}
+      <p className="mt-[0.5em] hidden max-w-[44ch] text-[clamp(0.58rem,0.8vw,0.72rem)] leading-relaxed text-slate-300/70 lg:block">
+        {cta.body}
+      </p>
+      <div className="mt-[0.8em] flex flex-wrap items-center gap-x-[1.6em] gap-y-[0.5em]">
+        {cta.actions.map((action, i) => (
+          <button
+            key={action.label}
+            type="button"
+            data-nav-item
+            data-index={action.chapter}
+            className={`group flex w-fit cursor-pointer items-center gap-[0.6em] border-b pb-[0.28em] text-[clamp(0.48rem,0.66vw,0.58rem)] tracking-[0.26em] uppercase transition-colors duration-200 outline-none focus-visible:border-white focus-visible:text-white motion-reduce:transition-none ${
+              // The first action is the one the chapter is asking for, so it
+              // is the one set in the page's ink. The second is a way to keep
+              // reading rather than a second request, and is ruled quieter.
+              i === 0
+                ? "border-white/45 text-white hover:border-white hover:text-white"
+                : "border-white/20 text-slate-300/75 hover:border-white/50 hover:text-slate-100"
+            }`}
+          >
+            {action.label}
+            <span
+              aria-hidden
+              className="transition-transform duration-200 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
+            >
+              &rarr;
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The recto of the perspectives spread: why the thinking matters.
+ *
+ * Read top to bottom in a fixed order, and the order is the client's own
+ * questions in the sequence they ask them -- what is this, why does it matter,
+ * what shape does it take, what do I get, how do I start. The diagram sits in
+ * the middle because it is the answer to the third and the setup for the
+ * fourth; the call to action is hung off the foot with `mt-auto` so it lands
+ * where the reader stops rather than wherever the copy above happens to end.
+ */
+function RationalePage({
+  rationale,
+}: {
+  rationale: NonNullable<BookPage["rationale"]>;
+}) {
+  return (
+    <div className="flex min-h-0 flex-col gap-[0.75em] lg:flex-1 lg:gap-[clamp(0.7em,2.5vh,1.9em)] [@media(max-height:480px)]:pt-[6%]">
+      <div data-ink className="shrink-0">
+        <p className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.34em] text-slate-400/60 uppercase">
+          {rationale.label}
+        </p>
+        <h3 className="mt-[0.6em] font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.75vw,1.65rem)] leading-[1.1] font-light text-balance text-white">
+          {rationale.headline}
+        </h3>
+        {/* Dropped below `lg`: the headline above says the same thing in six
+            words, and this page has a diagram, three benefits and a way out to
+            fit onto a sheet that is already carrying the six domains. */}
+        <p className="mt-[0.6em] hidden max-w-[48ch] text-[clamp(0.6rem,0.84vw,0.76rem)] leading-relaxed text-slate-300/70 lg:block">
+          {rationale.intro}
+        </p>
+      </div>
+
+      <IdeaFlow title={rationale.flowTitle} flow={rationale.flow} />
+      <Benefits title={rationale.benefitsTitle} items={rationale.benefits} />
+      <PerspectiveCta cta={rationale.cta} />
+    </div>
   );
 }
 
@@ -2407,10 +2425,13 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
       ) : illustrated ? (
         <ServiceEntries services={page.services} from={from} />
       ) : perspective ? (
-        <>
-          <PerspectivePanels services={page.services} />
-          <PerspectiveStrip services={page.services} />
-        </>
+        // The recto of 05 is not its entries at all -- it is the ARGUMENT for
+        // them, which lives on the page rather than in the run. The six
+        // domains are printed opposite; this side says what thinking about
+        // them is for and what a reader gets out of it.
+        (page as BookPage).rationale ? (
+          <RationalePage rationale={(page as BookPage).rationale!} />
+        ) : null
       ) : (
         <ServiceGrid services={page.services} from={from} />
       )}

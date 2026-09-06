@@ -306,61 +306,33 @@ export type PageService = {
 };
 
 /**
- * One entry in a run of PERSPECTIVES: an opinion, and the short label the
- * index calls it by.
+ * One entry in a run of PERSPECTIVES: a domain the studio thinks about, and
+ * the one line a CLIENT needs in order to know why that matters to them.
  *
- * WHY A `thesis` AND NOT JUST THE TITLE THAT WAS THERE
+ * WHY THIS IS A `summary` AND NOT THE `thesis` IT WAS
  *
- * 05 used to be six category names -- AI & Automation, Technology, Software
- * Engineering, Design, Business, Future Insights -- each under a sentence
- * saying it was interested in that category. "Tracking the latest technologies
- * shaping the digital world" is a description of a topic, not a view of it,
- * and a chapter called Perspectives whose entries hold no opinion is a
- * contents page for writing that does not exist.
+ * It held a thesis -- "The next interface is intelligence." -- on the argument
+ * that a perspective has to be a claim someone could disagree with, and that a
+ * chapter of topic names holding no opinion is a contents page. That argument
+ * was right about the chapter it was written for and does not survive the one
+ * this became.
  *
- * The category stays as `title`, because it is how a reader finds the entry.
- * The thesis is what the entry actually SAYS, and it is a claim someone could
- * disagree with -- which is the test. It is the largest thing on the page for
- * the same reason.
+ * The reason is that the CHAPTER now carries the argument and the rows no
+ * longer have to. `BookPage.rationale` opposite says what the thinking is for,
+ * draws the line from idea to product, and names what a client gets out of it.
+ * With that on the facing page, six aphorisms down the verso are six things to
+ * decode before reaching the point; six plain lines are a list of what we
+ * think about, which is what the reader is actually looking for at that
+ * moment. "Smarter workflows, decisions and products" tells a client what the
+ * domain buys them. "The next interface is intelligence" tells a designer
+ * something true and tells a client nothing.
+ *
+ * `git log` has the six theses if the chapter ever goes back to holding them.
  */
 export type PagePerspective = {
-  /** The short form the index prints: AI, TECHNOLOGY, ENGINEERING. */
-  label: string;
-  /** The opinion itself, set large. A sentence, with a full stop. */
-  thesis: string;
-  /**
-   * The plate's number, in roman, restarting at I for this chapter.
-   *
-   * Roman for the reason the note above ROMAN_PARTS gives: illustrations are
-   * numbered in roman so they cannot be read as pointers to the 01-07 of the
-   * chapters. That matters more here than anywhere -- an arabic "FIG. 05"
-   * inside chapter 05 names either the chapter or the picture and there is no
-   * way to tell which.
-   */
-  figure: string;
-  /**
-   * What the perspective is ABOUT, as four short nouns.
-   *
-   * They are the one thing on this spread that is not an opinion. A thesis is
-   * a claim someone could disagree with, which is what makes it worth
-   * printing; these say what territory the claim covers, which is what a
-   * reader needs in order to decide whether they care about it. Four, because
-   * the window sets them two by two and an odd list leaves a hole.
-   */
-  themes: string[];
-  /**
-   * This perspective's crop of the chapter artwork.
-   *
-   * Six crops of one drawing and not six drawings: see the header of
-   * tools/build-perspective-plates.sh. Each is chosen for its subject and all
-   * six are cut 16:9, so the window is one box at every setting and nothing
-   * under it moves on a click.
-   */
-  plate: PageMask;
+  /** One line, client-facing, no jargon. What this domain is for. */
+  summary: string;
 };
-
-/** The chapter's artwork, as a single tall crop for the verso's outer margin. */
-export type PageColumnPlate = PageMask;
 
 /** One numbered step of a procedure. */
 export type PageStep = {
@@ -444,6 +416,39 @@ export type BookPage = {
    * just finished counting the entries it qualifies.
    */
   colophon?: string;
+  /**
+   * The facing half of the perspectives spread: why the thinking matters.
+   *
+   * It is one object rather than six loose fields because it is one ARGUMENT,
+   * read top to bottom in a fixed order -- what we do, why, the shape of it,
+   * what you get, and the way in. Splitting it across the page type would let
+   * somebody print the benefits without the line that earns them.
+   */
+  rationale?: {
+    /** The running label over the page. */
+    label: string;
+    headline: string;
+    intro: string;
+    /** The line from idea to product: the chapter's one diagram. */
+    flowTitle: string;
+    flow: { label: string; note: string }[];
+    benefitsTitle: string;
+    benefits: { number: string; title: string; body: string }[];
+    /**
+     * The way out, and the one place in this chapter that asks for anything.
+     *
+     * Both actions turn to a chapter that EXISTS -- Connect and Work -- which
+     * is what makes them printable at all. The rule this book keeps is the one
+     * that took "VIEW PROJECT" off 04 and "READ PERSPECTIVE" off this chapter
+     * a revision ago: an action may only promise something the book can
+     * actually turn to.
+     */
+    cta: {
+      headline: string;
+      body: string;
+      actions: { label: string; chapter: number }[];
+    };
+  };
   /**
    * A tall STRUCK plate, printed down the outer margin of the verso.
    *
@@ -1036,136 +1041,92 @@ export const BOOK_PAGES: BookPage[] = [
     number: "05",
     title: "Perspectives",
     facing: {
-      headline: "Ideas Worth Exploring.",
+      headline: "Ideas That Shape Better Products.",
       subtitle:
-        "Thoughts on technology, design and the ideas shaping what comes next.",
+        "We think beyond code to make better product decisions — exploring technology, design and business ideas that help create products with real value.",
     },
+    // The six domains. Numbered by position, named by `title`, and explained
+    // in one line each -- see PagePerspective for why that line is a summary
+    // and no longer a thesis.
     services: [
       {
         title: "AI & Automation",
-        body: "AI is moving beyond features and becoming part of how people interact with products, services and information.",
-        perspective: {
-          label: "AI",
-          thesis: "The next interface is intelligence.",
-          figure: "I",
-          themes: [
-            "AI agents",
-            "Automation",
-            "Human + AI collaboration",
-            "Ethical AI",
-          ],
-          plate: {
-            src: "/perspectives/ai.webp",
-            ratio: "16 / 9",
-            alt: "A radial dial of concentric measured arcs at the centre of the chapter's drawing, with a struck panel beside it.",
-          },
-        },
+        perspective: { summary: "Smarter workflows, decisions and products." },
       },
       {
         title: "Technology",
-        body: "The best technology does its job quietly, making complex systems feel simple, useful and natural.",
         perspective: {
-          label: "Technology",
-          thesis: "Technology should disappear into the experience.",
-          figure: "II",
-          themes: [
-            "Product technology",
-            "Infrastructure",
-            "Digital experiences",
-            "Emerging tools",
-          ],
-          plate: {
-            src: "/perspectives/technology.webp",
-            ratio: "16 / 9",
-            alt: "An interface panel drawn in outline, linked by fine rules to a node diagram and a segmented dial.",
-          },
+          summary: "Choosing the right technology for the right problem.",
         },
       },
       {
         title: "Software Engineering",
-        body: "Strong architecture creates systems that can adapt as products, users and businesses grow.",
-        perspective: {
-          label: "Engineering",
-          thesis: "Good software is built for change.",
-          figure: "III",
-          themes: [
-            "Architecture",
-            "Scalability",
-            "Maintainability",
-            "Engineering practices",
-          ],
-          plate: {
-            src: "/perspectives/engineering.webp",
-            ratio: "16 / 9",
-            alt: "An isometric wireframe of a structure drawn on a measured grid, beside a plotted panel.",
-          },
-        },
+        perspective: { summary: "Reliable systems built to grow and adapt." },
       },
       {
         title: "Design",
-        body: "Good design gives complicated products structure, direction and a sense of simplicity.",
-        perspective: {
-          label: "Design",
-          thesis: "Design is how complexity becomes clear.",
-          figure: "IV",
-          themes: [
-            "UX",
-            "UI systems",
-            "Information architecture",
-            "Product design",
-          ],
-          plate: {
-            src: "/perspectives/design.webp",
-            ratio: "16 / 9",
-            alt: "Ruled dot grids and a measured frame above an interface panel, with a segmented dial at the edge.",
-          },
-        },
+        perspective: { summary: "Turning complexity into simple experiences." },
       },
       {
         title: "Business",
-        body: "Technology creates value when it solves a meaningful business problem rather than simply adding another feature.",
         perspective: {
-          label: "Business",
-          thesis: "Build technology around the problem.",
-          figure: "V",
-          themes: [
-            "Business problems",
-            "Product strategy",
-            "Digital transformation",
-            "Growth",
-          ],
-          plate: {
-            src: "/perspectives/business.webp",
-            ratio: "16 / 9",
-            alt: "A struck plate carrying a faint world map, with a globe and a dotted register beside it.",
-          },
+          summary: "Connecting technology with real business value.",
         },
       },
       {
         title: "Future Insights",
-        body: "Products that learn, respond and evolve will have an advantage as technology and user expectations continue to change.",
         perspective: {
-          label: "Future",
-          thesis: "The future belongs to adaptive products.",
-          figure: "VI",
-          themes: [
-            "Future products",
-            "Adaptive systems",
-            "Emerging technology",
-            "Digital transformation",
-          ],
-          plate: {
-            src: "/perspectives/future.webp",
-            ratio: "16 / 9",
-            alt: "A growth curve plotted on a fine grid, beside a textured field and a list panel.",
-          },
+          summary: "Understanding what emerging technology means next.",
         },
       },
     ],
+    rationale: {
+      label: "Why it matters",
+      headline: "Better thinking. Better decisions. Better products.",
+      intro:
+        "Before we build technology, we ask whether it solves the right problem. Our perspectives help us choose the right technology, simplify complexity and design products that create real value.",
+      flowTitle: "From idea to product",
+      // Four stages on one line. The questions matter as much as the labels:
+      // a diagram of four nouns is a decoration, and the same four with the
+      // question each one answers is the argument of the chapter in one row.
+      flow: [
+        { label: "Idea", note: "What could be possible?" },
+        { label: "Insight", note: "What actually matters?" },
+        { label: "Decision", note: "What should we build?" },
+        { label: "Product", note: "Turn the decision into reality." },
+      ],
+      benefitsTitle: "How this helps you",
+      benefits: [
+        {
+          number: "01",
+          title: "Choose the right technology",
+          body: "Avoid unnecessary complexity and select technology around the actual business problem.",
+        },
+        {
+          number: "02",
+          title: "Make better decisions",
+          body: "Understand what deserves investment before committing significant time and resources.",
+        },
+        {
+          number: "03",
+          title: "Build with purpose",
+          body: "Turn strategy and insight into products designed to create measurable value.",
+        },
+      ],
+      cta: {
+        headline: "Have a problem worth solving?",
+        body: "Bring us the challenge. We'll help you think through the opportunity, choose the right direction and build what comes next.",
+        // Both turn to a chapter that exists: 07 Connect and 04 Work.
+        actions: [
+          { label: "Start a project", chapter: 6 },
+          { label: "Explore our work", chapter: 3 },
+        ],
+      },
+    },
     columnPlate: {
       src: "/perspectives/column.webp",
       ratio: "420 / 760",
-      alt: "The chapter's drawing in the outer margin: a network of nodes and connecting rules running down the page.",
+      alt: "The chapter's drawing in the outer margin: an interface panel, a measured dial and a plotted grid, struck in the page's own silver.",
     },
   },
   {

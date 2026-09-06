@@ -147,7 +147,7 @@ the entries decides, the same way it decides whether the chapter paginates.
 | `stage` | process spread — six ruled rows, three to a page, all six printed | 03 |
 | `project` | project stage — a selectable 16:9 plate over its facts | 04 |
 | `image` | catalogue — photograph beside copy, alternating sides | 02 |
-| `perspective` | perspectives — an index of six theses on the verso, a struck plate and its argument on the recto | 05 |
+| `perspective` | perspectives — six domains listed on the verso, the argument for them on the recto | 05 |
 | neither | engraved — a lead plate over a modular grid | — |
 
 The engraved grid is the fallback and currently nothing selects it: it was 05's
@@ -198,13 +198,10 @@ and nothing is hidden. **Nothing in this chapter may go behind a gesture.**
 revision 03, 04 and 05 were three consecutive chapters set as an index on the
 verso and a window on the recto, and the standing note here is that two
 chapters set the same way one spread apart stop reading as two chapters. There
-are two windows again, and they are 04 and 05, which are held apart by the
-shape of their rows and their windows: 04's rows are a small tracked category
-over a display title and its window is a photograph of software; 05's lead with
-a large serif numeral and carry the thesis itself, and its window is a struck
-drawing. That is a narrower margin than it was — 05's rows were one line of
-tracked capitals until they took the thesis — so see the note under 05. **A
-third window is the thing not to add.**
+is ONE window left in the whole book, and it is 04's. 05 followed 03 off the
+mechanism for the same reason a revision later, so there is nothing left for
+this warning to be about except 04 itself. **The thing not to add is a second
+one.**
 
 **Both pages share one grid template**, `minmax(0,1.2fr)` for a head and then
 one equal row per stage, so stage 01 sits on exactly the line stage 04 does and
@@ -453,154 +450,130 @@ Consequences worth knowing before touching it:
   of a 284px column and MOBILE ran 51px past the page edge. And the list is
   `flex-wrap`, as the backstop for a phone narrower than 390.
 - **It is not 05's index, though both sit on a verso and share a mechanism.**
-  05's rows are now two lines as well, so this is the narrowest that margin has
-  ever been: what separates them is that 05 leads with a LARGE SERIF NUMERAL
-  and its second line is the thesis itself, where these lead with a small
-  tracked category and a display title. One is a list of positions, this is a
-  table of contents with titles in it. Two adjacent chapters running the same
-  mechanism read as one repeated page unless the settings differ, which is the
-  same failure that collapsed 04 into 02 when both were catalogues.
+  05's rows are two lines as well, but they no longer drive anything: that
+  chapter is a printed list beside an argument, and this is an index driving a
+  window. The two are different kinds of object again, which is what ended a
+  warning this file carried through three revisions. It is worth keeping in
+  mind anyway — two adjacent chapters running the same mechanism read as one
+  repeated page unless the settings differ, which is the failure that collapsed
+  04 into 02 when both were catalogues.
 - **The epigraph is not "a studio is what it has built".** It was, when one of
   the five entries was a delivered build. With four concepts it would be the
   page arguing against its own colophon two inches away.
 
-**05 is a volvelle, and that is why a page in this book is allowed to change
-without turning.** Its six perspectives are not six pages: they are six answers
-to one question, and a reader wants to compare them rather than read through
-them. A volvelle — the rotating paper disc bound into books since the
-thirteenth century — is the printed precedent for a page that shows one of
-several states in a fixed window, and it is the only device in the book that
-moves without the scroll moving it.
+**05 is a spread that argues, and it is no longer a window.** The verso lists
+the six domains the studio thinks about, one line each; the recto says what
+that thinking is for — a diagram from idea to product, three things a client
+gets out of it, and the way in. **Nothing on this spread is behind a click, a
+hover or a tab.**
 
-**It has pictures now, having had none.** Every entry carried a struck emblem,
-and the reason was written down at the time: no artwork had been supplied, and
-the brief asking for a picture also forbade stock photography, which is the
-same answer twice. Artwork has now been supplied. `PERSPECTIVES_VISUAL.png` is
-cut into six 16:9 plates and one tall column by
-`tools/build-perspective-plates.sh`, and the emblems are gone — an emblem and a
-plate are two pictures of one idea on one page, and the emblem was the one
-standing in for the other.
+**It has been three things, and the third is a reversal of the second.** It was
+six category names under sentences saying the studio was interested in each
+category. Then a volvelle: an index of six theses driving a window that showed
+one plate and one argument at a time. It is now printed whole. The volvelle was
+a good device and the reason it went is the reason 03's window went one chapter
+earlier — a reader who does not operate the page learns that the studio has
+opinions and not one of them. A page that has to be worked before it will speak
+is a page most readers never hear.
 
-**The plates are MASKS, which is the third kind of picture in this book and the
-reason this chapter needed no toning script.** `build-process-plates.sh` and
-`build-work-plates.sh` both exist to solve one problem: a photograph has a
-GROUND, and a ground darker than the page is a hole punched in it while a
-lighter one is a label stuck on it. This source is line work on a flat pale
-ground, so it is keyed the way the engravings in `fetch-plates.sh` are —
-negate the luminance, ship the negative, let the page paint the silver and use
-the file as a CSS mask. What lands on the paper is the drawing and the
-photograph of the page shows through everywhere else. **There is no ground to
-tone and none to get wrong.**
+**That also finally settles the 04/05 collapse this file warned about through
+three revisions.** They are no longer the same kind of object at all: 04 is an
+index driving a window, and this is a list beside an argument. The warning now
+attaches to 04 alone, which is the only window left in the book.
 
-- **`mask-mode: luminance` has to be declared, and this is the trap.** The mask
-  files are greyscale with no alpha channel, so under the default
-  `match-source` the browser reads their alpha — opaque everywhere — and every
-  plate paints as a solid silver rectangle. That is exactly what the first
-  render of this chapter produced: six of them on one spread.
-  `<EngravedPlate>` does *not* declare it and 01 and 07 render correctly
-  anyway, which makes this worse rather than better — the two that work are
-  relying on undeclared behaviour the new files did not get. **Declare it on
-  anything new.**
-- **The ink is capped at 50%, which the engravings are not.** Three panels in
-  this artwork are solid dark, and a solid dark area negates to solid white,
-  which is full opacity. Struck at full strength those print as near-white
-  blocks and become the brightest thing in the monograph — brighter than any
-  headline on any page. Proofed against the real paper: 0.75 leaves holes in
-  the page, 0.62 is still the lightest thing on the spread, 0.50 reads as
-  tinted plates with the line work intact. A tonal operator cannot separate the
-  two, because a hairline and a filled panel are the same black in the source.
-- **Six crops, not one picture six times.** The picture that does not change
-  while everything around it does is the one the eye stops believing. Each is
-  chosen for its subject and all six are cut 16:9, so the window is one box at
-  every setting. They are ASSOCIATIVE, not documentary, which abstract artwork
-  is allowed to be — unlike 04's plates, which are pictures of software and are
-  believed as evidence the moment they are seen.
-- **Ink coverage is the number that judges a crop**, and the only way to judge
-  one is to proof the composite. The whole artwork measures 15.7%; anything at
-  or below that is a tile of empty page with a detail in the corner. The margin
-  column was first cut from the sparsest part of the drawing at 13.6%, and at
-  150px wide it read as a smudge. The script's header has the table.
+- **The rows are not controls.** No `data-perspective`, no panels, no
+  `bindWindow` call. The factory is down to one caller and the note under it
+  says why.
+- **A perspective is a `summary` now and not a `thesis`.** It held one — "The
+  next interface is intelligence." — on the argument that a perspective must be
+  a claim someone could disagree with. That argument was right about the
+  chapter it was written for and does not survive this one: the CHAPTER now
+  carries the argument on the facing page, so the rows do not have to. Six
+  aphorisms down a verso are six things to decode before reaching the point;
+  six plain lines are a list of what we think about, which is what a reader is
+  looking for at that moment. `git log` has the theses.
+- **The diagram is the chapter's one picture that is not artwork**, and it is
+  drawn rather than illustrated: one continuous rule with a tick dropped at
+  each station, which is how a measured drawing marks a stage — not four boxes
+  joined by arrows, which is how a slide does it. The chevron is 03's, because
+  a book that invents a second arrowhead has stopped being one book. **The
+  QUESTION under each label is the load-bearing part**: four nouns in a row is
+  decoration, and the same four with the question each answers is the whole
+  argument of the chapter in one line.
+- **The call to action came back, and the note that removed it has expired.**
+  It said a chapter that is a WINDOW has no closing page, and an ornament with
+  a way out under a page that is about to change signs off something that has
+  not finished. Nothing on this spread changes any more, so the page finishes
+  where the reader finishes reading it — which is exactly where an action
+  belongs. Both actions turn to a chapter that EXISTS, 07 and 04, which is the
+  rule that took "VIEW PROJECT" off 04 and "READ PERSPECTIVE" off this chapter:
+  an action may only promise something the book can turn to. They carry
+  `data-nav-item` and `data-index`, so they are the book's own navigation and
+  not a second kind of link that looks like it.
+- **Six of the seven plates are retired and the column is not.** The six were
+  one per perspective, shown one at a time in a window; with no window, six
+  pictures on one spread are six things competing with the argument, which is
+  the one thing this chapter is now for. The column stays because every other
+  chapter carries a picture and a chapter with none would be the only one — and
+  because at 166px in a margin it is a mark, not an illustration. The crops are
+  listed in `tools/build-perspective-plates.sh` rather than deleted: each was
+  measured against ink coverage and proofed on the real paper, and restoring
+  one is a single `key` line.
+- **`mask-mode: luminance` still has to be declared** on the one plate that is
+  left. The files are greyscale with no alpha, so under the default
+  `match-source` the browser reads their alpha — opaque everywhere — and the
+  plate paints as a solid silver rectangle. `<EngravedPlate>` does *not*
+  declare it and 01 and 07 render correctly anyway, which makes this a trap
+  rather than a convention. **Declare it on anything new.**
 
-**The index carries the THESIS now, not just the category.** It was six
-category names, which told a reader the topic of each perspective and not the
-view — and a chapter called Perspectives whose index holds no opinion is a
-contents page again, which is the thing this chapter was rebuilt to stop being.
-All six positions are now readable with nothing hovered, clicked or scrolled,
-and the window is where you go to read one properly rather than the only place
-to find out what it says.
+**What was measured, and what it cost.** The spread is over-subscribed on a
+phone and the cuts are in the brief's own priority order:
 
-**That is also the sharpest the 04/05 collapse has ever been.** Both are an
-index on a verso driving a window one spread away, and both rows are now two
-lines. The standing warning is that two chapters set the same way one spread
-apart stop reading as two chapters. What holds them apart is the shape of the
-row and the kind of picture: 04 leads with a small tracked category over a
-display title and its window is a photograph of software; 05 leads with a LARGE
-SERIF NUMERAL over a tracked category and a sentence, and its window is a
-struck drawing. 05's verso also carries the column plate, which 04's has no
-equivalent of. **If either of those is levelled, they collapse.**
+- **The chapter subtitle is not the house subtitle.** Everywhere else it is
+  30ch of 1.05rem, which is right on a page introducing one thing and wrong on
+  a page that also carries six rows: at 1440x900 it ran to five lines and
+  pushed perspective 06 down through the drop folio. It is set at 46ch, a size
+  down, inside the index block — and `FacingCopy` guards the generic one out
+  for this chapter so it is not printed twice.
+- **Four things drop below `lg`, and each is a paragraph under a heading that
+  stays**: the chapter's opening sentence, the recto's opening sentence, the
+  three benefit descriptions and the call to action's sentence. At 390x844 the
+  whole spread is on ONE sheet — six domains, the argument, the diagram, three
+  benefits and the way out came to 920px of the 781 the face will show. The
+  opening sentence is the largest single loss at 90px, and it goes because two
+  other things on the same sheet do its job: the headline directly above says
+  it in six words and "Why it matters" a few inches down says it in full.
+- **The index rows tighten again below 480px of viewport HEIGHT.** At 844x390
+  the sheet is 475px in a 390px window, so its bottom 45px are off-screen
+  before anything is printed and the verso shows about 365.
 
-Consequences worth knowing before touching it:
+**Three things the brief asked for that this chapter does not do**, all for the
+same reason — it is a photograph of a page, not a stylesheet:
 
-- **The index is on the verso and the window is on the recto, which are
-  different sheets.** A verso is the back of the sheet before it, so the six
-  buttons and the six panels they drive sit in sibling subtrees with nothing
-  above them to hold state. `<Book>` therefore queries from the DOCUMENT, not
-  from the section, and sets every copy. There are three copies of the index —
-  the verso, the hidden portrait duplicate inside `data-facing-inline`, and the
-  reduced-motion column — and keeping them all in step is simpler than deciding
-  which one is live.
-- **HOVER PREVIEWS, CLICK PINS, and the two are different state.** 05 asks for
-  it and 04 does not, which is why it is
-  `bindWindow("perspective", { preview: true })` and not the behaviour: 04's
-  four projects are things to compare deliberately, where 05's six are
-  positions to skim, and a plate changing under the pointer on the way
-  somewhere else would make 04's window twitch for nothing. Without the
-  pinned/previewed distinction a glance would overwrite the choice, and moving
-  away would leave the window on whatever the pointer passed over last.
-  - **Restoring is bound to the enclosing `<nav>`, not to each button.** Moving
-    between two rows of one index fires a leave and an enter on every row
-    crossed, so per-button restore put the pinned panel back for a frame each
-    time — the window flickering all the way down the list. `focusout` checks
-    `relatedTarget` for the same reason: arrow keys move focus from one row to
-    the next inside the same nav, and that is not leaving the index.
-  - **Mouse only.** A touch `pointerenter` fires once, immediately before the
-    click that pins the same row, and there is no `pointerleave` to undo it —
-    so on a phone the preview is at best redundant and at worst a panel left
-    previewed with nothing chosen.
-- **There are TWO indices and they are different objects.** `PerspectiveIndex`
-  is on the verso: six rows of numeral, category and thesis. `PerspectiveStrip`
-  is along the foot of the recto: the six plates in miniature, and the only
-  place in the chapter where all six DRAWINGS are visible at once. A reader who
-  has looked at one plate and wants to know what the others look like has
-  nowhere else to find out, and crossing the gutter to a list of words does not
-  answer that. Their landmark names are "Perspectives" and "Perspective plates"
-  and must stay different: two navigation landmarks with one accessible name
-  are announced identically while going to the same six places by different
-  routes.
-- **There is no "READ PERSPECTIVE" action, and the brief asked for one.** There
-  is nothing to read: these six are positions, not articles; no route exists,
-  and inventing one would mean inventing the writing to put behind it. That is
-  the argument that took "VIEW PROJECT →" off 04, and it matters more here — a
-  link promising an article would be the page describing writing that does not
-  exist, one revision after it stopped doing exactly that.
-- **The metadata line is the book's currency, not the brief's.** It asked for
-  "INDEX / 2026" and "FIG. 05". A year dates the page the moment it turns over,
-  and an arabic 05 inside chapter 05 names either the chapter or the picture
-  with no way to tell which — which is the whole reason plates are roman here.
-  It reads `PERSPECTIVE 01 / 06` and `PLATE I` instead.
-- **Two thresholds, and each was measured.** The index rows tighten below 480px
-  of viewport HEIGHT and the gap above them closes: at 844x390 the sheet is
-  475px in a 390px window, so its bottom 45px are off-screen before anything is
-  printed, and six two-line rows with a chapter head came to 410px of a page
-  showing 365 — perspective 06's thesis was cut in half by the foot. The
-  recto's own margins tighten below `lg`, where the whole spread is on one
-  844px sheet and the KEY THEMES table was landing on the sheet edge.
-- **`bindWindow(group, options)` in `book.tsx` drives this and 04.** One
-  factory called twice — `("project")` and `("perspective", { preview: true })`
-  — because the mechanism is identical and the settings are not. It was called three times for one
-  revision, when 03 was a window too; 03 is a printed spread again and binds
-  nothing. Two is also the most this mechanism should carry: three consecutive
-  windows stopped reading as three chapters. It reads `[data-<group>]` for the index and both
+- **A warm off-white paper ground with near-black text.** The page is a
+  photograph of navy stock. One white spread inside a navy book is not a colour
+  change, it is a different frame set. The brief's own last question is whether
+  the section belongs to the existing site, and belonging wins.
+- **ALL-CAPS headlines.** Briefs are written in caps; this book sets chapter
+  headlines in the display serif in sentence case, and 05 doing otherwise would
+  be the only one. The words are the brief's exactly.
+- **A `NIVLAK TECHNOLOGIES / 05 / 06` footer.** The book already prints its own
+  drop folios two lines below where that would go.
+
+**And one it does not do for a different reason: entrance animation.** The
+brief asks for the rows to stagger in and the diagram's line to draw. The
+sheets already arrive by turning — that IS the entrance — and a second
+animation inside a page that is mid-turn fights the first. The standing rule in
+this file is also that nothing may put `opacity` on a sheet, and the brief's own
+line is that animation must never delay comprehension.
+
+- **`bindWindow(group)` in `book.tsx` drives 04, and only 04.** It has been
+  three calls and two. 03 was a window until its six stages were printed on one
+  spread, and 05 until the same argument was made about its six perspectives: a
+  reader should not have to operate a page before it will tell them anything.
+  The factory stays because 04 is genuinely the case for it — four full-measure
+  photographs of software cannot be printed four-up at a size where they can be
+  read. It reads `[data-<group>]` for the index and both
   `[data-<group>-panel]` (copy, which leaves the accessibility tree when it is
   not showing) and `[data-<group>-plate]` (pictures, which do not: their alt
   text is already reachable only through the current panel, and an
@@ -622,22 +595,6 @@ Consequences worth knowing before touching it:
   the document, and moved focus to the verso list a page away. Every index copy
   is a `<nav>` and none nests inside another, so `el.closest("nav")` is the
   scope that keeps working as copies are added.
-- **All six panels are in the markup and five are transparent.** They share one
-  grid cell, so the window is as tall as the longest thesis from the first
-  paint and does not resize on a click. `opacity` is safe here and nowhere near
-  a sheet: a panel is inside a face, which its own clip has already flattened.
-  The five that are off are `aria-hidden` and `pointer-events-none`.
-- **This chapter has no tailpiece**, and the guard in `ServicesPage` says so
-  (`&& !perspective`). An ornament under a window that is about to change is
-  signing off a page that has not finished.
-- **The panel takes extra sinkage below 480px of viewport HEIGHT.** At 844x390
-  the page's top 40px is off-screen (see 04's colophon note above) and the
-  page's own 8% sinkage resolves against WIDTH to 33px, which does not clear
-  it. Every other recto leads with type, whose line box carries leading above
-  the cap and hides the cut; this one leads with a struck emblem that starts
-  flush at the top of its box, and the chip's pins came off. Hiding the emblem
-  only moves the cut onto the kicker.
-
 ### Rules that are not obvious from the code
 
 - **Illustrations are numbered in roman and chapters in arabic**, and 03 is
@@ -654,8 +611,9 @@ Consequences worth knowing before touching it:
   telegraphy, are `Fig. 1` and `Fig. 2`.
 
   **The plates restart per chapter**: 03's six photographs are `PLATE I`–`VI`,
-  04's four are `PLATE I`–`IV` and 05's six struck crops are `PLATE I`–`VI`
-  again, so `PLATE III` names three different pictures in one book. That is a deliberate choice and not an oversight — a
+  and 04's four are `PLATE I`–`IV` again, so `PLATE III` names two different
+  pictures in one book. (05 numbered six struck crops the same way for one
+  revision; they are retired and it numbers nothing now.) That is a deliberate choice and not an oversight — a
   chapter numbers its own plates from one, the way its stages and its projects
   are numbered from one. The rule that still holds without exception is the
   NUMERAL SYSTEM: plates roman, chapters arabic, engraved figures their own

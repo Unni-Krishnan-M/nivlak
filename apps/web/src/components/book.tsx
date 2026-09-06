@@ -319,10 +319,10 @@ export function Book() {
       // the thumb index deal in. There was a second currency until 03 stopped
       // paginating: its process index carried a SPREAD, because its six
       // entries were six PAGES of one chapter and a chapter number sent all
-      // six to the half-title the reader was already looking at. Those six are
-      // a window now and carry `data-approach`, which bindWindow handles and
-      // which never scrolls anything -- so `data-spread` and the seek that
-      // served it are gone, and a nav item is one thing again.
+      // six to the half-title the reader was already looking at. 03 is one
+      // spread now and prints all six stages on it, so there is nothing left
+      // to address and nothing to bind -- `data-spread`, `data-approach` and
+      // the seek that served them are all gone, and a nav item is one thing.
       const onNavClick = (event: Event) => {
         const el = (event.currentTarget ?? event.target) as HTMLElement;
         goTo(Number(el.dataset.index));
@@ -338,6 +338,12 @@ export function Book() {
       // it. 04 shows one 16:9 plate of four; 05 shows one of six opinions. The
       // mechanism is identical and the settings are not, which is exactly the
       // case for one binder called twice rather than two handlers.
+      //
+      // It was called three times for one revision: 03 was a window too. It is
+      // a printed spread again -- all six stages set, nothing behind a click --
+      // so it binds nothing. Two chapters are also the most this mechanism
+      // should carry: three consecutive windows stopped reading as three
+      // chapters, which is the note CLAUDE.md keeps about it.
       //
       // Queried from the DOCUMENT rather than from the section, and for a
       // reason that is not the reduced-motion column's: the two halves of a
@@ -440,7 +446,6 @@ export function Book() {
           }
         });
       };
-      bindWindow("approach");
       bindWindow("project");
       bindWindow("perspective");
       const dropWindows = () => {

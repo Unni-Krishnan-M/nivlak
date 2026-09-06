@@ -124,9 +124,11 @@ What follows from that:
 - **`continued` and `lastOfChapter` are both needed and are not each other's
   negation.** A chapter of one spread is the first *and* the last. `continued`
   suppresses the opener devices; `lastOfChapter` is what the tailpiece keys off.
-- **Only the catalogue paginates.** 03, 04 and 05 are each one spread with a
-  window on it, and a run behind one window is never cut: the index has to
-  reach every entry from wherever it is printed. `expandChapter` opts a chapter
+- **Only the catalogue paginates.** 03, 04 and 05 are each one spread: 04 and
+  05 because a run behind one window is never cut — the index has to reach
+  every entry from wherever it is printed — and 03 because its six stages are
+  a run the reader is meant to COMPARE, which is a thing a spread does and two
+  spreads cannot. `expandChapter` opts a chapter
   out when its entries carry `stage` or `project`, or when none carries an
   `image` — a question about the ENTRIES and never a list of chapter numbers,
   which is how 04 crossed from one side of it to the other without that file
@@ -142,7 +144,7 @@ the entries decides, the same way it decides whether the chapter paginates.
 
 | The entries carry | Setting | Where |
 | --- | --- | --- |
-| `stage` | plate section — a full-measure plate over its letterpress, one of six in a window | 03 |
+| `stage` | process spread — six ruled rows, three to a page, all six printed | 03 |
 | `project` | project stage — a selectable 16:9 plate over its facts | 04 |
 | `image` | catalogue — photograph beside copy, alternating sides | 02 |
 | `perspective` | perspectives — an index on the verso, one window on the recto | 05 |
@@ -177,117 +179,167 @@ studies. It names every picture-bearing setting now
 the test getting cleverer. Ask what setting a run is in, never whether an entry
 happens to have an image.
 
-**03 is a plate section: six stages, one window, one spread.** It PAGINATED
-until recently — a half-title, one stage to a page, a tailpiece, four spreads —
-and every one of those pages was fully set. What was wrong with it was not the
-page but the arithmetic of reading it: six stages a page apart are six page
-turns to get back to the one you wanted, and a procedure is the thing in this
-book a reader most wants to COMPARE. That is the argument 05 made for the
-volvelle and 04 made for its stage, and it is the same argument here.
+**03 is a process spread: six stages, all six printed, three to a page.** It
+has been three things — six one-line `steps`, then four paginated spreads one
+stage to a page, then one spread with a window — and the window is the one
+worth understanding, because it was reverted deliberately.
 
-Its recto is `StageWindow` and is 04's page part for part: head with the
-stage's numeral and name, rule, label and plate number, the plate, headline,
-sentence, the run of work, and DELIVERABLE and OUTCOME hung off the foot. The
-verso is the chapter opening plus the index of six that drives it.
+**Why the window went.** Its argument was that six stages a page apart are six
+page turns to compare two of them, and a procedure is the thing in this book a
+reader most wants to compare. That was true, and it was the wrong fix: it
+bought comparison by hiding five of the six behind a click. A procedure is the
+one chapter a client reads to find out what they are BUYING, and a reader who
+never clicks learns that the studio has a process and nothing about it. A
+spread answers both at once — six rows across two facing pages compare at a
+glance, which is what a spread is *for* and what a scrolling page cannot do —
+and nothing is hidden. **Nothing in this chapter may go behind a gesture.**
 
-**The cost is written down because nobody should have to rediscover it.** 03,
-04 and 05 are now three consecutive chapters set as an index on the verso and a
-window on the recto, and the standing warning in this file is that two chapters
-set the same way one spread apart stop reading as two chapters. Three is worse.
-What is left holding them apart is the shape of the rows and the shape of the
-window — 03's rows are a tracked stage name with its subject beside it on one
-baseline and its window is a photograph of the work; 04's are a category over a
-project title, two lines, and its window is a 16:9 interface; 05's are a single
-line of tracked capitals with no subject at all and its window is an emblem
-over a thesis. **If a fourth window is added that is no longer enough**, and
-one of them has to go back to being a page.
+**It also ends the collapse this file has been warning about.** For one
+revision 03, 04 and 05 were three consecutive chapters set as an index on the
+verso and a window on the recto, and the standing note here is that two
+chapters set the same way one spread apart stop reading as two chapters. There
+are two windows again, and they are 04 and 05, which are held apart by the
+shape of their rows and their windows: 04's rows are a category over a project
+title with a 16:9 interface opposite, 05's are one line of tracked capitals
+with an emblem over a thesis. **A third window is the thing not to add.**
 
-**It is still not a second catalogue**, for the reason 04 is not one either.
-The catalogue's plate is 42% of a text column — about 260px at 1440 — where
-these six photographs are *made of* small type: a notebook of interview notes,
-a strategy blueprint, a wireframe sheet, an architecture diagram, a deployment
-pipeline, an analytics dashboard. At 260px none of it is readable and the plate
-is a texture. Being able to read it is the whole reason they are photographs
-and not emblems.
+**Both pages share one grid template**, `minmax(0,1.2fr)` for a head and then
+one equal row per stage, so stage 01 sits on exactly the line stage 04 does and
+the six rules run straight across the gutter. That is `<ServiceEntries>`'s
+device and it is here for the same reason: rules that *nearly* line up read as
+a mistake, and the reader is being invited to compare rows, which they can only
+do if the rows are on lines. The row count is derived — seven stages would set
+as four and three, both grids taking four rows so the recto's last is blank,
+which is what a book does rather than respacing one page against the other.
 
-Consequences worth knowing before touching it:
+**It is over-subscribed, and every number in it was measured.** Six stages of
+eight fields each do not comfortably fit two pages of 699px, and the levers
+that made it fit are all recorded in `book-sheets.tsx`. Read those comments
+before changing any of them; the short version is that the type is already at
+the floor this file warns about elsewhere, so nothing here may be fixed by
+making something smaller.
 
-- **The window group is `data-approach`, not `data-stage`.** `layoutSheets`
-  already owns `[data-stage]` — it is how it finds the element it writes
-  `--page-image` and the page positions onto — and an index button carrying
-  that attribute is a second answer to `section.querySelector`. Named `stage`
-  for one revision, the six index buttons and the book's own stage landed in
-  the same `bindWindow` call and a click blanked the entire recto.
-- **There are TWO indices and they are different objects.** `StageWindowIndex`
-  is on the verso: six ruled rows, each a tracked stage name with its subject
-  beside it. `StageHeadIndex` is in the window's head: six numbered notches,
-  `<BookIndex>`'s own device one level down. One instance of each — the heads
-  are stacked six deep with five transparent, and an index inside every one
-  would be thirty-six buttons for six destinations. Their landmark names are
-  "The stages of the process" and "Stage index", which must stay different:
-  two navigation landmarks with one accessible name are announced identically
-  while going to the same six places by different routes.
-- **The verso's index rows are ONE line carrying two things**, not two lines.
-  A reader choosing between six stages wants to know what each one is, so the
-  subject is set beside the name rather than left off — and beside rather than
-  under, which 04's four-row index can afford and this cannot. Six two-line
-  rows measured 373px on a verso that also carries a chapter opening, a
-  drop-cap paragraph and the note; the note printed through the drop folio and
-  off the foot. On one baseline the six are 175px.
-- **The chapter lost its tailpiece and kept its note.** The closing page had
-  four things on it: an arc (the six stage names run on with arrows), a value
-  list (the six deliverables), the note, and a call to action with two ruled
-  buttons. The arc and the value list were always restatements, and the index
-  now on the verso IS the six stage names, printed larger and clickable, so the
-  arc would be the same list twice on one page. The CALL TO ACTION went for
-  05's reason: a chapter that is a window has no closing page, and an ornament
-  with a way out under a page that is about to change is signing off something
-  that has not finished. 07 is three sheets later and is the whole of that
-  argument anyway. `git log` has the copy. `ChapterTailpiece` went with it;
-  `PageTailpiece` is one field now.
-- **A stage reserves the drop folio; nothing else on a recto has to.**
+- **The chapter opening lost its drop cap and its epigraph.** The head shares a
+  grid with three stage rows: at 1440x900 the four slots have 699px between
+  them, a row will not set below ~180 of those with everything printed, and the
+  head therefore has ~200. A drop cap is 3.4em tall by definition, so the
+  shortest paragraph that can carry one is three lines — measured at 339px in a
+  187px slot, printing straight through stage 01. 02 has no intro either, for
+  the same reason: a verso carrying the chapter's entries has no room for an
+  opening paragraph as well. The epigraph went next, for 27px, because the
+  description under it says what it said and only one of the two is the
+  brief's.
+- **The spread takes an ordinary page's sinkage, not an opener's.** `pt-[18%]`
+  is 130px of the 887 this sheet has. With it, the three rows and the head came
+  to 801px against 699 available; at 8% they have 771 and it fits. Both halves
+  still take the same drop, which is the part that actually matters — the first
+  lines sit on one line across the gutter.
+- **BOTH pages reserve the drop folio**, where normally no page has to.
   `VersoPage` and `PageBody` print it at 7% of the page HEIGHT while their own
-  bottom padding is a percentage of its WIDTH — 56px against a folio whose top
-  edge is 71px up. A stage hangs DELIVERABLE and OUTCOME off the foot with
-  `mt-auto` and lands exactly there: measured at 1440x900 the letterpress
-  reached 838 against a folio at 829 and printed "03" through the last line of
-  the outcome. `lg:pb-[clamp(20px,3vh,34px)]`, in vh because the folio is
-  placed in vh. 04 does not need it because its colophon is sitting in that
-  space already.
+  bottom padding is a percentage of its WIDTH — 8% of ~725 is 58px against a
+  folio whose top edge is 73px up. Every page that stops short of its own
+  padding never sees the 15px they overlap by; this one fills its page to the
+  last pixel by construction, and stage 03's outcome printed through
+  "03 — APPROACH". Reserved in vh, because the folio is placed in vh.
+- **The plate is a FIXED width and a 4:3 box**, where every other plate in the
+  book is a percentage of its column at the file's own ratio. Fixed, because
+  the recto is 434px wide against the verso's 562 — the thumb index is reserved
+  out of the right-hand page and nothing is reserved out of the left — so 34%
+  of the measure printed stage 01 half as large again as stage 04 across the
+  gutter. Six plates a reader is invited to compare have to be one size. 4:3
+  because the row's height is set by the copy beside it and a 16:9 box that
+  wide came 24px short: same width, 31% more picture.
+- **The copy was cut to the RECTO's measure, which is the binding one.** Two
+  lines of description in a 434px page is about 88 characters; two lines of
+  outcome in the deliverable table is about 55. A sentence over either ran to a
+  third line, and a third line on three rows overflows the page. That is why
+  every description and every outcome in this chapter is shorter than it was.
+- **The plate reads as a texture and that is the price of printing all six.**
+  These photographs are *made* of small type — a notebook of interview notes, a
+  strategy blueprint, a wireframe sheet, an architecture diagram, a deployment
+  pipeline, an analytics dashboard — and at 132px none of it can be read. The
+  window could read them and hid five. A picture a reader cannot decode is
+  worth less than a stage a reader never opens, but it is a real cost and it is
+  written down rather than left to be found as a bug.
+- **The row is a GRID and the plate changes which rows it spans.** On a spread
+  the plate sits beside the headline with the deliverable rules running the
+  full measure under both. Below `lg` the whole chapter is on one sheet, and
+  that shape does not fit: measured at 390x844 the face clips at 781px and six
+  rows came to 866. The fix is not a smaller plate but a TALLER one — spanning
+  the deliverable rows as well, the picture is 52px against 53px of copy beside
+  it and costs the row nothing, where beside the headline alone it cost 23px a
+  row and 138 over the chapter. Line numbers rather than named areas:
+  `grid-template-areas` through an arbitrary variant is one string that has to
+  be got right twice.
+- **The slot template is `lg`-only, and that is a correctness fix.** Below `lg`
+  both grids render into the same column — the facing copy above, the page's
+  own below. With `h-full flex-1` on each, the first took the entire column and
+  the second was handed zero height: stages 04, 05 and 06 were in the DOM at
+  0px. Auto rows down there, so the two stack at their content height.
 - **Three things go at small sizes and each has its own threshold.** The
-  stage's `body` goes below `lg`: a project's verso is a head, an epigraph, a
-  subtitle and a four-row index, where a stage's is all of that plus a
-  seven-line drop-cap opening, and on one 844px portrait sheet that leaves
-  ~90px less for the window than 04 has — with the paragraph in, the
-  deliverable and the outcome fell clean off the foot. The NOTE goes below `lg`
-  too, as the last 67px: it is a footnote, and the index has taken over what it
-  says, since every one of the six is now a tap away in any order directly
-  above it. And the PLATE drops to 64% of the measure below 480px of viewport
-  HEIGHT, where the recto has 390px and a full-measure plate takes 181 of them
-  — that is the same picture the paginated page printed at 74% of a narrower
-  column. The headline, the work, the deliverable and the outcome never go.
-- **The reduced-motion column has no branch any more.** It needed one
-  (`PlateSectionColumn`) for as long as the chapter paginated: that column sets
-  an uncut CHAPTER per article, and routed through the spread path an uncut
-  plate section printed stage 01 and stopped. A window is the same object cut
-  or not, so 03 now goes through `ServicesPage` exactly as 04 and 05 do, and
-  the index in the column drives the window there like every other copy.
+  per-stage DESCRIPTION goes below `lg` — it is the only part of a row that
+  says something the page says elsewhere, since it elaborates the headline
+  directly above it. The ACTIVITY RUN goes below `lg` too, and that one hurts:
+  it is the brief's KEY ACTIVITIES and it is a fact rather than a restatement.
+  It goes because it is the largest thing left in the row — 33px of a 94px
+  landscape row — and because what a stage PRODUCES survives it: the
+  deliverable and the outcome are the two lines a client is deciding on, and
+  they print at every size. The chapter DESCRIPTION goes below 480px of
+  viewport HEIGHT, where the head cell has 104px and needs 138 with it in; the
+  head overflows first because a chapter opening cannot be made shorter — the
+  numeral, the title and the rule are what say which chapter this is.
+- **The arc is `hidden lg:flex`.** Below `lg` it would sit between stage 03 and
+  stage 04 — a summary of six stages printed halfway down them — for 28px the
+  page does not have. It is a device for a SPREAD, where it heads the second
+  page; a column has no second page to head.
+- **`data-process-run` is a hook for `tools/scroll-shots.mjs`, not styling.**
+  Every fit on this spread is a measurement, the slots overflow silently
+  because `minmax(0,1fr)` lets them, and a probe that has to guess which div is
+  the grid measures the wrong thing. Named `process-run` and not `stage-run`:
+  `layoutSheets` owns `[data-stage]`, and near-misses on that selector have
+  cost a day.
 
+**The arc is at the HEAD of the recto and the brief asked for it at the foot.**
+That is the one place this chapter knowingly departs from the brief, and the
+reason is the grid: the verso spends its head slot on the chapter opening, so
+the recto has to spend a slot of the same height on something or its three rows
+ride up and none of the six rules line up. So IDEAS → STRATEGY → PRODUCT →
+GROWTH is set there, hung off the bottom of the slot where it reads as a
+running head over the second half. Moving it to the foot costs the alignment of
+all six rows; it is one `justify-end` away if that trade is ever judged the
+wrong way round.
 
-**04 is a project stage: four studies, one window, one spread — and its recto
-is 03's page, part for part.** Head, rule, label and plate number, plate,
-headline, sentence, the run of work, and two ruled rows hung off the foot: that
-is `StagePlate`'s order exactly, and it is here because a reader arriving on
-either page asks the same three questions in the same sequence — what is this,
-what does it look like, and what would it involve. It also fills a page that
-was a third empty; with the plate at the very top and nothing above it the
-letterpress ran out two thirds down and the colophon sat alone at the foot with
-a hole between them.
+**The arc is not the arc that was removed.** The old one named the six stages
+and was a restatement of the list beside it. These four are a level up — no
+single stage can say that the whole procedure turns an idea into growth, and
+nothing else on the spread says it either.
 
-What keeps 04 from collapsing into 03 the way it once collapsed into 02 is
-that 03's page is FIXED and this one is a WINDOW — its plate, its head, its
-label and its whole letterpress change under a click, and 03's never do — and
-that 03 spends four spreads on six stages where this spends one on four.
+**The chapter kept its note and still has no tailpiece.** The closing page had
+four things on it: an arc, a value list of the six deliverables, the note, and
+a call to action. The value list is now printed in full on the spread itself,
+one deliverable per row, so it would be the same list twice within eight
+inches. The call to action went for 05's reason — 07 is four sheets later and
+is the whole of that argument. The note is on the RECTO's head slot rather than
+the verso's, because the verso ran out of page: its head has ~200px and the
+chapter head takes 189. It also lands the line where it is of most use, at the
+reader halfway through the six rather than the one who has not begun.
+
+**04 is a project stage: four studies, one window, one spread — and it keeps
+03's ORDER even though 03 is no longer a page like it.** Head, rule, label and
+plate number, plate, headline, sentence, the run of work, and two ruled rows
+hung off the foot. That was `StagePlate`'s order, and `StagePlate` is gone with
+the window it belonged to, but the order is not arbitrary and did not go with
+it: a reader arriving on either page asks the same three questions in the same
+sequence — what is this, what does it look like, and what would it involve.
+03's rows still answer them in that order, six times smaller. It also fills a
+page that was a third empty; with the plate at the very top and nothing above
+it the letterpress ran out two thirds down and the colophon sat alone at the
+foot with a hole between them.
+
+What keeps 04 from collapsing into 03 is that 03 prints SIX stages at a glance
+and this prints ONE project at a time — six small ruled rows against a single
+16:9 window that changes under a click. They are now the two ends of the same
+trade, one chapter apart, which is a contrast rather than a repetition.
 
 **04 is a project stage: four studies, one window, one spread.** It has been
 three things now — a catalogue, a register, and this — and the two rewrites are
@@ -339,9 +391,9 @@ Consequences worth knowing before touching it:
   thing in the chapter that may be dropped for space, so it moves rather than
   disappears.
 - **The description is the only thing that goes below `lg`-height**, and only
-  below 480px — unlike `StagePlate`'s body, which also goes below `lg`. A stage
-  has to share a portrait sheet with the stage facing it; a project does not,
-  because only one of the four is showing. Measured at 390x844 the whole recto
+  below 480px — unlike 03's rows, which lose both their description and their
+  activity run at `lg`. Six stages have to share a portrait sheet; a project
+  does not, because only one of the four is showing. Measured at 390x844 the whole recto
   ends ~100px short of the sheet with the paragraph in. Everything that is a *fact* — category, status, services,
   platform — stays at every size; the sentence that goes is the one the plate
   and the headline have already said.
@@ -351,11 +403,11 @@ Consequences worth knowing before touching it:
   click — a blank frame in the window, which is the one thing a window may not
   do. The first is `loading="eager"`; the other three are behind a click that
   has not happened.
-- **There are TWO indices, and the second one is not redundant.** 03 needs its
-  `StageIndex` because a spread carries two stages and nothing else says which
-  you asked for; 04's window shows one project at a time, so `ProjectHeadIndex`
-  is not resolving an ambiguity. What it does is give the head the same shape
-  03's has — a name on the left, numbered notches on the right — and a second
+- **There are TWO indices, and the second one is not redundant.** 04's window
+  shows one project at a time, so `ProjectHeadIndex` is not resolving an
+  ambiguity — nothing about which project is showing is unclear. What it does
+  is give the head a name on the left and numbered notches on the right, and a
+  second
   place to change the plate for a reader whose eye is already on the recto
   rather than back across the gutter. **One instance, not one per project**:
   the heads are stacked four deep in one grid cell with three transparent, and
@@ -417,18 +469,23 @@ Consequences worth knowing before touching it:
   which one is live. Arrow keys move focus within the copy they were
   pressed in, so it never jumps to the hidden duplicate — see the scoping note
   below.
-- **`bindWindow(group)` in `book.tsx` drives this, 04 and 03.** One factory
-  called three times — `("approach")`, `("project")` and `("perspective")` —
-  because the mechanism is identical and the settings are not. It reads `[data-<group>]` for the index and both
+- **`bindWindow(group)` in `book.tsx` drives this and 04.** One factory called
+  twice — `("project")` and `("perspective")` — because the mechanism is
+  identical and the settings are not. It was called three times for one
+  revision, when 03 was a window too; 03 is a printed spread again and binds
+  nothing. Two is also the most this mechanism should carry: three consecutive
+  windows stopped reading as three chapters. It reads `[data-<group>]` for the index and both
   `[data-<group>-panel]` (copy, which leaves the accessibility tree when it is
   not showing) and `[data-<group>-plate]` (pictures, which do not: their alt
   text is already reachable only through the current panel, and an
   `aria-hidden` `<img>` mid-fade reads as a flicker to some AT). Adding a
-  window is one more call, not another handler — which is what 03 cost. Pick
-  the group name against the DOM, though: `data-stage` was already
-  `layoutSheets`'s, and one revision of 03 put its six index buttons and the
-  book's own stage element into the same call, where a click blanked the whole
-  recto.
+  window is one more call, not another handler. Pick the group name against the
+  DOM, though: `data-stage` is already `layoutSheets`'s — it is how it finds
+  the element it writes the page-image variables onto — and the revision of 03
+  that was a window put its six index buttons and the book's own stage element
+  into the same call under that name, where a click blanked the whole recto.
+  The lesson outlived the chapter: any new group name has to be checked against
+  what `layoutSheets` already queries.
 - **Arrow-key focus is scoped to the enclosing `<nav>`, not to a landmark
   name.** It was the name for as long as every copy of an index shared one —
   04's verso list, its portrait duplicate and the reduced-motion column are all

@@ -561,6 +561,7 @@ function ChapterHead({
 }: {
   page: BookPage | BookSpread;
   headline: string;
+  /** Optional: the process spread has no room for one. See <StageRun>. */
   epigraph?: string;
 }) {
   return (
@@ -650,6 +651,73 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
     );
   }
 
+  // The PROCESS SPREAD's verso: the chapter opening in the head slot, then the
+  // first half of the six stages, one to a row.
+  //
+  // It shares ONE grid with the head for the reason the catalogue above does.
+  // The head cannot sit in a box above the rows: the grid would then divide
+  // whatever height was left over, "whatever was left over" is a different
+  // number on this page and on the one facing it, and the six rules would run
+  // across the gutter at six different heights.
+  //
+  // The run is read off the CHAPTER (BOOK_PAGES) and not off `facing.services`,
+  // the way the indices of 04 and 05 are, because both halves of this spread
+  // need all six of it -- the verso to print the first three, the recto to
+  // print the rest and to know how many rows to leave room for.
+  if (plateChapter >= 0) {
+    const { verso, rows } = stageHalves(BOOK_PAGES[plateChapter]?.services);
+    return (
+      <StageRun
+        services={verso}
+        from={0}
+        rows={rows}
+        head={
+          <div className="flex min-h-0 flex-col">
+            {/* No epigraph on this chapter, and it is the last ornament the
+                head could spare. The description below says what the epigraph
+                said -- "six stages, in the order they actually happen" against
+                "a structured approach that turns ideas into products" -- and
+                only one of the two is the brief's, so the quoted line is the
+                one that goes. It is 27px, which is the difference between a
+                stage row that fits and one that prints through its own
+                deliverable. */}
+            <ChapterHead page={page} headline={headline} />
+            {/* The chapter's description, and NOT the drop-cap opening this
+                page carried for as long as it was a half-title. That is a
+                measurement, not a preference.
+
+                The head shares a grid with three stage rows. At 1440x900 the
+                four slots have 699px between them; a row will not set below
+                ~157 of those with its plate, its activities, its deliverable
+                and its outcome all printed; so the opening has ~220px and the
+                chapter head alone is 189. A drop cap is 3.4em tall by
+                definition, so the shortest paragraph that can carry one is
+                three lines -- the version measured here ran to 339px in a
+                187px slot and printed straight through stage 01.
+
+                02 has no intro either, for the same reason: a verso carrying
+                the chapter's entries has no room for an opening paragraph as
+                well. The drop cap is an opener device that needs
+                `facing.intro`, and this chapter no longer has one. */}
+            {subtitle ? (
+              <p
+                data-ink
+                // Gone below 480px of viewport HEIGHT. At 844x390 the head
+                // cell has 104px and needs 138 with this line in, and it is
+                // the head that overflows first because a chapter opening
+                // cannot be made shorter -- the numeral, the title and the
+                // rule are what say which chapter this is.
+                className="mt-[0.9em] max-w-[42ch] text-[clamp(0.68rem,0.92vw,0.85rem)] leading-relaxed text-balance text-slate-300/80 [@media(max-height:480px)]:hidden"
+              >
+                {subtitle}
+              </p>
+            ) : null}
+          </div>
+        }
+      />
+    );
+  }
+
   return (
     <>
       <ChapterHead page={page} headline={headline} epigraph={epigraph} />
@@ -727,46 +795,6 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             {(page as BookPage).colophon}
           </p>
         </div>
-      ) : null}
-
-      {/* The plate section's index, on its verso, driving the window opposite.
-          Its stages are a SEQUENCE and a reader has to be able to see how many
-          there are and which one is showing, which a catalogue's entries never
-          have to answer.
-
-          The tailpiece comes with it. When the chapter paginated, the arc, the
-          note and the way out took the whole closing page; there is no closing
-          page now, so the two parts that are not RESTATEMENTS are set here and
-          the rest is dropped. The arc was the six stage names run on with
-          arrows and the value list was the six deliverables -- and the index
-          directly above is now the six stage names, printed larger and
-          clickable, so the arc would be the same list twice on one page. What
-          is kept is the note, which is the one thing a reader could not have
-          worked out from the stages, and the call to action, which is the one
-          thing on the page that is not a restatement of anything. */}
-      {plateChapter >= 0 ? (
-        <>
-          <StageWindowIndex
-            services={BOOK_PAGES[plateChapter]?.services ?? []}
-          />
-          {/* shrink-0 because the page is a flex column: without it this gets
-              compressed to nothing when the verso is tight, which is not the
-              same as being dropped -- it prints THROUGH the index above it and
-              the drop folio below.
-
-              Dropped below `lg`, where the whole chapter is on one 844px
-              sheet. Measured at 390x844 it was the last 67px between the
-              window's outcome row and the foot of the page. It is a footnote,
-              and it is the one part of this verso the index has taken over
-              from: what it says is that the six can be entered at any point,
-              and where it used to be the only thing saying so, every one of
-              the six is now a tap away in any order directly above it. */}
-          {page.tailpiece ? (
-            <p className="mt-[1em] hidden shrink-0 text-[clamp(0.62rem,0.82vw,0.74rem)] leading-relaxed text-slate-400/70 italic lg:block">
-              {page.tailpiece.note}
-            </p>
-          ) : null}
-        </>
       ) : null}
 
       {/* An illustrated catalogue sets its entries full measure and starts
@@ -885,19 +913,19 @@ function isIllustrated(services: PageService[] | undefined) {
 }
 
 /**
- * Does this run set as a PLATE SECTION -- a numbered plate per page with its
- * description under it -- rather than as a catalogue or a register?
+ * Does this run set as a PROCESS SPREAD -- six ruled rows, three to a page,
+ * every one of them printed -- rather than as a catalogue?
  *
- * Asked of the run and not of each entry, like the other two and for the same
- * reason: the answer is the setting for the whole chapter.
+ * Asked of the run and not of each entry, like the other three and for the
+ * same reason: the answer is the setting for the whole chapter.
  *
  * It has to be asked FIRST, because a stage carries `image` as well and
  * isIllustrated would claim it. That is not an ordering accident to be tidied
  * away later -- the two questions are genuinely both true of the data, and the
- * one that wins decides whether a photograph of an architecture diagram is
- * printed at the full measure of a page or at 42% of a text column. At the
- * second size none of the type inside it can be read, and being able to read
- * it is the entire reason these are photographs and not emblems.
+ * one that wins decides the layout. The catalogue would cut six stages three
+ * to a page as 42% thumbnails beside sentences, alternating sides; the process
+ * spread sets them as six rows on ONE set of lines across the gutter, which is
+ * what a reader compares in and what an alternating catalogue is not.
  */
 function isPlateSection(services: PageService[] | undefined) {
   return Boolean(services?.some((service) => service.stage));
@@ -909,432 +937,408 @@ function spreadIsPlates(page: BookPage | BookSpread) {
 }
 
 /**
- * A compact index in the head of the stage window, the twin of 04's
- * <ProjectHeadIndex> and built the same way for the same reasons.
+ * THE PROCESS SPREAD: six stages, all six printed, three to a page.
  *
- * A numeral over a notch, the current one cut deeper -- the same device
- * <BookIndex> uses on the fore-edge, because it is doing the same job one
- * level down. A filled bar would be a website's answer; this book already had
- * one for "where am I in a sequence" and inventing a second is how a set of
- * pages stops looking like one book.
+ * WHY THIS IS NOT A WINDOW, WHICH IS WHAT IT WAS
  *
- * ONE INSTANCE, NOT ONE PER STAGE. The heads it sits beside are stacked six
- * deep in a single grid cell with five transparent; an index inside each would
- * be thirty-six buttons for six destinations, thirty of them in an
- * `aria-hidden` subtree.
+ * 03 spent one revision as an index on the verso driving a single plate on the
+ * recto -- 04's and 05's construction -- and the argument for it was that six
+ * stages a page apart are six page turns to compare two of them. That is true
+ * and it was the wrong fix, because it bought comparison by hiding five of the
+ * six: a reader who never clicked learned that the studio has a process and
+ * nothing whatever about it. A procedure is the one chapter in this book that
+ * a client reads to find out what they are BUYING, and it cannot be behind a
+ * gesture.
  *
- * Its landmark name is "Stage index" and not "The stages of the process",
- * which is the verso list's: two navigation landmarks with one accessible name
- * are announced identically while going to the same six places by different
- * routes. bindWindow scopes arrow keys to the enclosing <nav> and not to that
- * name, so the two copies never steal focus from each other.
+ * The spread is what solves both at once. Six rows across two facing pages are
+ * comparable at a glance -- which is the whole reason a book has spreads and a
+ * scrolling page does not -- and nothing is hidden. It costs the plate its
+ * size, and that cost is real: see the note on the plate below.
  *
- * Hidden below lg, where the verso's own index is inches up the same collapsed
- * sheet.
+ * WHY THE TWO PAGES SHARE ONE GRID TEMPLATE
+ *
+ * Both halves are `minmax(0,1.2fr)` for a head and then one equal row per
+ * stage, so stage 01 sits on exactly the line stage 04 does and the six rules
+ * run straight across the gutter. That is <ServiceEntries>'s device and it is
+ * here for the same reason: rules that nearly line up read as a mistake, and
+ * the reader is being invited to compare rows, which they can only do if the
+ * rows are on lines.
+ *
+ * It is what decides where the arc goes. The verso spends its head slot on the
+ * chapter opening; the recto has to spend a slot of the same height on
+ * something or its three rows ride up and nothing aligns. So the arc -- the
+ * brief's IDEAS -> STRATEGY -> PRODUCT -> GROWTH -- is set THERE, hung off the
+ * bottom of the slot where it reads as a running head over the second half,
+ * rather than at the foot of the page where the brief put it. Moving it down
+ * costs the alignment of all six rows; it is one `justify-end` away if that
+ * trade is ever judged the wrong way round.
+ *
+ * The row count is derived from the run, not written: seven stages set as four
+ * and three, and both grids take four rows so the recto's last slot is simply
+ * blank -- which is what a book does rather than respacing one page against
+ * the other.
  */
-function StageHeadIndex({ services }: { services: PageService[] }) {
-  return (
-    <nav
-      aria-label="Stage index"
-      className="hidden shrink-0 items-baseline gap-[clamp(0.4rem,0.8vw,0.8rem)] lg:flex"
-    >
-      {services.map((service, i) => {
-        const number = String(i + 1).padStart(2, "0");
-        return (
-          <button
-            key={service.title}
-            type="button"
-            data-approach={i}
-            data-current={i === 0 ? "true" : "false"}
-            aria-current={i === 0 ? "true" : undefined}
-            // The visible text is a numeral; the name is the numeral and the
-            // stage, so a screen reader is not offered "01 02 03 04 05 06".
-            aria-label={`${number} ${service.title}`}
-            className="group flex cursor-pointer flex-col items-center gap-[0.45em] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
-          >
-            <span className="text-[clamp(0.46rem,0.6vw,0.55rem)] tracking-[0.2em] text-slate-400/45 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
-              {number}
-            </span>
-            {/* Driven by data-current rather than by a render-time flag,
-                because the current stage changes without React: <Book> sets
-                the attribute on every copy of the index at once. */}
-            <span
-              aria-hidden
-              className="block h-px w-[10px] bg-white/20 transition-all duration-300 group-hover:w-[14px] group-hover:bg-white/45 group-data-[current=true]:w-[18px] group-data-[current=true]:bg-white/75 motion-reduce:transition-none"
-            />
-          </button>
-        );
-      })}
-    </nav>
-  );
+// The head slot, as a multiple of one stage row.
+//
+// Measured, not chosen. At 1440x900 the four slots have 699px between them; a
+// stage row will not set below ~157 of those with its plate, its activities,
+// its deliverable and its outcome all printed; and the chapter head with its
+// description is 201 once the epigraph comes off. The three gaps come off the
+// page first -- 1vh each, 27px -- so 744 is what the four slots divide:
+// 201 + 3x181 = 744, and 201/181 = 1.11.
+//
+// Every one of those numbers was measured rather than chosen, and the spread
+// is over-subscribed enough that all of them are load-bearing. At 1.2 the head
+// had 187px and printed its last two lines through stage 01; at the opener's
+// full sinkage the rows had 148 and needed 182, so every row printed its
+// deliverable through its own activities.
+const STAGE_HEAD_SLOT = 1.11;
+
+/** The run split across the gutter. Derived, so a seventh stage rebalances. */
+function stageHalves(services: PageService[] | undefined) {
+  const entries = services?.filter((service) => service.stage) ?? [];
+  const half = Math.ceil(entries.length / 2);
+  const verso = entries.slice(0, half);
+  const recto = entries.slice(half);
+  return { entries, verso, recto, rows: Math.max(verso.length, recto.length) };
 }
 
 /**
- * The chapter's six stages, on the verso, as the index that drives the window.
+ * One stage, set as an editorial ROW and deliberately not as a card.
  *
- * It is the brief's "process index" and it is also just a table of contents,
- * which is the device a book already has for this and puts in the same place.
- * Derived from the run rather than written down, so a seventh stage appears
- * here without anyone remembering to add it.
+ * A card is a bounded object with its own background and its own border, and
+ * six of them are six things on a page. A row is the page's own measure with a
+ * rule over it -- the way a book sets a numbered entry -- and six of those are
+ * one list. That distinction is the whole of what keeps this spread from
+ * reading as a grid of tiles, and it is why nothing here has a background, a
+ * radius or a shadow: the rule and the alignment do all the separating.
  *
- * WHAT CHANGED WHEN THE CHAPTER STOPPED PAGINATING
+ * THE ORDER OF THE PARTS
  *
- * These entries used to seek a SPREAD -- the one piece of navigation in the
- * book that addressed a page rather than a chapter, because six stages were
- * six pages and a chapter number would have sent all six to the half-title the
- * reader was already looking at. There are no pages of stages any more, so
- * they drive the window instead: `data-approach`, the same currency 04's
- * projects and 05's perspectives use, and <Book> keeps every copy of the
- * index in step. NOT `data-stage`: layoutSheets already owns that attribute --
- * it is how it finds the element it writes the page-image variables onto -- and
- * an index button carrying it is a second answer to `section.querySelector`.
+ * A client reads a stage asking three questions in a fixed sequence -- what is
+ * this, what happens in it, what do I end up with -- so the row answers them in
+ * that order and stops. The numeral and the name say where in the six you are;
+ * the plate and the headline say what the stage is; the run of phrases is the
+ * work; and the two ruled rows at the foot are the two halves of the answer to
+ * the third, which is the one that decides whether a stage was worth paying
+ * for. It is the order the window this replaced used, kept, because the
+ * questions did not change when the setting did -- and it is 04's order too,
+ * which is deliberate: a reader crossing from one chapter to the other should
+ * not have to learn a second way of reading an entry.
  *
- * WHY THE ROWS ARE ONE LINE CARRYING TWO THINGS
+ * WHAT THE PLATE COSTS HERE, AND IT IS NOT NOTHING
  *
- * A reader choosing between six stages wants to know what each one IS, and
- * DISCOVER on its own is a word rather than an answer -- so the stage's
- * subject is set beside it, not left off. It is BESIDE and not under, which
- * 04's four-row index can afford: six two-line rows measured 373px on a verso
- * that also carries a chapter opening, a drop-cap paragraph and the note, and
- * the note printed through the drop folio and off the foot of the page. On one
- * baseline the six are 175px and everything fits with room. The subject keeps
- * the display face, so the row still reads as a label and a name rather than
- * as one long line.
+ * These six photographs are MADE of small type -- a notebook of interview
+ * notes, a strategy blueprint, a wireframe sheet, an architecture diagram, a
+ * deployment pipeline, an analytics dashboard -- and the reason to print them
+ * rather than an emblem is that a client can look at one and see the actual
+ * artefact. At the full measure of a recto that works. At 34% of a half-page
+ * column, which is 186px at 1440, it does not: the type inside is texture.
  *
- * That also keeps it distinct from BOTH its neighbours, which is the whole of
- * what stops three window chapters in a row reading as one: 04's rows are a
- * category over a title, two lines; 05's are a single tracked capital with no
- * subject at all.
+ * That is the price of printing all six, and it is the right price to pay,
+ * because a picture a reader cannot decode is worth less than a stage a reader
+ * never opens. It is written down rather than hidden so that nobody
+ * rediscovers it as a bug. 34% and not less: below about 30% the plate stops
+ * reading as a photograph at all and starts reading as an icon, which would
+ * put an engraving's job on a picture that is not one.
  */
-function StageWindowIndex({ services }: { services: PageService[] }) {
+function StageRow({ service, index }: { service: PageService; index: number }) {
+  const stage = service.stage!;
+  const number = String(index + 1).padStart(2, "0");
   return (
-    <nav
-      // Not "Stage index" -- that is the compact row in the window's head, and
-      // two navigation landmarks with the same accessible name are announced
-      // identically while going to the same six places by different routes.
-      aria-label="The stages of the process"
+    // A GRID with three rows, and the plate changes which of them it spans.
+    //
+    // On a spread the plate sits beside the headline and the deliverable rules
+    // run the full measure under both -- which is the shape of every other
+    // ruled entry in this book. Below `lg` the whole chapter is on one sheet
+    // and that shape does not fit: measured at 390x844 the face clips at 781px
+    // and six rows of it came to 866. The fix is not a smaller plate, it is a
+    // taller one -- spanning the deliverable rows as well, the picture is
+    // 52px against 53px of copy beside it and costs the row NOTHING, where
+    // beside the headline alone it cost 23px a row and 138 over the chapter.
+    //
+    // Line numbers rather than named areas: `grid-template-areas` through an
+    // arbitrary variant is one string that has to be got right twice, and
+    // row-start/row-span are utilities that certainly generate.
+    <article
       data-ink
-      className="mt-[1.6em] border-b border-white/12 lg:border-t lg:border-b-0"
+      className="grid grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,1.3vw,1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em]"
     >
-      {/* Two shapes at one breakpoint, for the reason 04's index has two.
-          At `lg` this is the verso of a spread with a page to itself: six
-          ruled rows, each naming a stage and setting its subject under it.
-          Below `lg` the spread has collapsed onto ONE sheet and this list is
-          sharing 844px with the window and its whole letterpress -- six
-          two-line rows would not leave room for the stage the reader chose. */}
-      <ol className="m-0 flex list-none flex-wrap items-baseline gap-x-[clamp(0.6em,2.6vw,1.2em)] gap-y-[0.5em] p-0 pb-[0.7em] lg:block lg:gap-0 lg:pb-0">
-        {services.map((service, i) => {
-          const number = String(i + 1).padStart(2, "0");
-          return (
-            <li key={service.title} className="lg:border-b lg:border-white/12">
-              <button
-                type="button"
-                data-approach={i}
-                data-current={i === 0 ? "true" : "false"}
-                aria-current={i === 0 ? "true" : undefined}
-                // Below `lg` the current mark is an UNDERLINE on the button,
-                // not the inline rule the spread uses: the rule costs width
-                // and six items on a 284px column have none. flex-wrap on the
-                // list is the backstop for a narrower phone still.
-                className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[0.55em] lg:pb-[0.55em] motion-reduce:transition-none"
-              >
-                <span className="shrink-0 text-[clamp(0.44rem,0.6vw,0.55rem)] tracking-[0.24em] tabular-nums opacity-70">
-                  {number}
-                </span>
+      {/* The stage's own line: numeral and name at the leading edge, the plate
+          number opposite. The plate number is set right because it belongs to
+          the PICTURE and not to the stage -- the numeral has already numbered
+          the stage, and printing IV beside 04 is one fact at two sizes. */}
+      <div className="col-span-2 row-start-1 flex items-baseline justify-between gap-[0.8em]">
+        <h3 className="flex min-w-0 items-baseline gap-[0.6em]">
+          <span
+            aria-hidden
+            className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.02vw,0.95rem)] leading-none font-light text-[#dce7f7]/80 tabular-nums"
+          >
+            {number}
+          </span>
+          <span className="truncate text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.28em] text-white uppercase">
+            {service.title}
+          </span>
+        </h3>
+        <p className="shrink-0 text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.26em] text-slate-400/45">
+          PLATE {stage.figure}
+        </p>
+      </div>
 
-                {/* The stage's name alone, below `lg`. DISCOVER / STRATEGIZE
-                    -- six words that wrap to two lines at 390px. */}
-                <span className="text-[clamp(0.5rem,2.2vw,0.62rem)] tracking-[0.2em] uppercase lg:hidden">
-                  {service.title}
-                </span>
+      <img
+        src={service.image!.src}
+        alt={service.image!.alt}
+        // The first two are on screen the moment the spread lands; the rest
+        // are a scroll away and can wait.
+        loading={index < 2 ? "eager" : "lazy"}
+        decoding="async"
+        draggable={false}
+        // A FIXED width and a 4:3 box, where every other plate in this book is
+        // a percentage of its column at the file's own ratio. Three reasons,
+        // and none of them is taste.
+        //
+        // Fixed, because the recto is 434px wide against the verso's 562 --
+        // the thumb index is reserved out of the recto and nothing is reserved
+        // out of the verso -- so 34% of the measure printed stage 01 half as
+        // large again as stage 04 across the gutter from it. Six plates a
+        // reader is invited to compare have to be one size.
+        //
+        // 4:3 rather than the source's 16:9, because the row's height is set
+        // by the copy beside it and a 16:9 box that wide came 24px short: the
+        // same width at 4:3 is 31% more picture for the same page.
+        // object-cover takes the middle 75% of each source, which these six
+        // survive -- they are photographs of a scene, not diagrams with edges
+        // that matter.
+        //
+        // 70px below `lg`, where it spans the deliverable rows too and 70 is
+        // what fits beside them.
+        className="col-start-1 row-span-2 row-start-2 w-[70px] self-start object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-1 lg:w-[clamp(84px,9.2vw,140px)] motion-reduce:transition-none"
+        style={{ aspectRatio: "4 / 3" }}
+      />
 
-                {/* The named row, on the full spread only: the stage tracked
-                    in capitals and its subject beside it on the same baseline,
-                    in the display face. */}
-                <span className="hidden min-w-0 flex-1 items-baseline gap-[1em] lg:flex">
-                  <span className="shrink-0 text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.26em] uppercase">
-                    {service.title}
-                  </span>
-                  {service.stage ? (
-                    <span className="min-w-0 font-[family-name:var(--font-display)] text-[clamp(0.74rem,1vw,0.92rem)] leading-[1.15] font-light text-slate-200/90 group-data-[current=true]:text-white">
-                      {service.stage.label}
-                    </span>
-                  ) : null}
-                </span>
+      <div className="col-start-2 row-start-2 flex min-w-0 flex-col">
+        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.16vw,1.05rem)] leading-tight font-light text-balance text-[#dce7f7]">
+          {stage.headline}
+        </h4>
+        {service.body ? (
+          // Dropped below `lg`, and it is the right one to drop first: it is
+          // the only part of a stage that says something the page says
+          // elsewhere, since it elaborates the headline directly above it.
+          // The same judgement this chapter made when it was a window.
+          <p className="mt-[0.35em] hidden text-[clamp(0.6rem,0.82vw,0.75rem)] leading-relaxed text-slate-300/75 lg:block">
+            {service.body}
+          </p>
+        ) : null}
+        {/* What happens here -- the brief's KEY ACTIVITIES. A `ul` because it
+            is a list and a screen reader should say so, set as one wrapped run
+            rather than as bullets: five items down a column is five rules and
+            120px of a page that also has to carry two more stages. The
+            separators are drawn, not typed, so nothing announces "middle dot"
+            four times.
 
-                {/* The active mark: a rule that grows against the fore-edge.
-                    <BookIndex>'s own device, so the book answers "which one is
-                    this" the same way at every level. */}
-                <span
-                  aria-hidden
-                  className="hidden h-px w-[0.6em] shrink-0 self-center bg-current opacity-40 transition-all duration-200 group-focus-visible:w-[1.4em] group-focus-visible:opacity-100 group-data-[current=true]:w-[2.2em] group-data-[current=true]:opacity-100 lg:block motion-reduce:transition-none"
-                />
-              </button>
+            Dropped below `lg` too, and this one hurts -- it is a fact rather
+            than a restatement. It goes second because it is the largest thing
+            left in the row (33px of a 94px landscape row) and because what a
+            stage PRODUCES survives it: the deliverable and the outcome are the
+            two lines a client is deciding on, and they print at every size.
+
+            mt-auto so the run sits on the foot of the copy column whatever
+            length the description ran to, which keeps the six on comparable
+            lines down the spread. */}
+        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] text-[clamp(0.53rem,0.72vw,0.66rem)] leading-relaxed text-slate-300/60 lg:flex">
+          {stage.work.map((item, k) => (
+            <li key={item} className="flex items-baseline gap-[0.55em]">
+              {k > 0 ? (
+                <span aria-hidden className="text-slate-400/30">
+                  &middot;
+                </span>
+              ) : null}
+              {item}
             </li>
-          );
-        })}
-      </ol>
-    </nav>
+          ))}
+        </ul>
+      </div>
+
+      {/* What the client is handed, and what is true afterwards. Ruled into a
+          two-row table so the same two lines sit in the same place on every
+          one of the six -- which is what makes the deliverable at 02
+          comparable with the one at 05 by eye, with no page to turn and
+          nothing to click.
+
+          Full measure on a spread; beside the plate below `lg`, which is what
+          buys the picture its room down there. */}
+      <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] lg:col-span-2 lg:col-start-1">
+        <dt className="border-t border-white/18 pt-[0.3em] text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.24em] text-slate-400/70">
+          DELIVERABLE
+        </dt>
+        <dd className="border-t border-white/18 pt-[0.3em] text-[clamp(0.62rem,0.86vw,0.8rem)] leading-tight text-white">
+          {stage.deliverable}
+        </dd>
+        <dt className="border-t border-white/10 pt-[0.3em] text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.24em] text-slate-400/70">
+          OUTCOME
+        </dt>
+        <dd className="border-t border-white/10 pt-[0.3em] text-[clamp(0.58rem,0.78vw,0.72rem)] leading-snug text-slate-300/75">
+          {stage.outcome}
+        </dd>
+      </dl>
+    </article>
   );
 }
 
 /**
- * The APPROACH window: one plate, and the letterpress of whichever of the six
- * stages the index has chosen.
+ * The arc: the four words the six stages add up to, drawn as a drafting
+ * diagram rather than written as a sentence.
  *
- * WHY THE CHAPTER IS ONE SPREAD AND NOT FOUR
+ * It is NOT the arc this chapter used to carry at its foot, which was the six
+ * stage names run on with arrows -- that one was a restatement of the list
+ * directly above it and went for that reason. These four are a level up from
+ * the six: nothing else on the spread says that the whole procedure turns an
+ * idea into growth, and no stage can, because each one only knows its own
+ * link. Four abstract nouns against six named stages is a different claim, not
+ * the same claim twice.
  *
- * It paginated once: a half-title, one stage to a page, a tailpiece, four
- * spreads. Every stage was fully set and none of it was wrong -- but six
- * stages a page apart are six page turns to get back to the one you wanted,
- * and a procedure is the thing in this book a reader most wants to COMPARE.
- * That is the argument 05 made for the volvelle and 04 made for its stage, and
- * it is the same argument here.
- *
- * WHAT THAT COSTS, WRITTEN DOWN SO NOBODY REDISCOVERS IT
- *
- * 03, 04 and 05 are now three consecutive chapters set as an index on the
- * verso and a window on the recto. CLAUDE.md's standing warning is that two
- * chapters set the same way one spread apart stop reading as two chapters, and
- * this is three. What is left holding them apart is the SHAPE OF THE ROWS and
- * the shape of the window: 03's index is a tracked stage name over its
- * subject and its window is a photograph of the work; 04's is a category over
- * a project title and its window is a 16:9 interface; 05's is one line of
- * tracked capitals and its window is an emblem over a thesis. If a fourth
- * window is ever added, that is no longer enough and one of them has to go
- * back to being a page.
- *
- * WHY EVERYTHING IS STACKED IN GRID CELLS AND ONLY ONE COPY IS OPAQUE
- *
- * Each stack shares one grid cell, so every box is sized once from the first
- * paint by its tallest member and NOTHING below it moves when the stage
- * changes. Rendering only the current one would mean a decode on every click
- * -- a blank frame in the window, which is the one thing a window must never
- * do -- and a head that re-measured itself would shift the plate under the
- * pointer.
- *
- * Three stacks and not one: the head, the label row and the letterpress, with
- * the window between them, because the window has to be a fixed box of its own
- * while the copy under it is sized by its longest member. Exactly 04's
- * construction; see <ProjectStage>.
- *
- * WHY THE ORDER OF THE PARTS IS THE ORDER IT IS
- *
- * A client arriving here is asking three questions in a fixed sequence -- what
- * is this stage, what happens in it, and what do I end up with -- and the page
- * answers them in that order and stops. The numeral and the name say where in
- * the six you are; the plate shows the actual artefact; the sentence says what
- * the stage is for; the run of phrases is the work; and the two ruled rows at
- * the foot are the two halves of the answer to the third question, which is
- * the one that decides whether a stage was worth paying for.
- *
- * WHY THE WORK IS A RUN AND NOT A LIST
- *
- * Five or six bullets down a column is four to six rules and about 150px of a
- * page that also has to carry a plate. Set as one wrapped run with hairline
- * separators it is two lines, it still reads as enumerated, and it stays
- * subordinate to the deliverable and the outcome -- which are what the reader
- * came for.
- *
- * WHY THE FOOT IS RULED WHEN THE CATALOGUE'S ENTRIES ARE NOT
- *
- * ServiceEntry drops its rules because a page carrying five photographs does
- * not need ruling as well. This page carries ONE, and the rules are doing a
- * different job here anyway: they make DELIVERABLE and OUTCOME a two-row table
- * that sits on the same line from stage to stage, so a reader can compare what
- * they get at 02 with what they get at 05 -- which, now that both are one
- * click apart in the same window, they finally can without turning anything.
+ * Drawn with a hairline and a chevron per link, at the weight of a rule rather
+ * than of type, because it is furniture: the reader should be able to take it
+ * in without stopping on it. The connectors carry the flex, so the diagram
+ * spans the measure at every width instead of clustering at the leading edge.
  */
-function StageWindow({ services }: { services: PageService[] }) {
-  const entries = services.filter((service) => service.stage);
-  if (!entries.length) return null;
-  const stacked =
-    "[grid-area:1/1] transition-opacity duration-300 ease-out data-[current=false]:pointer-events-none data-[current=false]:opacity-0 motion-reduce:transition-none";
+function ArcArrow() {
   return (
-    // Reserving the drop folio, which only a stage has ever had to.
-    //
-    // VersoPage and PageBody both print it absolutely at 7% of the page
-    // HEIGHT, while their own bottom padding is a percentage of the page's
-    // WIDTH -- 8% of ~700 is 56px against a folio whose top edge is ~71px up.
-    // Every page that stops short of its own padding never sees the 15px they
-    // overlap by. This one hangs DELIVERABLE and OUTCOME off the foot with
-    // mt-auto and lands exactly there: measured at 1440x900 the letterpress
-    // reached 838 against a folio at 829, and the recto printed "03" through
-    // the last line of the outcome. Reserved in vh because the folio is placed
-    // in vh; a percentage here would resolve against the width and miss it.
-    //
-    // lg-only, for the same reason h-full is: below lg the spread has
-    // collapsed onto one sheet and there is no drop folio down there to
-    // reserve room for.
-    <div className="flex min-h-0 flex-col lg:flex-1 lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:flex-none [@media(max-height:480px)]:pt-[4%]">
-      {/* The head: the stage's own numeral, large, and its name beside it.
-          Same construction as ChapterHead's numeral and section name, one size
-          down -- this is a page inside a chapter, not the chapter opening. */}
-      <div className="flex shrink-0 items-baseline justify-between gap-[0.9em]">
-        <div className="grid min-w-0">
-          {entries.map((service, i) => (
-            <div
-              key={service.title}
-              data-approach-panel={i}
-              data-current={i === 0 ? "true" : "false"}
-              aria-hidden={i === 0 ? undefined : "true"}
-              className={`flex items-baseline gap-[0.6em] ${stacked}`}
-            >
+    <svg
+      viewBox="0 0 12 8"
+      aria-hidden
+      focusable="false"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1"
+      strokeLinecap="square"
+      className="h-[0.6em] w-[0.75em] shrink-0 text-slate-400/45"
+    >
+      <path d="M7.5 1.2 10.6 4 7.5 6.8" />
+    </svg>
+  );
+}
+
+function ProcessArc({ labels, note }: { labels: string[]; note?: string }) {
+  if (!labels.length) return null;
+  return (
+    // Hung off the BOTTOM of its slot, so it sits directly over the rule that
+    // opens stage 04 and reads as a running head for the second half of the
+    // procedure. Centred in the slot it floated in the middle of a blank
+    // quarter-page and read as a stray caption.
+    // Hidden below `lg`, note and all. Down there the spread has collapsed
+    // onto one sheet and the arc would sit between stage 03 and stage 04 --
+    // a summary of six stages printed halfway down them -- for 28px this
+    // page does not have. It is a device for a SPREAD, where it heads the
+    // second page; a column has no second page to head.
+    <div
+      data-ink
+      className="hidden min-h-0 flex-col justify-end pb-[1.1em] lg:flex"
+    >
+      {/* The chapter's qualification -- that a reader need not start at stage
+          01 -- printed HERE and not on the verso, where it belongs by rights
+          and where it was.
+
+          The verso ran out of page: its head slot has ~220px and the chapter
+          head takes 189 of them. This slot holds a diagram 20px tall in 187.
+          It also lands the line where it is of most use, which is at the
+          reader halfway through the six rather than at the one who has not
+          begun.
+
+          Dropped below `lg`, where the whole spread collapses onto one 844px
+          sheet carrying all six stages: it is the only line here that no
+          reader needs in order to follow the procedure, which makes it the
+          right last thing to go. */}
+      {note ? (
+        <p className="mb-auto hidden max-w-[46ch] pb-[1.2em] text-[clamp(0.58rem,0.78vw,0.7rem)] leading-relaxed text-slate-400/70 italic lg:block">
+          {note}
+        </p>
+      ) : null}
+      <ol className="flex w-full list-none items-center p-0">
+        {labels.map((label, i) => (
+          <li
+            key={label}
+            className={`flex items-center ${i > 0 ? "min-w-0 flex-1" : "shrink-0"}`}
+          >
+            {i > 0 ? (
               <span
                 aria-hidden
-                className="font-[family-name:var(--font-display)] text-[clamp(1.7rem,3.4vw,3.2rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
+                className="mx-[0.55em] flex min-w-[1.1em] flex-1 items-center gap-[0.2em]"
               >
-                {String(i + 1).padStart(2, "0")}
+                <span className="h-px flex-1 bg-white/18" />
+                <ArcArrow />
               </span>
-              <h3 className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.7vw,1.55rem)] leading-none font-light text-white">
-                {service.title}
-              </h3>
-            </div>
-          ))}
-        </div>
-        <StageHeadIndex services={entries} />
-      </div>
-
-      {/* The label and the plate number, on one line against the rule that
-          closes the head. The plate number is set to the right because it
-          belongs to the PICTURE below it rather than to the stage -- the
-          numeral above already numbers the stage, and printing IV beside 04
-          twice is the same fact said at two sizes. */}
-      <div className="mt-[0.5em] grid shrink-0 border-t border-white/18 pt-[0.55em]">
-        {entries.map((service, i) => (
-          <div
-            key={service.title}
-            data-approach-panel={i}
-            data-current={i === 0 ? "true" : "false"}
-            aria-hidden={i === 0 ? undefined : "true"}
-            className={`flex items-baseline justify-between gap-[1em] ${stacked}`}
-          >
-            <p className="text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/75">
-              {service.stage!.label.toUpperCase()}
-            </p>
-            <p className="shrink-0 text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/50">
-              PLATE {service.stage!.figure}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* The window. aspect-ratio reserves the box before a byte of image has
-          landed, so nothing below it moves on load or on a swap. The ratio is
-          read off the first plate: all six are cut to one size by
-          build-process-plates.sh, and a run whose plates disagreed would want
-          the letterbox rather than a box that changes height. */}
-      {/* 64% of the measure below 480px of viewport HEIGHT, full measure
-          everywhere else -- the same lever the paginated page pulled, scoped
-          to the viewport that actually needs it. Measured at 844x390: the
-          recto has 390px, the plate at full measure takes 181 of it, and the
-          letterpress ran to 445 -- 55px past the foot, with the outcome cut
-          off mid-sentence. At 64% the plate is 110px and the page closes at
-          384. Portrait (390x844) keeps the full measure: only one stage is on
-          that sheet now, and it fits.
-
-          Not smaller than 64%: these photographs are made of small type, and
-          the reason to print them rather than an emblem is that it can be
-          read: 64% of a 305px recto is 195px, which is the same picture the
-          paginated page printed at 74% of a 284px one. */}
-      <div
-        className="relative mt-[0.75em] grid w-full shrink-0 overflow-hidden lg:mt-[0.9em] [@media(max-height:480px)]:w-[64%]"
-        style={{ aspectRatio: entries[0]!.image?.ratio ?? "1240 / 698" }}
-      >
-        {entries.map((service, i) => (
-          <img
-            key={service.title}
-            data-approach-plate={i}
-            data-current={i === 0 ? "true" : "false"}
-            src={service.image!.src}
-            alt={service.image!.alt}
-            // The first plate is the one on screen when the spread arrives, so
-            // it is the only one worth fetching eagerly; the other five are
-            // behind a click that has not happened.
-            loading={i === 0 ? "eager" : "lazy"}
-            decoding="async"
-            draggable={false}
-            className="[grid-area:1/1] h-full w-full object-cover object-center transition-opacity duration-300 ease-out select-none data-[current=false]:opacity-0 motion-reduce:transition-none"
-          />
-        ))}
-      </div>
-
-      {/* The letterpress, set at the book's own body size and not smaller. It
-          was a size down at first -- 12.4px against the 16.5px the prose pages
-          use at 1440 -- which read as a caption block rather than as the
-          page's text. This is the page a client reads most carefully; it takes
-          the measure the rest of the book takes.
-
-          grid-rows-1 makes the single row fill the flexed container rather
-          than sit at its content height, which is what gives the foot rows
-          below something to hang from. */}
-      <div className="mt-[0.85em] grid min-h-0 lg:flex-1 lg:grid-rows-1">
-        {entries.map((service, i) => (
-          <div
-            key={service.title}
-            data-approach-panel={i}
-            data-current={i === 0 ? "true" : "false"}
-            aria-hidden={i === 0 ? undefined : "true"}
-            className={`flex flex-col ${stacked}`}
-          >
-            <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.62vw,1.5rem)] leading-tight font-light text-balance text-[#dce7f7]">
-              {service.stage!.headline}
-            </h4>
-            {service.body ? (
-              // Dropped below `lg`, which is 03's own rule and not 04's.
-              //
-              // A project's verso is a head, an epigraph, a subtitle and a
-              // four-row index; a stage's is all of that plus a seven-line
-              // drop-cap opening and the note, and on one 844px portrait sheet
-              // that leaves ~90px less for the window than 04 has. Measured at
-              // 390x844 with this paragraph in, the deliverable and the
-              // outcome fell clean off the foot of the sheet.
-              //
-              // It is the right thing to drop because it is the only part of a
-              // stage that says something the page says elsewhere -- it
-              // elaborates the headline directly above it. The headline, the
-              // work, the deliverable and the outcome all stay at every size.
-              <p className="mt-[0.55em] hidden shrink-0 text-[clamp(0.74rem,1.04vw,0.95rem)] leading-relaxed text-slate-300/80 lg:block">
-                {service.body}
-              </p>
             ) : null}
-            {/* What happens here. A `ul` because it is a list and a screen
-                reader should say so; the separators are decorative and are
-                drawn by the rule below rather than typed into the copy, so
-                nothing announces "middle dot" five times. */}
-            <ul className="mt-[0.95em] flex shrink-0 flex-wrap items-baseline gap-x-[0.75em] gap-y-[0.25em] text-[clamp(0.64rem,0.88vw,0.8rem)] leading-relaxed text-slate-300/65">
-              {service.stage!.work.map((item, k) => (
-                <li key={item} className="flex items-baseline gap-[0.7em]">
-                  {k > 0 ? (
-                    <span aria-hidden className="text-slate-400/35">
-                      &middot;
-                    </span>
-                  ) : null}
-                  {item}
-                </li>
-              ))}
-            </ul>
-            {/* The two rows that answer "what do I get". mt-auto hangs them
-                off the foot of the page rather than letting them float under
-                copy of whatever length. mt-auto only at lg: on the stacked
-                portrait sheet there is no page foot to drop to. */}
-            <dl className="mt-[1em] grid shrink-0 grid-cols-[auto_1fr] gap-x-[1.2em] pt-[0.6em] lg:mt-auto lg:pt-[1.2em]">
-              <dt className="border-t border-white/18 pt-[0.6em] text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/70">
-                DELIVERABLE
-              </dt>
-              <dd className="border-t border-white/18 pt-[0.6em] text-[clamp(0.78rem,1.08vw,1rem)] leading-tight text-white">
-                {service.stage!.deliverable}
-              </dd>
-              <dt className="border-t border-white/10 pt-[0.6em] text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/70">
-                OUTCOME
-              </dt>
-              <dd className="border-t border-white/10 pt-[0.6em] text-[clamp(0.7rem,0.96vw,0.88rem)] leading-snug text-slate-300/80">
-                {service.stage!.outcome}
-              </dd>
-            </dl>
-          </div>
+            <span className="shrink-0 text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.26em] text-slate-300/65 uppercase">
+              {label}
+            </span>
+          </li>
         ))}
-      </div>
+      </ol>
+    </div>
+  );
+}
+
+/**
+ * One page of the process spread: a head slot, then one stage per row.
+ *
+ * Both halves render through here and differ only in what they hand to `head`
+ * and which slice of the run they print, which is what guarantees the two
+ * grids agree. `rows` is passed in rather than taken from `services.length`
+ * for exactly that reason: an odd run gives the recto one row fewer, and a
+ * recto that sized itself to its own count would put its rows on different
+ * lines from the verso's.
+ */
+function StageRun({
+  services,
+  from,
+  rows,
+  head,
+}: {
+  services: PageService[];
+  from: number;
+  rows: number;
+  head?: React.ReactNode;
+}) {
+  if (!services.length) return null;
+  return (
+    <div
+      // A hook for tools/scroll-shots.mjs. Every fit on this spread is a
+      // measurement -- the slots overflow silently, since minmax(0,1fr) lets
+      // them -- and a probe that has to guess which div is the grid measures
+      // the wrong thing. Named `process-run`, not `stage-run`: layoutSheets
+      // owns [data-stage] and near-misses on that selector have cost a day.
+      data-process-run
+      // Reserving the drop folio, which on this spread BOTH pages have to.
+      //
+      // VersoPage and PageBody print it absolutely at 7% of the page HEIGHT
+      // while their own bottom padding is a percentage of its WIDTH -- 8% of
+      // ~725 is 58px against a folio whose top edge is 73px up. Every page
+      // that stops short of its own padding never sees the 15px they overlap
+      // by; this one fills its page to the last pixel by construction, and
+      // stage 03's outcome printed straight through "03 - APPROACH".
+      //
+      // In vh because the folio is placed in vh: a percentage here would
+      // resolve against the width and miss it. lg-only, because below lg the
+      // spread has collapsed onto one sheet with no drop folio on it.
+      // The equal-slot template is lg-ONLY, and that is a correctness fix
+      // rather than a refinement. Below lg the spread collapses onto one
+      // full-bleed sheet and BOTH grids render into the same column -- the
+      // facing copy above, this page's own below. With `h-full flex-1` on
+      // each, the first one took the entire column and the second was handed
+      // zero height: stages 04, 05 and 06 were in the DOM at 0px. Auto rows
+      // down there, so the two grids stack at their content height.
+      className="grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 lg:pb-[clamp(14px,2vh,24px)] lg:[grid-template-rows:var(--stage-rows)]"
+      style={
+        {
+          "--stage-rows": `minmax(0, ${STAGE_HEAD_SLOT}fr) repeat(${rows}, minmax(0, 1fr))`,
+        } as React.CSSProperties
+      }
+    >
+      {head}
+      {services.map((service, i) => (
+        <StageRow key={service.title} service={service} index={from + i} />
+      ))}
     </div>
   );
 }
@@ -1700,7 +1704,7 @@ function ProjectHeadIndex({ entries }: { entries: PageService[] }) {
  * WHY THE PAGE IS SHAPED LIKE 03'S AND NOT LIKE A CARD
  *
  * Head, rule, label and plate number, plate, headline, sentence, the run of
- * work, and two ruled rows hung off the foot: that is <StageWindow>'s order,
+ * work, and two ruled rows hung off the foot: that is 03's order,
  * part for part, and it is here because a reader arriving on either page is
  * asking the same three questions in the same sequence -- what is this, what
  * does it look like, and what would it involve.
@@ -1713,7 +1717,8 @@ function ProjectHeadIndex({ entries }: { entries: PageService[] }) {
  *
  * The risk this runs is the one CLAUDE.md names about 02 and 04: two chapters
  * a spread apart, set the same way, stop reading as two chapters. What keeps
- * them apart here is that 03's page is FIXED and this one is a window -- its
+ * them apart here is that 03 prints SIX stages at a glance and this prints ONE
+ * project at a time -- six small ruled rows against a single 16:9 window; its
  * plate, its head, its label and its whole letterpress change under a click,
  * and 03's never do -- and that 03 spends four spreads on six stages where
  * this spends one on four studies.
@@ -1759,7 +1764,7 @@ function ProjectStage({
     // the line saying these are studies into the part nobody can see.
     <div className="flex min-h-0 flex-col lg:flex-1 [@media(max-height:480px)]:flex-none [@media(max-height:480px)]:pt-[4%]">
       {/* The head: the project's numeral, large, and its category beside it.
-          Same construction as <StageWindow>'s, one size down from the chapter
+          Same construction as 03's rows use, one size down from the chapter
           opening, because this is a page inside a chapter. */}
       <div className="flex shrink-0 items-baseline justify-between gap-[0.9em]">
         <div className="grid min-w-0">
@@ -1857,7 +1862,7 @@ function ProjectStage({
                 {service.title}
               </h4>
               {/* The description goes below 480px of viewport HEIGHT and
-                  nowhere else -- unlike <StageWindow>'s body, which also goes
+                  nowhere else -- unlike 03's rows, whose body also goes
                   below `lg`. A stage has to share a portrait sheet with the
                   stage facing it; a project does not, because only one of the
                   four is showing. Measured at 390x844 the whole recto ends
@@ -1871,7 +1876,7 @@ function ProjectStage({
                   reader should say so; the separators are decorative and are
                   drawn rather than typed into the copy, so nothing announces
                   "middle dot" three times. Set as one wrapped run and not as
-                  bullets, for <StageWindow>'s reason: four bullets down a
+                  bullets, for 03's reason: four bullets down a
                   column would be the most prominent thing on a page whose
                   picture is the point. */}
               <ul className="mt-[0.95em] flex shrink-0 flex-wrap items-baseline gap-x-[0.75em] gap-y-[0.25em] text-[clamp(0.64rem,0.88vw,0.8rem)] leading-relaxed text-slate-300/65">
@@ -2144,13 +2149,31 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
   const plates = isPlateSection(page.services);
   const projects = isProjects(page.services);
   const perspective = isPerspective(page.services);
+  // Both halves of the process spread are cut here, off the CHAPTER's run, so
+  // that the recto knows how many rows the verso reserved. `rows` is the
+  // larger of the two counts and is what keeps the two grids on one set of
+  // lines when the run is odd.
+  const halves = plates ? stageHalves(page.services) : null;
   return (
     <>
       {/* The picture-bearing settings are asked FIRST and isIllustrated LAST.
           It answers true for the plate section and the project stage as well,
           and would print their plates as thumbnails beside sentences. */}
-      {plates ? (
-        <StageWindow services={page.services} />
+      {plates && halves ? (
+        // The recto of the process spread: the arc in the head slot, then the
+        // second half of the six stages. See <StageRun> for why the arc is at
+        // the head of this page rather than at its foot.
+        <StageRun
+          services={halves.recto}
+          from={halves.verso.length}
+          rows={halves.rows}
+          head={
+            <ProcessArc
+              labels={page.tailpiece?.arc ?? []}
+              note={page.tailpiece?.note}
+            />
+          }
+        />
       ) : projects ? (
         <ProjectStage
           services={page.services}
@@ -2562,10 +2585,22 @@ function VersoPage({ page }: { page: BookPage | BookSpread }) {
   // line across the gutter. A continuation spread opens nothing, so it starts
   // where any ordinary page does and gets the space back for entries.
   const continued = (page as Partial<BookSpread>).continued === true;
+  // A chapter opener starts low on the page -- except this one. The process
+  // spread prints six stages where an opener prints a title, and 18% of the
+  // page WIDTH is 130px of the 887 it has. Measured: with the opener's sinkage
+  // the four slots divide 699px, a stage row needs 182 of them, and the three
+  // rows plus the chapter head come to 801. At 8% they divide 771 and it fits.
+  // Both halves take the same drop, which is the part that actually matters --
+  // the first lines still sit on one line across the gutter.
+  const plateSpread = spreadIsPlates(page);
   return (
     <div
       className={`relative flex h-full w-full flex-col justify-start pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200 ${
-        continued ? "pt-[7%] lg:pt-[11%]" : "pt-[8%] lg:pt-[18%]"
+        continued
+          ? "pt-[7%] lg:pt-[11%]"
+          : plateSpread
+            ? "pt-[8%]"
+            : "pt-[8%] lg:pt-[18%]"
       }`}
     >
       <FacingCopy page={page} />
@@ -2676,6 +2711,14 @@ function PageFoot({ page }: { page: BookPage }) {
 
 function PageBody({ page }: { page: BookPage | BookSpread }) {
   const continued = (page as Partial<BookSpread>).continued === true;
+  // A chapter opener starts low on the page -- except this one. The process
+  // spread prints six stages where an opener prints a title, and 18% of the
+  // page WIDTH is 130px of the 887 it has. Measured: with the opener's sinkage
+  // the four slots divide 699px, a stage row needs 182 of them, and the three
+  // rows plus the chapter head come to 801. At 8% they divide 771 and it fits.
+  // Both halves take the same drop, which is the part that actually matters --
+  // the first lines still sit on one line across the gutter.
+  const plateSpread = spreadIsPlates(page);
   return (
     // --page-index-inset reserves the thumb index. It is measured rather than
     // guessed, and it lives on the recto only, because <BookIndex> is pinned to
@@ -2688,7 +2731,11 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         // lines sit on one line across the gutter.
         page.facing
           ? `justify-start pb-[8%] ${
-              continued ? "pt-[7%] lg:pt-[11%]" : "pt-[8%] lg:pt-[18%]"
+              continued
+                ? "pt-[7%] lg:pt-[11%]"
+                : plateSpread
+                  ? "pt-[8%]"
+                  : "pt-[8%] lg:pt-[18%]"
             }`
           : "justify-center py-[8%]"
       }`}

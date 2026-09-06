@@ -185,26 +185,27 @@ export type PageStage = {
  * says which page an entry is on: a seventh stage should change one place.
  */
 /**
- * What is left of the page that used to close 03.
+ * What is left of the page that used to close 03, and the one part of it that
+ * came back.
  *
- * It had four parts: an arc (the six stage names run on with arrows), a value
- * list (the six deliverables), this note, and a call to action with two ruled
- * buttons. Three of the four went when the chapter stopped paginating and
- * became a window, and each for its own reason.
+ * The closing page had four things on it: an arc (the six stage names run on
+ * with arrows), a value list (the six deliverables), this note, and a call to
+ * action with two ruled buttons. It went when the chapter stopped paginating,
+ * and three of the four have stayed gone.
  *
- * The ARC and the VALUE LIST were always restatements -- and the index that
- * now sits on the verso IS the six stage names, printed larger and clickable,
- * so the arc would have been the same list twice on one page.
+ * The SIX-NAME ARC and the VALUE LIST were restatements. Both printed, in
+ * smaller type, a list the reader had just read at full size -- and the spread
+ * now sets all six stages with their deliverables on two facing pages, so
+ * either one would be the same list twice within eight inches.
  *
- * The CALL TO ACTION went for 05's reason, written out under the volvelle in
- * CLAUDE.md: a chapter that is a window has no closing page, and an ornament
- * with a way out under a page that is about to change is signing off
- * something that has not finished. 07 is four sheets later and is the whole
- * of that argument anyway. `git log` has the copy if the chapter ever gets a
- * closing page back.
+ * The CALL TO ACTION went for 05's reason: 07 is four sheets later and is the
+ * whole of that argument. `git log` has the copy.
  *
- * The note stays because it is the only one of the four that is not a
- * restatement of the pages around it.
+ * `arc` is NOT the arc that went. That one named the six stages; this one
+ * names the four things they add up to, which is a claim no single stage can
+ * make and nothing else on the spread makes either. Four abstract nouns
+ * against six named stages is a different statement, not the same statement
+ * quieter.
  */
 export type PageTailpiece = {
   /**
@@ -213,6 +214,15 @@ export type PageTailpiece = {
    * doing a footnote's job -- see `colophon`.
    */
   note: string;
+  /**
+   * The whole procedure at one level up, drawn as a drafting diagram at the
+   * head of the recto: IDEAS -> STRATEGY -> PRODUCT -> GROWTH.
+   *
+   * A list rather than a sentence because the page DRAWS it -- a hairline and
+   * a chevron between each pair -- and a sentence with arrows typed into it
+   * would be read aloud as "ideas arrow strategy".
+   */
+  arc: string[];
 };
 
 /** One entry in an illustrated catalogue: a plate and what it is. */
@@ -246,14 +256,15 @@ export type PageService = {
    */
   project?: PageProject;
   /**
-   * The letterpress, on a PLATE-SECTION entry. Its presence is what puts the
-   * chapter into the plate setting, the third of the three the data decides
-   * between -- see isPlateSection in book-sheets.tsx.
+   * The letterpress, on a PROCESS-SPREAD entry. Its presence is what puts the
+   * chapter into that setting -- see isPlateSection in book-sheets.tsx.
    *
    * An entry carrying `stage` also carries `image`, and that is not the
    * catalogue setting arriving by the back door: isPlateSection is asked
-   * FIRST, so a stage's photograph is set as a full-measure plate with its
-   * description under it rather than as a 42% thumbnail beside a sentence.
+   * FIRST. The catalogue would cut six stages three to a page as thumbnails
+   * beside sentences, alternating sides; the process spread sets them as six
+   * ruled rows on one set of lines across the gutter, which is the layout a
+   * reader compares in and the catalogue's is not.
    */
   stage?: PageStage;
   /**
@@ -532,64 +543,83 @@ export const BOOK_PAGES: BookPage[] = [
       },
     ],
   },
-  // 03 is the PLATE SECTION, the third of the three settings the data picks
-  // between, and it is here because the other two would both have been wrong.
-  //
-  // WHAT IT WAS
-  //
-  // Six `steps` -- an emblem, a name and one sentence each -- three down the
-  // verso and three down the recto against an engraved plate. It was accurate
-  // and it answered nothing. A client who read it came away knowing the ORDER
-  // of the work and not what any stage of it involves, what arrives at the end
-  // of one, or what is different afterwards. "Deploying with confidence and
-  // performance" is a caption, and captions are what you write when the page
-  // has no room for an answer.
-  //
-  // WHY NOT THE CATALOGUE SETTING, WHICH ALREADY HANDLES PHOTOGRAPHS
-  //
-  // Because 02 is the catalogue and this would then be the second one, which
-  // is the exact bug 04 was rebuilt to fix -- see the note above it. Two
-  // chapters set the same way one spread apart stop reading as two chapters.
-  // And the catalogue's plate is 42% of a text column, about 260px wide on a
-  // 1440 viewport: these six photographs are a notebook of interview notes, a
-  // strategy blueprint, a wireframe sheet, an architecture diagram, a
-  // deployment pipeline and an analytics dashboard, and every one of them is
-  // MADE of small type. At 260px none of it is readable and the plate becomes
-  // a texture. The whole reason to use these photographs rather than emblems
-  // is that a client can look at one and see the actual artefact.
-  //
-  // SO: ONE STAGE IN A WINDOW, PLATE ABOVE ITS LETTERPRESS
-  //
-  // The plate takes the full measure of the recto and the three questions a
-  // client is actually asking are answered under it in order -- what happens,
-  // what you get, what is true afterwards.
-  //
-  // This chapter used to PAGINATE: a half-title, one stage to a page, and a
-  // tailpiece, over four spreads. It is one spread now, with the six stages
-  // behind an index on the verso, the way 04's four projects and 05's six
-  // perspectives are. Six stages were six page turns to compare two of them,
-  // and a procedure is a thing a reader compares.
-  //
-  // The chapter carries no engraved plate any more. There is no page left for
-  // one, and a Baudot code table beside a photograph of a deployment pipeline
-  // is two answers to the same question -- the reason 02 dropped its own.
-  //
-  // Three of the five engravings have gone this way now: 03's when it gained
-  // photographs, 05's when it became the perspectives, and 04's when its verso
-  // took the index of projects. Each time the numbering closed up behind them,
-  // which is the whole reason the engraved series is numbered separately from
-  // the plates. The two left -- 01's flow chart and 07's telegraphy -- are
-  // Fig. 1 and Fig. 2, where they began as Fig. 1 and Fig. 5.
+  // 03 is the PROCESS SPREAD: six stages, all six printed, three to a page.
+//
+// WHAT IT HAS BEEN
+//
+// Three things. Six `steps` -- an emblem, a name and one sentence each --
+// which was accurate and answered nothing: a client read it and learned the
+// ORDER of the work, not what any stage involves, what arrives at the end of
+// one, or what is different afterwards. Then four paginated spreads, one stage
+// to a page, every page fully set. Then one spread with an index on the verso
+// driving a single plate on the recto, the way 04 and 05 are built.
+//
+// WHY IT IS NOT THE WINDOW ANY MORE
+//
+// The argument for the window was that six stages a page apart are six page
+// turns to compare two of them, and a procedure is the thing in this book a
+// reader most wants to compare. That was true and it was the wrong fix,
+// because it bought comparison by hiding five of the six behind a click. A
+// procedure is the one chapter a client reads to find out what they are
+// BUYING, and it cannot be behind a gesture: a reader who never clicks learns
+// that the studio has a process and nothing whatever about it.
+//
+// A spread solves both at once. Six rows across two facing pages compare at a
+// glance -- which is what a spread is FOR, and what a scrolling page cannot do
+// -- and nothing is hidden.
+//
+// WHAT IT COSTS, WHICH IS THE PLATE
+//
+// These six photographs are made of small type: a notebook of interview notes,
+// a strategy blueprint, a wireframe sheet, an architecture diagram, a
+// deployment pipeline, an analytics dashboard. The window gave one of them the
+// full measure of a recto and they could be read. Six on a spread is 132px
+// each, and at that size the type inside is texture.
+//
+// That is the right price. A picture a reader cannot decode is worth less than
+// a stage a reader never opens -- but it IS a price, and it is written here
+// rather than left to be rediscovered as a bug.
+//
+// WHY THE COPY IS SHORTER THAN IT WAS
+//
+// Every description and every outcome in this chapter was cut, and the cuts
+// are arithmetic rather than editing. The binding measure is the RECTO's copy
+// column: the thumb index is reserved out of the right-hand page and nothing
+// is reserved out of the left, so the recto is 434px wide against the verso's
+// 562. Two lines of description there is about 88 characters; two lines of
+// outcome in the deliverable table is about 55. A sentence over either ran to
+// a third line, and a third line on three rows is a page that overflows.
+//
+// The chapter also lost its drop-cap opening and its epigraph. See the note in
+// <StageRun>, which has the measurements.
+//
+// The chapter carries no engraved plate. There is no page for one, and a
+// Baudot code table beside a photograph of a deployment pipeline is two
+// answers to the same question -- the reason 02 dropped its own.
+//
+// Three of the five engravings have gone this way now: 03's when it gained
+// photographs, 05's when it became the perspectives, and 04's when its verso
+// took the index of projects. Each time the numbering closed up behind them,
+// which is the whole reason the engraved series is numbered separately from
+// the plates. The two left -- 01's flow chart and 07's telegraphy -- are
+// Fig. 1 and Fig. 2, where they began as Fig. 1 and Fig. 5.
   {
     number: "03",
     title: "Approach",
     facing: {
       headline: "From Vision to Reality.",
       epigraph: "Six stages, in the order they actually happen.",
-      intro: {
-        lead: "Every product begins with understanding.",
-        body: "Not with assumptions, and not with a stack chosen before anyone knows what it is for. This chapter is the whole of the work: what happens at each stage, what you are handed at the end of it, and what changes because it happened.",
-      },
+      // A subtitle where this page carried a drop-cap opening for as long as
+      // it was a half-title, and the swap is arithmetic rather than taste. The
+      // verso's head now shares a grid with three stage rows: at 1440x900 the
+      // four slots have 699px between them, a row will not set below ~157 of
+      // them with its plate and its four facts printed, and the chapter head
+      // alone is 189. A drop cap is 3.4em tall, so the shortest paragraph that
+      // can carry one is three lines -- 339px into a 187px slot, printing
+      // through stage 01. 02 lost its intro to the same page for the same
+      // reason.
+      subtitle:
+        "A structured approach that turns ideas into scalable, high-performing digital products.",
     },
     services: [
       {
@@ -599,7 +629,7 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "An open notebook of customer interview notes and business observations beside a magnifier, photographs and a folded plan.",
         },
         title: "Discover",
-        body: "We learn how your business works, who your users are, and what problem actually needs solving — before anyone writes code. This is the cheapest stage at which to be wrong.",
+        body: "We learn how your business works, who your users are, and what actually needs solving.",
         stage: {
           figure: "I",
           label: "Research & Insight",
@@ -608,12 +638,11 @@ export const BOOK_PAGES: BookPage[] = [
             "Stakeholder discovery",
             "Business analysis",
             "User research",
-            "Requirement gathering",
-            "Opportunity mapping",
+            "Requirements",
           ],
           deliverable: "Discovery Report",
           outcome:
-            "A shared understanding of the problem, agreed before development begins.",
+            "The problem agreed, before development begins.",
         },
       },
       {
@@ -623,7 +652,7 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "A product strategy blueprint on a drafting table: business goals, user needs and technology strategy feeding a system architecture, with a scale rule and a pencil beside it.",
         },
         title: "Strategize",
-        body: "With the problem clear, we settle what to build and in what order: the architecture, the technology, and which features earn their place in the first release.",
+        body: "With the problem clear, we settle what to build and in what order — architecture, technology, first release.",
         stage: {
           figure: "II",
           label: "System Blueprint",
@@ -631,13 +660,12 @@ export const BOOK_PAGES: BookPage[] = [
           work: [
             "Product strategy",
             "Technical architecture",
-            "Feature prioritization",
+            "Prioritization",
             "Technology selection",
-            "Development roadmap",
           ],
           deliverable: "System Blueprint",
           outcome:
-            "One document that connects the business goals to the technical decisions they imply.",
+            "Business goals connected to the technical decisions they imply.",
         },
       },
       {
@@ -647,7 +675,7 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "Wireframe sheets for a website and a phone laid out beside a component library, a type specimen and a colour palette.",
         },
         title: "Design",
-        body: "Strategy becomes something you can click. Flows, wireframes, a visual system and a working prototype, drawn around your users rather than around our taste.",
+        body: "Strategy becomes something you can click: flows, wireframes, a visual system, a working prototype.",
         stage: {
           figure: "III",
           label: "Experience & Interface",
@@ -657,11 +685,10 @@ export const BOOK_PAGES: BookPage[] = [
             "Wireframing",
             "UX and UI design",
             "Design systems",
-            "Prototyping",
           ],
           deliverable: "Design System",
           outcome:
-            "An interface you can click through and judge before a line of it is built.",
+            "An interface you can judge before a line of it is built.",
         },
       },
       {
@@ -671,22 +698,22 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "A monitor showing a service architecture diagram over an editor and a running terminal, beside a second screen of engineering documentation.",
         },
         title: "Engineer",
-        body: "The plan becomes a product. The same people who scoped it build it, so nothing is lost in a handover — and it is built to be read, extended and handed on.",
+        body: "The plan becomes a product, built by the same people who scoped it.",
         stage: {
           figure: "IV",
           label: "Building the System",
           headline: "Turn the plan into working software.",
           work: [
-            "Frontend development",
-            "Backend development",
-            "API integration",
-            "AI integration",
-            "Database engineering",
-            "Security and performance",
+            "Frontend",
+            "Backend",
+            "APIs and AI",
+            "Database",
+            "Security",
+            "Performance",
           ],
           deliverable: "Working Product",
           outcome:
-            "A system that is secure, that scales, and that the next person to open it can read.",
+            "Secure, scalable, and readable by whoever opens it next.",
         },
       },
       {
@@ -696,7 +723,7 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "A production deployment pipeline on screen — build, test, staging, deploy, verify — beside service health, response times and deployment history.",
         },
         title: "Launch",
-        body: "We test it, tune it and put it into production, then watch it. Going live is a procedure with a checklist, not an event you hope goes well.",
+        body: "We test it, tune it and put it into production, then watch it.",
         stage: {
           figure: "V",
           label: "From Build to Production",
@@ -705,12 +732,11 @@ export const BOOK_PAGES: BookPage[] = [
             "Quality assurance",
             "Deployment",
             "Performance testing",
-            "Production configuration",
             "Monitoring",
           ],
           deliverable: "Live Platform",
           outcome:
-            "The product in front of real users, with the instrumentation to know it is well.",
+            "In front of real users, instrumented so you know it is well.",
         },
       },
       {
@@ -720,7 +746,7 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "A product analytics dashboard showing growth, feature adoption and an iteration roadmap, above an open notebook working through the next release.",
         },
         title: "Evolve",
-        body: "Launch is the beginning. Analytics, feedback and what people actually do with the product decide what gets built next, release after release.",
+        body: "Analytics and what people do with the product decide what is built next.",
         stage: {
           figure: "VI",
           label: "Continuous Evolution",
@@ -728,18 +754,18 @@ export const BOOK_PAGES: BookPage[] = [
           work: [
             "Product analytics",
             "User feedback",
-            "Feature improvements",
-            "Performance optimization",
+            "Improvements",
             "Long-term support",
           ],
           deliverable: "Growth Roadmap",
           outcome:
-            "Decisions about what to build next made from evidence rather than from opinion.",
+            "Decided from evidence, not from opinion.",
         },
       },
     ],
     tailpiece: {
       note: "Not every project starts at the same stage. We can carry an idea from discovery through to launch, or step in at the one where your product is stuck.",
+      arc: ["Ideas", "Strategy", "Product", "Growth"],
     },
   },
   // 04 is the PROJECT STAGE: four studies, one 16:9 window, and an index that

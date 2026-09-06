@@ -580,7 +580,21 @@ export const BOOK_PAGES: BookPage[] = [
 // a stage a reader never opens -- but it IS a price, and it is written here
 // rather than left to be rediscovered as a bug.
 //
-// WHY THE COPY IS SHORTER THAN IT WAS
+// WHY THE STAGES HAVE NO `body`
+//
+// They had one -- a sentence under each headline -- and it went when the
+// spread turned out to be congested rather than merely full. Six stages of
+// eight fields on two pages of 699px left a row using 180 of its 181 pixels:
+// rules sat directly on type, and six rows of that read as a table rather
+// than as a chapter.
+//
+// The description is the right one to lose because it is the only field that
+// restates another: it elaborates the headline printed directly above it,
+// where the activity run, the deliverable and the outcome each say something
+// nothing else on the page says. Dropping it also makes the row ONE object at
+// every size, since it was already dropped below `lg`. `git log` has the copy.
+//
+// WHY THE REST OF THE COPY IS SHORTER THAN IT WAS
 //
 // Every description and every outcome in this chapter was cut, and the cuts
 // are arithmetic rather than editing. The binding measure is the RECTO's copy
@@ -629,7 +643,6 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "An open notebook of customer interview notes and business observations beside a magnifier, photographs and a folded plan.",
         },
         title: "Discover",
-        body: "We learn how your business works, who your users are, and what actually needs solving.",
         stage: {
           figure: "I",
           label: "Research & Insight",
@@ -652,7 +665,6 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "A product strategy blueprint on a drafting table: business goals, user needs and technology strategy feeding a system architecture, with a scale rule and a pencil beside it.",
         },
         title: "Strategize",
-        body: "With the problem clear, we settle what to build and in what order — architecture, technology, first release.",
         stage: {
           figure: "II",
           label: "System Blueprint",
@@ -675,7 +687,6 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "Wireframe sheets for a website and a phone laid out beside a component library, a type specimen and a colour palette.",
         },
         title: "Design",
-        body: "Strategy becomes something you can click: flows, wireframes, a visual system, a working prototype.",
         stage: {
           figure: "III",
           label: "Experience & Interface",
@@ -698,7 +709,6 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "A monitor showing a service architecture diagram over an editor and a running terminal, beside a second screen of engineering documentation.",
         },
         title: "Engineer",
-        body: "The plan becomes a product, built by the same people who scoped it.",
         stage: {
           figure: "IV",
           label: "Building the System",
@@ -723,7 +733,6 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "A production deployment pipeline on screen — build, test, staging, deploy, verify — beside service health, response times and deployment history.",
         },
         title: "Launch",
-        body: "We test it, tune it and put it into production, then watch it.",
         stage: {
           figure: "V",
           label: "From Build to Production",
@@ -746,7 +755,6 @@ export const BOOK_PAGES: BookPage[] = [
           alt: "A product analytics dashboard showing growth, feature adoption and an iteration roadmap, above an open notebook working through the next release.",
         },
         title: "Evolve",
-        body: "Analytics and what people do with the product decide what is built next.",
         stage: {
           figure: "VI",
           label: "Continuous Evolution",

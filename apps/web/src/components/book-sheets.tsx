@@ -1046,23 +1046,29 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
   const stage = service.stage!;
   const number = String(index + 1).padStart(2, "0");
   return (
-    // A GRID with three rows, and the plate changes which of them it spans.
+    // A GRID of three rows, and the PLATE SPANS THE LOWER TWO -- at every
+    // size, which is the whole of what stops this spread reading as congested.
     //
-    // On a spread the plate sits beside the headline and the deliverable rules
-    // run the full measure under both -- which is the shape of every other
-    // ruled entry in this book. Below `lg` the whole chapter is on one sheet
-    // and that shape does not fit: measured at 390x844 the face clips at 781px
-    // and six rows of it came to 866. The fix is not a smaller plate, it is a
-    // taller one -- spanning the deliverable rows as well, the picture is
-    // 52px against 53px of copy beside it and costs the row NOTHING, where
-    // beside the headline alone it cost 23px a row and 138 over the chapter.
+    // It did not, for one revision. The plate sat beside the headline with the
+    // deliverable rules running the full measure UNDER both, which is how
+    // every other ruled entry in this book is set. On a page carrying one or
+    // two entries that is right. On a page carrying three it is not, because
+    // the plate's height then ADDS to the row instead of sharing it: at
+    // 1440x900 the row had 181px and needed 180 of them, so there was no space
+    // anywhere -- rules sat directly on type, and six rows of that read as a
+    // table rather than as a chapter.
+    //
+    // Spanning, the plate is beside the whole entry and the tallest thing in
+    // the row is the copy, not the picture. The same row now needs 166 of its
+    // 181 and the 15 left over fall between one stage's outcome and the next
+    // stage's rule, which is where a book puts them.
     //
     // Line numbers rather than named areas: `grid-template-areas` through an
     // arbitrary variant is one string that has to be got right twice, and
     // row-start/row-span are utilities that certainly generate.
     <article
       data-ink
-      className="grid grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,1.3vw,1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em]"
+      className="grid grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,1.3vw,1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em] lg:gap-y-[0.75em] lg:pt-[1.1em]"
     >
       {/* The stage's own line: numeral and name at the leading edge, the plate
           number opposite. The plate number is set right because it belongs to
@@ -1093,42 +1099,39 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
         loading={index < 2 ? "eager" : "lazy"}
         decoding="async"
         draggable={false}
-        // A FIXED width and a 4:3 box, where every other plate in this book is
-        // a percentage of its column at the file's own ratio. Three reasons,
-        // and none of them is taste.
+        // A FIXED width, where every other plate in this book is a percentage
+        // of its column, and a height taken from the ROW rather than from the
+        // file's ratio.
         //
-        // Fixed, because the recto is 434px wide against the verso's 562 --
-        // the thumb index is reserved out of the recto and nothing is reserved
-        // out of the verso -- so 34% of the measure printed stage 01 half as
-        // large again as stage 04 across the gutter from it. Six plates a
-        // reader is invited to compare have to be one size.
+        // Fixed width, because the recto is 434px wide against the verso's 562
+        // -- the thumb index is reserved out of the right-hand page and nothing
+        // out of the left -- so a percentage printed stage 01 half as large
+        // again as stage 04 across the gutter from it. Six plates a reader is
+        // invited to compare have to be one size.
         //
-        // 4:3 rather than the source's 16:9, because the row's height is set
-        // by the copy beside it and a 16:9 box that wide came 24px short: the
-        // same width at 4:3 is 31% more picture for the same page.
-        // object-cover takes the middle 75% of each source, which these six
-        // survive -- they are photographs of a scene, not diagrams with edges
-        // that matter.
+        // The FILE's own 16:9 on a spread, and the row's height below `lg`.
         //
-        // 70px below `lg`, where it spans the deliverable rows too and 70 is
-        // what fits beside them.
-        className="col-start-1 row-span-2 row-start-2 w-[70px] self-start object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-1 lg:w-[clamp(84px,9.2vw,140px)] motion-reduce:transition-none"
-        style={{ aspectRatio: "4 / 3" }}
+        // 16:9 and not the 4:3 this printed for one revision. The squarer box
+        // was 31% more picture for the same width, and it cost 25px of every
+        // row -- which is 25px the page did not have to give. Cropping the
+        // page's air away to enlarge a plate that is a texture at either size
+        // is the wrong way round, and 16:9 is also the ratio the six were cut
+        // to, so nothing is thrown away.
+        //
+        // Below `lg` it spans the deliverable rows and takes its height from
+        // them (`h-full`), where it costs the row nothing: 52px of picture
+        // against 53px of copy. Spanning does not work on a spread -- it puts
+        // the deliverable table in the narrow column, the outcome wraps to a
+        // third and fourth line, and the six plates come out four different
+        // heights, which is the one thing they may not be.
+        style={{ aspectRatio: service.image!.ratio }}
+        className="col-start-1 row-span-2 row-start-2 h-full w-[70px] self-stretch object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-1 lg:h-auto lg:w-[clamp(80px,8.5vw,130px)] lg:self-start motion-reduce:transition-none"
       />
 
       <div className="col-start-2 row-start-2 flex min-w-0 flex-col">
         <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.16vw,1.05rem)] leading-tight font-light text-balance text-[#dce7f7]">
           {stage.headline}
         </h4>
-        {service.body ? (
-          // Dropped below `lg`, and it is the right one to drop first: it is
-          // the only part of a stage that says something the page says
-          // elsewhere, since it elaborates the headline directly above it.
-          // The same judgement this chapter made when it was a window.
-          <p className="mt-[0.35em] hidden text-[clamp(0.6rem,0.82vw,0.75rem)] leading-relaxed text-slate-300/75 lg:block">
-            {service.body}
-          </p>
-        ) : null}
         {/* What happens here -- the brief's KEY ACTIVITIES. A `ul` because it
             is a list and a screen reader should say so, set as one wrapped run
             rather than as bullets: five items down a column is five rules and
@@ -1136,15 +1139,12 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
             separators are drawn, not typed, so nothing announces "middle dot"
             four times.
 
-            Dropped below `lg` too, and this one hurts -- it is a fact rather
-            than a restatement. It goes second because it is the largest thing
-            left in the row (33px of a 94px landscape row) and because what a
-            stage PRODUCES survives it: the deliverable and the outcome are the
-            two lines a client is deciding on, and they print at every size.
+            mt-auto so the run sits on the foot of its column and the six land
+            on one line down the spread.
 
-            mt-auto so the run sits on the foot of the copy column whatever
-            length the description ran to, which keeps the six on comparable
-            lines down the spread. */}
+            Dropped below `lg`, and it is the last thing that goes: what a
+            stage PRODUCES survives it, because the deliverable and the outcome
+            are the two lines a client is deciding on. */}
         <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] text-[clamp(0.53rem,0.72vw,0.66rem)] leading-relaxed text-slate-300/60 lg:flex">
           {stage.work.map((item, k) => (
             <li key={item} className="flex items-baseline gap-[0.55em]">
@@ -1159,25 +1159,23 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
         </ul>
       </div>
 
-      {/* What the client is handed, and what is true afterwards. Ruled into a
-          two-row table so the same two lines sit in the same place on every
-          one of the six -- which is what makes the deliverable at 02
-          comparable with the one at 05 by eye, with no page to turn and
-          nothing to click.
-
-          Full measure on a spread; beside the plate below `lg`, which is what
-          buys the picture its room down there. */}
-      <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] lg:col-span-2 lg:col-start-1">
-        <dt className="border-t border-white/18 pt-[0.3em] text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.24em] text-slate-400/70">
+      {/* What the client is handed, and what is true afterwards. ONE rule over
+          the pair, where there were two -- a rule under the deliverable as
+          well made three rules in every row and eighteen down the spread,
+          which is most of what made it read as a grid. The two lines still sit
+          on the same baselines from stage to stage, because the grid puts them
+          there and not the ruling. */}
+      <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] gap-y-[0.15em] border-t border-white/18 pt-[0.4em] lg:col-span-2 lg:col-start-1 lg:gap-y-[0.45em] lg:pt-[0.75em]">
+        <dt className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.24em] text-slate-400/70">
           DELIVERABLE
         </dt>
-        <dd className="border-t border-white/18 pt-[0.3em] text-[clamp(0.62rem,0.86vw,0.8rem)] leading-tight text-white">
+        <dd className="text-[clamp(0.62rem,0.86vw,0.8rem)] leading-tight text-white">
           {stage.deliverable}
         </dd>
-        <dt className="border-t border-white/10 pt-[0.3em] text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.24em] text-slate-400/70">
+        <dt className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.24em] text-slate-400/70">
           OUTCOME
         </dt>
-        <dd className="border-t border-white/10 pt-[0.3em] text-[clamp(0.58rem,0.78vw,0.72rem)] leading-snug text-slate-300/75">
+        <dd className="text-[clamp(0.58rem,0.78vw,0.72rem)] leading-snug text-slate-300/75">
           {stage.outcome}
         </dd>
       </dl>

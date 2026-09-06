@@ -212,12 +212,22 @@ do if the rows are on lines. The row count is derived — seven stages would set
 as four and three, both grids taking four rows so the recto's last is blank,
 which is what a book does rather than respacing one page against the other.
 
-**It is over-subscribed, and every number in it was measured.** Six stages of
-eight fields each do not comfortably fit two pages of 699px, and the levers
-that made it fit are all recorded in `book-sheets.tsx`. Read those comments
-before changing any of them; the short version is that the type is already at
-the floor this file warns about elsewhere, so nothing here may be fixed by
-making something smaller.
+**It is over-subscribed, and every number in it was measured.** Six stages do
+not comfortably fit two pages of 699px, and the levers that made it fit are all
+recorded in `book-sheets.tsx`. Read those comments before changing any of them;
+the short version is that the type is already at the floor this file warns
+about elsewhere, so nothing here may be fixed by making something smaller.
+
+**A stage has no `body`, and that is what bought the page its air.** It had
+one — a sentence under each headline — and with it in, a row used 180 of its
+181 pixels: rules sat directly on type and six rows of that read as a table
+rather than as a chapter. The description is the right field to lose because it
+is the only one that restates another, elaborating the headline printed
+directly above it, where the activity run, the deliverable and the outcome each
+say something nothing else on the page says. It also makes the row ONE object
+at every size, since it was already dropped below `lg`. There is now about 30px
+between one stage's outcome and the next stage's rule. **If something has to be
+added back to a row, something else comes out — the page has no slack.**
 
 - **The chapter opening lost its drop cap and its epigraph.** The head shares a
   grid with three stage rows: at 1440x900 the four slots have 699px between
@@ -241,14 +251,15 @@ making something smaller.
   padding never sees the 15px they overlap by; this one fills its page to the
   last pixel by construction, and stage 03's outcome printed through
   "03 — APPROACH". Reserved in vh, because the folio is placed in vh.
-- **The plate is a FIXED width and a 4:3 box**, where every other plate in the
-  book is a percentage of its column at the file's own ratio. Fixed, because
-  the recto is 434px wide against the verso's 562 — the thumb index is reserved
-  out of the right-hand page and nothing is reserved out of the left — so 34%
-  of the measure printed stage 01 half as large again as stage 04 across the
-  gutter. Six plates a reader is invited to compare have to be one size. 4:3
-  because the row's height is set by the copy beside it and a 16:9 box that
-  wide came 24px short: same width, 31% more picture.
+- **The plate is a FIXED width**, where every other plate in the book is a
+  percentage of its column. The recto is 434px wide against the verso's 562 —
+  the thumb index is reserved out of the right-hand page and nothing out of the
+  left — so a percentage printed stage 01 half as large again as stage 04
+  across the gutter. Six plates a reader is invited to compare have to be one
+  size. It keeps the file's own 16:9; a 4:3 crop was 31% more picture for the
+  same width and cost 25px of every row, which is 25px the page has not got.
+  Cropping the page's air away to enlarge a plate that is a texture at either
+  size is the wrong way round.
 - **The copy was cut to the RECTO's measure, which is the binding one.** Two
   lines of description in a 434px page is about 88 characters; two lines of
   outcome in the deliverable table is about 55. A sentence over either ran to a
@@ -262,13 +273,16 @@ making something smaller.
   worth less than a stage a reader never opens, but it is a real cost and it is
   written down rather than left to be found as a bug.
 - **The row is a GRID and the plate changes which rows it spans.** On a spread
-  the plate sits beside the headline with the deliverable rules running the
-  full measure under both. Below `lg` the whole chapter is on one sheet, and
+  the plate sits beside the headline, with the deliverable table running the
+  full measure under both. Below `lg` the whole chapter is on one sheet and
   that shape does not fit: measured at 390x844 the face clips at 781px and six
   rows came to 866. The fix is not a smaller plate but a TALLER one — spanning
-  the deliverable rows as well, the picture is 52px against 53px of copy beside
-  it and costs the row nothing, where beside the headline alone it cost 23px a
-  row and 138 over the chapter. Line numbers rather than named areas:
+  the deliverable rows as well, the picture takes its height from them and
+  costs the row nothing, where beside the headline alone it cost 23px a row and
+  138 over the chapter. **Spanning does not work on a spread**, which was tried:
+  it puts the deliverable table in the narrow column, the outcome wraps to a
+  third and fourth line, and the six plates come out four different heights —
+  the one thing they may not be. Line numbers rather than named areas:
   `grid-template-areas` through an arbitrary variant is one string that has to
   be got right twice.
 - **The slot template is `lg`-only, and that is a correctness fix.** Below `lg`
@@ -276,18 +290,16 @@ making something smaller.
   own below. With `h-full flex-1` on each, the first took the entire column and
   the second was handed zero height: stages 04, 05 and 06 were in the DOM at
   0px. Auto rows down there, so the two stack at their content height.
-- **Three things go at small sizes and each has its own threshold.** The
-  per-stage DESCRIPTION goes below `lg` — it is the only part of a row that
-  says something the page says elsewhere, since it elaborates the headline
-  directly above it. The ACTIVITY RUN goes below `lg` too, and that one hurts:
-  it is the brief's KEY ACTIVITIES and it is a fact rather than a restatement.
-  It goes because it is the largest thing left in the row — 33px of a 94px
-  landscape row — and because what a stage PRODUCES survives it: the
-  deliverable and the outcome are the two lines a client is deciding on, and
-  they print at every size. The chapter DESCRIPTION goes below 480px of
-  viewport HEIGHT, where the head cell has 104px and needs 138 with it in; the
-  head overflows first because a chapter opening cannot be made shorter — the
-  numeral, the title and the rule are what say which chapter this is.
+- **Two things go at small sizes and each has its own threshold.** The ACTIVITY
+  RUN goes below `lg`, and it hurts: it is the brief's KEY ACTIVITIES and it is
+  a fact rather than a restatement. It goes because it is the largest thing
+  left in the row — 33px of a 94px landscape row — and because what a stage
+  PRODUCES survives it: the deliverable and the outcome are the two lines a
+  client is deciding on, and they print at every size. The chapter DESCRIPTION
+  goes below 480px of viewport HEIGHT, where the head cell has 104px and needs
+  138 with it in; the head overflows first because a chapter opening cannot be
+  made shorter — the numeral, the title and the rule are what say which chapter
+  this is.
 - **The arc is `hidden lg:flex`.** Below `lg` it would sit between stage 03 and
   stage 04 — a summary of six stages printed halfway down them — for 28px the
   page does not have. It is a device for a SPREAD, where it heads the second

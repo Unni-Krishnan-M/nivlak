@@ -14,6 +14,7 @@ import {
   pickTier,
   planAt,
 } from "@/components/book-camera";
+import { ProjectInquiry } from "@/components/book-inquiry";
 import { BookIndex, BookNav } from "@/components/book-nav";
 import {
   BOOK_PAGES,
@@ -90,8 +91,32 @@ const BATCH = 8;
 
 export function Book() {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const [inquiry, setInquiry] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const kickerRef = useRef<HTMLParagraphElement>(null);
+
+  // Opening the project inquiry.
+  //
+  // Delegated from the document, and NOT plumbed down to <ContactPage> as a
+  // prop, because the button that carries [data-inquiry-open] is printed in
+  // three places at once: on the recto of sheet 6, in the portrait sheet's
+  // inline copy, and again in the reduced-motion column, which is rendered
+  // outside the pinned section altogether. One listener covers all three the
+  // way [data-nav-item] already does, and adding a fourth copy of the page
+  // costs nothing.
+  //
+  // It is a plain effect and not part of the useGSAP block on purpose: that
+  // block reverts and rebuilds on a dependency change, and a click handler
+  // that has nothing to do with the timeline should not be torn down with it.
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest) return;
+      if (target.closest("[data-inquiry-open]")) setInquiry(true);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
 
   const imagesRef = useRef<(HTMLImageElement | null)[]>([]);
   // Highest frame index that is decoded and safe to draw. The playhead is
@@ -772,6 +797,13 @@ export function Book() {
         <BookNav />
         <BookIndex />
       </section>
+
+      {/* Placed BEFORE the conditional column, so the column is still the last
+          child of this wrapper and React's insertion of it is still an append.
+          The dialog itself renders nothing until showModal() puts it in the
+          top layer, which is also what lifts it clear of the pinned section's
+          transforms without a portal. */}
+      <ProjectInquiry open={inquiry} onClose={() => setInquiry(false)} />
 
       {/* Appended after the section rather than swapped into it, so React only
           ever adds a child at the end of this wrapper -- an append needs no

@@ -36,18 +36,39 @@ There is no lint task and no test suite. `pnpm check-types` and a build are the
 only automated gates — which is why the landing page has a screenshot harness
 (below), because neither of them can see it.
 
-## Deploy: two paths, and they disagree
+## Deploy: NETLIFY serves production, and pushing does not deploy
 
-Both are wired up and they are not the same target.
+Two paths are wired up and only one of them is live.
 
-- **Cloudflare** — the one `bts.jsonc` and `packages/infra` describe.
-  `@opennextjs/cloudflare` + `wrangler.jsonc` + `alchemy.run.ts`; `pnpm deploy`.
-- **Netlify** — `netlify.toml` at the root, added later, builds
+- **Netlify — this is the one.** `netlify.toml` at the root builds
   `pnpm --filter web build` and publishes `apps/web/.next` via
-  `@netlify/plugin-nextjs`.
+  `@netlify/plugin-nextjs`. Production is **https://nivlak.netlify.app**.
+- **Cloudflare** — what `bts.jsonc` and `packages/infra` describe.
+  `@opennextjs/cloudflare` + `wrangler.jsonc` + `alchemy.run.ts`; `pnpm deploy`.
+  Not serving anything. `pnpm deploy` is NOT how this site ships.
 
-Before touching build config, find out which one is actually serving
-production. Changing `next.config.ts` or the output mode affects both.
+**The site has no continuous deployment**, which is the thing that catches
+people out. `netlify api getSite` reports `build_settings: {}`, no `repo_url`,
+`deploy_hook: null`, and `commit_ref: null` on every recent deploy — the
+project is not connected to the GitHub repo at all. **Pushing to `main` deploys
+nothing.** Every release is a CLI deploy:
+
+```bash
+netlify deploy --build --prod --filter web
+```
+
+`--filter web` is required and is not optional tidiness: without it the CLI
+stops on "We've detected multiple projects inside your repository" and, in a
+TTY, opens an interactive picker that will hang a scripted run. It still reads
+the ROOT `netlify.toml`, which is what you want.
+
+Two consequences worth holding on to. `apps/server` is **not deployed** — only
+`apps/web` is built and published — so `NEXT_PUBLIC_SERVER_URL` resolves to
+nothing in production and a tRPC procedure added to `packages/api` works in
+`pnpm dev` and 404s on the live site. Anything the site itself has to call
+belongs in a route handler under `apps/web/src/app/api/`, which ships with the
+site. And because `next.config.ts` is shared, changing it or the output mode
+affects both targets even though only one of them runs.
 
 ## The landing page
 
@@ -673,6 +694,113 @@ only**, which is the second half of the fix: below `lg` the verso is a stacked
 auto-height column where `mt-auto` does nothing, so the same margin only pushed
 the contact rows below it further down — 7px, on a page measured at 390x844
 that is already short.
+
+**07 is a chapter with a door in it.** The spread is still a spread — a
+chapter head and a description on the verso, Fig. 2 and the four ways to reach
+a person on the recto — but the recto now leads with a PANEL, and the panel
+opens a project inquiry that is not printed in the book at all.
+
+**The order on the recto is the whole argument.** It used to be contact
+details, a paragraph, five prompts, and a line of type with an arrow. A visitor
+who wanted to start something had to read to the bottom of a 434px page to find
+out they could. It is now the action, then what the studio can help with, then
+the direct contact — `primary`, `enquiryTitle`/`prompts`, `directTitle`/`rows`
+in `book-pages.content.ts`, in that order.
+
+- **The panel is the one action in this book set as a panel.** Everything else
+  that acts — 04's "Enquire about this", 05's "Start a project" — is a ruled
+  line with an arrow, because those are navigation INSIDE the book. This is
+  the thing the book is for. 2px border against hairlines everywhere else, a
+  label a size up from any other action, and a 2.3rem arrow: three ways of
+  saying the same thing, because a visitor who misses it misses the chapter.
+- **The accent fills on hover and focus rather than sitting filled.** The brief
+  asked for the brand accent as a background. A solid `#dce7f7` slab printed on
+  a photograph of navy stock reads as a sticker stuck to the page — the same
+  failure as the plates that came out darker than the paper and read as holes
+  punched in it, inverted. A strong rule with the accent held to a 7% wash is a
+  block a printer could have inked.
+- **07's engraving is `hidden lg:block` now.** This is the only page using
+  `EngravedPlate`'s non-beside variant, and portrait stacks the whole chapter
+  onto one sheet: at 390x844 that sheet measures 475px in a 390px window, so
+  45px of its foot is off-screen before anything is printed and the plate is
+  385 of what is left. With it in, the enquiry block AND the action were both
+  in the clipped band. 04's verso drops its engraving at portrait for the same
+  reason, and the two figures are still Fig. 1 and Fig. 2 on the spread, which
+  is where the numbering lives.
+- **The description was split across the gutter rather than shortened.** The
+  brief's supporting text is 158 characters and the verso has about 115 of
+  measure between the chapter head and the plate. The half that asks the
+  question is the subtitle; the half that says what happens next is
+  `primary.body`, printed under the action where it is of use. Neither page
+  prints the other's half.
+
+### The project inquiry
+
+`book-inquiry.tsx`. Eight steps: six about the PROJECT, then a name, then an
+address. The order is the design — by question seven a visitor has spent two
+minutes describing their own problem, and giving an address to hear back about
+it is the natural next thing rather than the price of entry.
+
+- **It is not printed in the book, and that is a measurement.** A sheet is
+  887px tall and its recto 434px wide, on a pinned scrub. Question four alone
+  is seven options. There is no version of this that goes on that page.
+- **The standing rule about gestures does not reach it.** "Nothing may go
+  behind a gesture" is about CONTENT — a reader who never clicks must still
+  learn what the studio thinks and how it works, which is why 03's and 05's
+  windows were both removed. Question six of an inquiry is not content a reader
+  is owed; it is a step in an action they chose to take. What the chapter has
+  to say unoperated is all printed on the spread. **It is also not a second
+  window**: `bindWindow` still has exactly one caller, and this is a `<dialog>`
+  in the top layer, not a panel swap inside a page.
+- **Native `<dialog>` + `showModal()`, not a div with a z-index.** It buys the
+  focus trap, Escape, the inert background, the correct AT semantics, and — the
+  reason it is load-bearing here — the TOP LAYER, which is what lifts it clear
+  of the pinned section's transforms and stacking context without a portal.
+- **`showModal()` focuses the first focusable descendant, which is the close
+  button.** So the question takes focus instead, on open and on every step
+  change. That is also why there is no `aria-live` region: moving focus to the
+  new heading announces it once, where a live region wrapping the step would
+  re-read all seven options with it.
+- **The scrub runs on window scroll, so the document is locked while it is
+  open** — `documentElement.style.overflow`, not the body, and the scroll
+  POSITION is never touched, because that is what ScrollTrigger reads on
+  refresh. Verified: open at y=6833, run the whole flow, close, still 6833.
+- **The opener is a delegated document listener, not a prop.** The button is
+  printed three times — the recto of sheet 6, the portrait sheet's inline copy,
+  and the reduced-motion column, which is outside the pinned section — exactly
+  as `[data-nav-item]` is. It is a plain effect and deliberately NOT inside the
+  `useGSAP` block, which reverts and rebuilds on a dependency change.
+- **Real radios and checkboxes, visually hidden.** Not buttons with hand-written
+  `aria-checked`. The browser then gives arrow-key movement within the group,
+  the roving tab stop, form association and the announcement for free. What the
+  brief asks to avoid is a TINY radio; the target here is the whole row.
+- **Four answers are required and four are not.** What they are building, the
+  problem, a name, an address. Stage, needs, timeline and scale are useful and
+  none is worth losing an inquiry over — which is also why scale offers "Not
+  sure yet" instead of a number.
+- **`<dialog>` is placed BEFORE the reduced-motion column in `book.tsx`**, so
+  the column is still the last child of the wrapper and React's insertion of it
+  is still an append. An append needs no reference node, which is the one DOM
+  operation that cannot trip over a reparented pin.
+
+**Submission: one env var, and it never lies.** `apps/web/src/app/api/inquiry/
+route.ts` validates and forwards to whatever `INQUIRY_WEBHOOK_URL` names. That
+variable is the integration point and the only thing to configure.
+
+It is a route handler and NOT a tRPC mutation, because `apps/server` is not
+deployed — see the deploy section. It reads `process.env` directly and not
+through `@nivlak/env`, which is imported for side effects so a missing variable
+fails the BUILD; that is right for a variable the site cannot run without and
+wrong for one whose absence has a defined behaviour.
+
+**Unset, it returns `delivered: false` rather than pretending**, and the client
+carries two confirmations: "We've got the idea." when something downstream
+accepted the inquiry, and "One step left." — with the whole inquiry already
+written into a `mailto:` — when it did not. Nothing writes to the database:
+`packages/db` is not in the web app's build, and adding Prisma to make a POST
+look successful would be a fake backend by another name. All four branches were
+exercised against a local webhook: `not-configured`, `delivered`, `unreachable`
+(502) and validation (422/400).
 
 ### Rules that are not obvious from the code
 

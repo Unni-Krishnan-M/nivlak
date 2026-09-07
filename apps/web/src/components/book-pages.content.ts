@@ -486,8 +486,24 @@ export type BookPage = {
   /** The contact spread. */
   contact?: {
     rows: PageContact[];
+    /**
+     * The dominant action on the page, and the only one that opens the
+     * project inquiry.
+     *
+     * It is a PANEL and not a line of type with an arrow after it, which is
+     * what every other action in this book is. That is the one place 07
+     * departs from the house treatment and it is deliberate: an action a
+     * visitor is meant to find without looking cannot be set at the same
+     * weight as "Enquire about this" three chapters back. `body` is the half
+     * of the chapter's own description that belongs next to the action -- the
+     * verso asks the question, this answers what happens when you say yes --
+     * so the sentence is not printed twice on one spread.
+     */
+    primary: { label: string; body: string };
     enquiryTitle: string;
     enquiryBody: string;
+    /** Heads the four ways to reach a person without the questionnaire. */
+    directTitle: string;
     /**
      * Where a reader recognises themselves before they write.
      *
@@ -1156,8 +1172,9 @@ export const BOOK_PAGES: BookPage[] = [
     number: "07",
     title: "Connect",
     facing: {
-      headline: "Let's Build What's Next.",
-      subtitle: "Tell us what you are trying to build and where it is stuck.",
+      headline: "Let's Build What Comes Next.",
+      subtitle:
+        "Have a product, problem or opportunity worth exploring? Tell us what you're working on.",
       plate: {
         src: "/plates/plate-telegraphy.webp",
         ratio: "431 / 620",
@@ -1184,9 +1201,12 @@ export const BOOK_PAGES: BookPage[] = [
         },
         { emblem: "pin", value: "Nagercoil, Tamil Nadu, India" },
       ],
-      enquiryTitle: "Business Enquiry",
-      enquiryBody:
-        "Let's start a conversation about your next digital product. Any of these is a place to begin:",
+      primary: {
+        label: "Start a Project",
+        body: "Eight short questions about the work. We'll ask who you are at the end.",
+      },
+      enquiryTitle: "What We Can Help With",
+      enquiryBody: "Any of these is a place to begin:",
       prompts: [
         "You have an idea.",
         "You have a product already.",
@@ -1194,7 +1214,8 @@ export const BOOK_PAGES: BookPage[] = [
         "You need engineering support.",
         "You need AI or automation.",
       ],
-      cta: "Start a Conversation",
+      directTitle: "Prefer to Talk Directly?",
+      cta: "Contact Us",
     },
   },
 ];

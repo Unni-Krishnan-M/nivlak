@@ -2623,7 +2623,18 @@ function EngravedPlate({
             // auto-height column where mt-auto does nothing, so the same
             // margin only pushes the contact rows BELOW it further down --
             // measured at 390x844 it cost 7px on a page that is already short.
-            "mt-auto mb-[7%] w-[clamp(150px,18.5vw,268px)] lg:mb-[10%]"
+            // hidden below lg, which is a fix and not a preference. This is
+            // 07's verso, the only page that uses the non-beside figure, and
+            // portrait stacks the whole chapter onto one sheet: at 390x844
+            // that sheet measures 475px in a 390px window, so 45px of its foot
+            // is off-screen before anything is printed and this plate is 385
+            // of what is left. With it in, the business enquiry and the action
+            // under it were both in the clipped band -- the chapter's own
+            // reason for existing, printed below the fold. 04's verso drops
+            // its engraving at portrait for the same reason, and the two
+            // remaining figures are still Fig. 1 and Fig. 2 on the spread,
+            // where the numbering lives.
+            "mt-auto mb-[7%] hidden w-[clamp(150px,18.5vw,268px)] lg:mb-[10%] lg:block"
       }
     >
       <div
@@ -2807,45 +2818,59 @@ function ContactPage({ page }: { page: BookPage }) {
   const mail = contact.rows.find((r) => r.href?.startsWith("mailto:"))?.href;
   return (
     <>
-      <ul className="flex flex-col">
-        {contact.rows.map((row) => {
-          const line = (
-            <>
-              <Emblem
-                name={row.emblem}
-                className="w-[clamp(16px,1.8vw,22px)] shrink-0 text-slate-300"
-              />
-              <span className="text-[clamp(0.72rem,1.15vw,1.049rem)] text-slate-200">
-                {row.value}
-              </span>
-            </>
-          );
-          return (
-            <li
-              key={row.value}
-              data-ink
-              className="border-t border-white/10 py-[0.85em]"
-            >
-              {row.href ? (
-                <a
-                  href={row.href}
-                  className="flex items-center gap-[0.9em] transition-colors duration-300 hover:text-white"
-                >
-                  {line}
-                </a>
-              ) : (
-                <span className="flex items-center gap-[0.9em]">{line}</span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      {/* THE PROJECT FIRST, THE VISITOR SECOND -- and on the page that means
+          this panel comes before anything else on the recto, including the
+          telephone number. The old order was contact details, then a
+          paragraph, then five prompts, then a line of type with an arrow; a
+          visitor who wanted to start something had to read to the bottom of a
+          434px page to find out they could.
 
-      <div data-ink className="mt-[2em] border-t border-white/12 pt-[1.3em]">
+          It is the one action in this book set as a PANEL rather than as a
+          ruled line with an arrow after it. Everything else that acts --
+          "Enquire about this" on 04, "Start a project" on 05 -- is a
+          navigation device inside the book, and this is the thing the book is
+          FOR. The border is 2px against the hairlines everywhere else, the
+          label is a size up from any other action, and the arrow is set at
+          1.6em: three ways of saying the same thing, because a visitor who
+          misses this misses the chapter.
+
+          The accent fills on hover and focus rather than sitting filled. A
+          solid silver slab printed on a photograph of navy stock reads as a
+          sticker stuck to the page -- the same failure, inverted, as the
+          plates that came out darker than the paper and read as holes in it.
+          A strong rule with the accent held back to a wash is a block a
+          printer could actually have inked. */}
+      <button
+        type="button"
+        data-inquiry-open
+        data-ink
+        className="group flex w-full cursor-pointer flex-col items-start border-2 border-[#dce7f7]/55 bg-[#dce7f7]/[0.07] px-[1.1em] py-[1.05em] text-start transition-colors duration-300 outline-none hover:border-[#dce7f7] hover:bg-[#dce7f7] focus-visible:border-[#dce7f7] focus-visible:bg-[#dce7f7] motion-reduce:transition-none"
+      >
+        <span className="flex w-full items-center justify-between gap-[0.8em]">
+          <span className="font-[family-name:var(--font-display)] text-[clamp(1.15rem,1.9vw,1.75rem)] leading-none font-medium tracking-[0.12em] text-white uppercase transition-colors duration-300 group-hover:text-[#0b1728] group-focus-visible:text-[#0b1728] motion-reduce:transition-none">
+            {contact.primary.label}
+          </span>
+          <span
+            aria-hidden
+            className="shrink-0 text-[clamp(1.5rem,2.5vw,2.3rem)] leading-none text-[#dce7f7] transition-all duration-300 group-hover:translate-x-[0.15em] group-hover:text-[#0b1728] group-focus-visible:text-[#0b1728] motion-reduce:transition-none"
+          >
+            &rarr;
+          </span>
+        </span>
+        <span className="mt-[0.7em] max-w-[34ch] text-[clamp(0.66rem,1.012vw,0.912rem)] leading-relaxed text-slate-300/75 transition-colors duration-300 group-hover:text-[#0b1728]/75 group-focus-visible:text-[#0b1728]/75 motion-reduce:transition-none">
+          {contact.primary.body}
+        </span>
+      </button>
+
+      {/* What the chapter says WITHOUT being operated. The inquiry asks the
+          same question at step four, and this list is why that is not the
+          only place it is answered: a visitor who never opens the inquiry
+          still has to be able to see what this studio does. */}
+      <div data-ink className="mt-[1.6em] border-t border-white/12 pt-[1.2em]">
         <p className="mb-[0.5em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70">
           {contact.enquiryTitle.toUpperCase()}
         </p>
-        <p className="max-w-[32ch] text-[clamp(0.72rem,1.15vw,1.049rem)] leading-relaxed text-slate-300/80">
+        <p className="max-w-[32ch] text-[clamp(0.7rem,1.08vw,0.98rem)] leading-relaxed text-slate-300/80">
           {contact.enquiryBody}
         </p>
         {/* Where a reader recognises themselves. Set as a run of short lines
@@ -2853,25 +2878,64 @@ function ContactPage({ page }: { page: BookPage }) {
             of five is not reading a list of five, and the rule is what stops
             them reading as five separate offers. */}
         {contact.prompts?.length ? (
-          <ul className="mt-[0.9em] flex flex-col border-t border-white/10">
+          <ul className="mt-[0.8em] flex flex-col border-t border-white/10">
             {contact.prompts.map((prompt) => (
               <li
                 key={prompt}
-                className="py-[0.42em] text-[clamp(0.64rem,0.989vw,0.889rem)] leading-snug text-slate-300/65"
+                className="py-[0.4em] text-[clamp(0.64rem,0.989vw,0.889rem)] leading-snug text-slate-300/65"
               >
                 {prompt}
               </li>
             ))}
           </ul>
         ) : null}
+      </div>
+
+      {/* The way through without the questionnaire. It is kept whole -- four
+          rows and a mail action -- because an inquiry flow that is the only
+          door is a worse page than the one this replaces: some visitors have
+          one question, and eight steps to ask it is an insult. */}
+      <div data-ink className="mt-[1.6em] border-t border-white/12 pt-[1.2em]">
+        <p className="mb-[0.4em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70">
+          {contact.directTitle.toUpperCase()}
+        </p>
+        <ul className="flex flex-col">
+          {contact.rows.map((row) => {
+            const line = (
+              <>
+                <Emblem
+                  name={row.emblem}
+                  className="w-[clamp(16px,1.8vw,22px)] shrink-0 text-slate-300"
+                />
+                <span className="text-[clamp(0.7rem,1.08vw,0.98rem)] text-slate-200">
+                  {row.value}
+                </span>
+              </>
+            );
+            return (
+              <li key={row.value} className="border-t border-white/10 py-[0.62em]">
+                {row.href ? (
+                  <a
+                    href={row.href}
+                    className="flex items-center gap-[0.9em] transition-colors duration-300 hover:text-white motion-reduce:transition-none"
+                  >
+                    {line}
+                  </a>
+                ) : (
+                  <span className="flex items-center gap-[0.9em]">{line}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
         <a
           href={mail ?? "#"}
-          className="group mt-[1.2em] inline-flex items-center gap-[0.8em] border-b border-white/25 pb-[0.4em] text-[clamp(0.6rem,0.943vw,0.844rem)] tracking-[0.26em] text-white transition-colors duration-300 hover:border-white/60"
+          className="group mt-[1em] inline-flex items-center gap-[0.8em] border-b border-white/25 pb-[0.4em] text-[clamp(0.6rem,0.943vw,0.844rem)] tracking-[0.26em] text-white transition-colors duration-300 hover:border-white/60 motion-reduce:transition-none"
         >
           {contact.cta.toUpperCase()}
           <span
             aria-hidden
-            className="transition-transform duration-300 group-hover:translate-x-[0.25em]"
+            className="transition-transform duration-300 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
           >
             &rarr;
           </span>

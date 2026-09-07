@@ -239,11 +239,13 @@ added back to a row, something else comes out — the page has no slack.**
   opening paragraph as well. The epigraph went next, for 27px, because the
   description under it says what it said and only one of the two is the
   brief's.
-- **The spread takes an ordinary page's sinkage, not an opener's.** `pt-[18%]`
-  is 130px of the 887 this sheet has. With it, the three rows and the head came
-  to 801px against 699 available; at 8% they have 771 and it fits. Both halves
-  still take the same drop, which is the part that actually matters — the first
-  lines sit on one line across the gutter.
+- **This chapter is why the whole book's drop is 8%.** `pt-[18%]` is 130px of
+  the 887 this sheet has. With it, the three rows and the head came to 801px
+  against 699 available; at 8% they have 771 and it fits. That was 03's
+  exception for one revision and is now `PAGE_SINKAGE`, the house value — see
+  "One drop, one head" below. Both halves still take the same drop, which is
+  the part that actually matters: the first lines sit on one line across the
+  gutter.
 - **BOTH pages reserve the drop folio**, where normally no page has to.
   `VersoPage` and `PageBody` print it at 7% of the page HEIGHT while their own
   bottom padding is a percentage of its WIDTH — 8% of ~725 is 58px against a
@@ -535,9 +537,10 @@ phone and the cuts are in the brief's own priority order:
   the page it is on reads as a caption block rather than as the page's text.
   Raising it cost 27px on the verso and 55 on the recto, and all of it was
   found rather than taken out of the content:
-  - **The opener's sinkage drops to 9%.** 18% of the page WIDTH is 130px of the
-    887 it has, which an opener can spend on air and a page carrying a whole
-    chapter cannot. 03 takes 8% for the same reason.
+  - **The opener's sinkage drops to 9%**, and later to the house 8%. 18% of the
+    page WIDTH is 130px of the 887 it has, which an opener can spend on air and
+    a page carrying a whole chapter cannot. 03 takes 8% for the same reason,
+    and the book now takes it everywhere — see "One drop, one head" below.
   - **The margin plate narrows to 138px.** At 166 the index had 374px of
     measure and two of the six summaries wrapped to a second line — 38px. The
     width came off the PICTURE rather than off the type, which is the right way
@@ -726,11 +729,55 @@ that is already short.
   no extra sheet is needed.
 - **Chapter-opener conventions key off `page.facing`, not off page 01.** A page
   with a facing verso is a chapter opening and gets the opener devices —
-  headpiece, sinkage, drop folios. The ones that need their own data appear
-  only where that data exists: the drop cap and small-caps lead-in need
+  headpiece, chapter head, drop folios. The ones that need their own data
+  appear only where that data exists: the drop cap and small-caps lead-in need
   `facing.intro`, so 01 has them and 02 does not. Pages without `facing` stay
   centred with no opener furniture at all, which is correct: they are
-  continuation pages.
+  continuation pages. **Sinkage is no longer on that list** — every page in the
+  book now takes the same drop, opener or not.
+
+- **One drop, one head.** Two things about a chapter opening used to vary from
+  chapter to chapter, and both were invisible in the code and obvious the
+  moment the seven were measured side by side.
+
+  **The drop was three different numbers.** 18% of the page WIDTH for five
+  chapters, 8% for 03 and 9% for 05, because those two print a whole chapter on
+  one spread and cannot afford an opener's air. On the page that is 139px of
+  the face against 70 and 62 — and this book is SCROLLED, so scrolling
+  02 → 03 → 04 jumped the chapter opening 77px up the sheet and back down.
+  `PAGE_SINKAGE` is now `pt-[8%]` for every page. It could only go this way
+  round: 03 and 05 are measured to the pixel and cannot be raised, while the
+  five that come down gain 77px at the foot, which is air on pages that were
+  not short of anything. **Say it in three places or 01 drifts**: `VersoPage`,
+  `PageBody`, and the `[data-left-page]` layer, which is not a `VersoPage` and
+  carries its own padding.
+
+  **The head was seven different widths.** `<ChapterHead>` is `self-start` in a
+  flex column, where `align-self` is the CROSS axis, so it shrink-wrapped to
+  its widest child — the headline — and the rule under it, being `w-full` of
+  that, came out the length of whatever the chapter happened to be called:
+  306px on 06, 361 on 04, 400 on 07, 419 on 01, 562 on 02. The headpiece above
+  it, at 38% of the same box, varied with it. 02 and 05 were the two that
+  looked right, and only because their head is a GRID item, where `self-start`
+  is the block axis and the inline axis stretches by default. `w-full` on the
+  head makes all seven the page's own 562px measure. **Nothing gets taller**: a
+  shrink-wrapped headline is by definition one line, and giving it more room
+  leaves it one line.
+
+  Measured after, at 1440x900: six of the seven heads are pixel-identical —
+  left 77, right 639, rule at y=205. **01 is 3px off and that is the camera,
+  not a bug.** Its verso is the `[data-left-page]` layer laid on `spreadAt()`'s
+  LEFT rect, which spans [-64, 732]; every other verso is a turned sheet's
+  back, which is the RIGHT page's box and spans [-41, 732]. The photographed
+  left page is genuinely 23px wider, the type is inset from each page's own
+  edges by percentages of that page's width, and 3px of offset with a 557px
+  measure against 562 is what falls out. Closing it would mean insetting one
+  page by another page's measure, which is the hardcoded-percentage mistake
+  this file warns about, for 0.9%.
+
+  05's rule sits 44px lower than the other six because its headline is two
+  lines. That is content, not design; the head's top, headpiece, numeral, label
+  and headline all start on the same line as everyone else's.
 - **The sheets are hidden until the book has finished opening**, and switched
   on with `gsap.set`, not a fade. Their paper is the same photograph the canvas
   is showing by then, at the same rect, so there is nothing to dissolve — and a

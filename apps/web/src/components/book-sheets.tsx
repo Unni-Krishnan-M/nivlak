@@ -281,7 +281,14 @@ export function BookSheets() {
               prints on the bare ground UNDER the book rather than being cut
               off at the page edge -- which is what 01's footnote did the one
               time the page came out shorter than the copy on it. */}
-          <div className="flex h-full w-full flex-col justify-start pt-[8%] pb-[8%] pe-[12%] lg:pt-[18%] ps-[calc(10%+var(--facing-inset-start,0px))] text-slate-200">
+          <div
+            // PAGE_SINKAGE, and it has to be said again here rather than
+            // read: this page is not a VersoPage. It is the layer under the
+            // stack that sheet 0 buries when it turns, so it carries its own
+            // padding. Give it a different drop and chapter 01 opens at a
+            // different height from the six that follow it.
+            className={`flex h-full w-full flex-col justify-start pb-[8%] pe-[12%] ps-[calc(10%+var(--facing-inset-start,0px))] text-slate-200 ${PAGE_SINKAGE}`}
+          >
             <FacingCopy page={opening} />
 
             {/* Footnote. Behind a short rule at the foot of the page, which is
@@ -572,7 +579,21 @@ function ChapterHead({
     // top of the subtitle beneath it. `shrink-0` keeps the head at its content
     // height and lets the page overflow instead, which the face clips. Type
     // over type is the worse failure by far.
-    <div data-ink className="shrink-0 self-start">
+    //
+    // `w-full` is what makes the head the same OBJECT on all seven chapters,
+    // and without it `self-start` quietly made it seven different ones. In a
+    // flex column `align-self` is the CROSS axis, so `self-start` shrink-wraps
+    // the head to its widest child -- which is the headline -- and the rule
+    // under it, being `w-full` of that, came out the length of whatever the
+    // chapter happened to be called: 306px on 06, 400 on 07, 419 on 01, 562 on
+    // 02. (02 and 05 were the two that looked right, and only because their
+    // head is a GRID item, where `self-start` is the block axis and the
+    // inline axis stretches by default.) With `w-full` every head takes the
+    // page's own 562px measure, so the rule is one length and the headpiece
+    // above it -- 38% of the head -- is one width. Nothing gets taller: a
+    // shrink-wrapped headline is by definition one line, and giving it more
+    // room leaves it one line.
+    <div data-ink className="w-full shrink-0 self-start">
       {/* Headpiece: the ornament that fills the blank at a chapter's head. */}
       <Ornament className="mb-[0.9em] w-[38%] text-slate-300" />
       <div className="flex items-baseline gap-[0.7em]">
@@ -2860,38 +2881,44 @@ function ContactPage({ page }: { page: BookPage }) {
   );
 }
 
+/**
+ * The drop every page takes, on BOTH halves of its spread.
+ *
+ * One number for all seven, which it has not always been. It was 18% of the
+ * page WIDTH -- an opener's sinkage, the classic device of starting a chapter
+ * low on the page -- with 8% for 03 and 9% for 05 because those two print a
+ * whole chapter on one spread and could not afford the air: 18% is 130px of
+ * the 887 the sheet has, and at that drop 03's four slots divide 699px where
+ * three stage rows and the chapter head need 801.
+ *
+ * Three drops is what the reader actually saw, though, and this page is
+ * SCROLLED rather than turned: the head sat at 139px of the face on five
+ * chapters, 70 on 05 and 62 on 03, so scrolling 02 -> 03 -> 04 jumped the
+ * chapter opening 77px up the sheet and back down again. A book whose chapter
+ * openings land at three different heights reads as three books, which is the
+ * same argument that put every chapter on one type size.
+ *
+ * So the constrained chapter's value becomes the house value. It can only go
+ * this way round -- 03 and 05 cannot be raised, they are measured to the pixel
+ * -- and the five that come down gain 77px at the foot, which is air on pages
+ * that were not short of anything. What was a concession for 03 is now simply
+ * where a chapter starts.
+ *
+ * A CONTINUATION spread took its own drop, 7% rising to 11% at lg, on the
+ * argument that it opens nothing and so should not take an opener's sinkage.
+ * With one house drop there is nothing left for it to be an exception to, and
+ * at 11% it would now start LOWER than the chapter it continues, which is the
+ * wrong way round. Nothing exercises it either: only the catalogue is ever cut
+ * across spreads and its five entries currently fit one. Folding it in gives a
+ * continuation 23px MORE room than it had, so this cannot be the change that
+ * overflows one when the catalogue grows back to two.
+ */
+const PAGE_SINKAGE = "pt-[8%]";
+
 function VersoPage({ page }: { page: BookPage | BookSpread }) {
-  // Sinkage is an opener device: a chapter's first page starts low, and both
-  // halves of that spread take the same drop so their first lines sit on one
-  // line across the gutter. A continuation spread opens nothing, so it starts
-  // where any ordinary page does and gets the space back for entries.
-  const continued = (page as Partial<BookSpread>).continued === true;
-  // A chapter opener starts low on the page -- except the two that print a
-  // chapter's worth of content on one spread. 18% of the page WIDTH is 130px
-  // of the 887 it has, which an opener can spend on air and these two cannot.
-  //
-  // 03 takes 8%: with the opener's sinkage its four slots divide 699px, a
-  // stage row needs 182 of them, and three rows plus the chapter head come to
-  // 801. 05 takes 9%: its type was set at 11-12px against the 16.5 the prose
-  // pages use at 1440, which reads as a caption block rather than as the
-  // page's text, and the 50px this returns to each half is what paid for the
-  // larger sizes.
-  //
-  // Both halves of a spread take the SAME drop, which is the part that
-  // actually matters -- the first lines still sit on one line across the
-  // gutter.
-  const plateSpread = spreadIsPlates(page);
-  const denseSpread = isPerspective(page.services);
-  const sinkage = plateSpread
-    ? "pt-[8%]"
-    : denseSpread
-      ? "pt-[8%] lg:pt-[9%]"
-      : "pt-[8%] lg:pt-[18%]";
   return (
     <div
-      className={`relative flex h-full w-full flex-col justify-start pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200 ${
-        continued ? "pt-[7%] lg:pt-[11%]" : sinkage
-      }`}
+      className={`relative flex h-full w-full flex-col justify-start pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200 ${PAGE_SINKAGE}`}
     >
       <FacingCopy page={page} />
       <p className="absolute bottom-[7%] start-[calc(10%+var(--verso-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums">
@@ -3000,28 +3027,6 @@ function PageFoot({ page }: { page: BookPage }) {
 }
 
 function PageBody({ page }: { page: BookPage | BookSpread }) {
-  const continued = (page as Partial<BookSpread>).continued === true;
-  // A chapter opener starts low on the page -- except the two that print a
-  // chapter's worth of content on one spread. 18% of the page WIDTH is 130px
-  // of the 887 it has, which an opener can spend on air and these two cannot.
-  //
-  // 03 takes 8%: with the opener's sinkage its four slots divide 699px, a
-  // stage row needs 182 of them, and three rows plus the chapter head come to
-  // 801. 05 takes 9%: its type was set at 11-12px against the 16.5 the prose
-  // pages use at 1440, which reads as a caption block rather than as the
-  // page's text, and the 50px this returns to each half is what paid for the
-  // larger sizes.
-  //
-  // Both halves of a spread take the SAME drop, which is the part that
-  // actually matters -- the first lines still sit on one line across the
-  // gutter.
-  const plateSpread = spreadIsPlates(page);
-  const denseSpread = isPerspective(page.services);
-  const sinkage = plateSpread
-    ? "pt-[8%]"
-    : denseSpread
-      ? "pt-[8%] lg:pt-[9%]"
-      : "pt-[8%] lg:pt-[18%]";
   return (
     // --page-index-inset reserves the thumb index. It is measured rather than
     // guessed, and it lives on the recto only, because <BookIndex> is pinned to
@@ -3029,13 +3034,10 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
     // under it. See the note where layoutSheets computes it.
     <div
       className={`flex h-full w-full flex-col ps-[10%] pe-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-slate-200 ${
-        // Sinkage: a chapter opener starts low on the page rather than centred,
-        // and both halves of this spread take the same drop so their first
-        // lines sit on one line across the gutter.
+        // Both halves of a spread take the same drop, so their first lines sit
+        // on one line across the gutter. See PAGE_SINKAGE.
         page.facing
-          ? `justify-start pb-[8%] ${
-              continued ? "pt-[7%] lg:pt-[11%]" : sinkage
-            }`
+          ? `justify-start pb-[8%] ${PAGE_SINKAGE}`
           : "justify-center py-[8%]"
       }`}
     >

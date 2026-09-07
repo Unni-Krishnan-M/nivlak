@@ -622,6 +622,55 @@ line is that animation must never delay comprehension.
   the document, and moved focus to the verso list a page away. Every index copy
   is a `<nav>` and none nests inside another, so `el.closest("nav")` is the
   scope that keeps working as copies are added.
+### The type grew, and the MINIMUMS did not
+
+05's type was raised to the book's own body size (above), and the same
+treatment was then applied to **01, 02, 04, 06 and 07** — every chapter except
+the two that set their own sizes by measurement. The rule, applied in one pass
+over `book-sheets.tsx`:
+
+> the clamp MINIMUM is unchanged; the `vw` term is multiplied by 1.15 and the
+> MAXIMUM by 1.14.
+
+`text-[clamp(min,Xvw,max)]` is the handle — 101 of them in the file, 61 scaled
+and 40 deliberately left.
+
+**Why the minimum is untouched is the whole point.** At a 390px viewport
+`1vw` is 3.9px, which is below every minimum in the file, so on a phone the
+clamp is pinned to its floor and the floor is the only number that renders.
+Raising the floors along with the rest grows type on sheets that are already
+carrying an entire chapter on one face — which is what pushed 05's call to
+action off the foot when it was tried there. So the book grows from about
+1100px of viewport width upward and is **pixel-identical below it**. A phone
+regression from this change is therefore a real bug and not a trade-off; check
+against a frame taken before it.
+
+**The 40 that were left out, and why each is not an oversight:**
+
+- **03's and 05's own blocks** (11 and 18). Both are over-subscribed spreads
+  where every size is a recorded measurement — 03 fills its page to the last
+  pixel by construction, and 05's sizes were raised by hand with the room found
+  lever by lever. A blanket multiplier on either overflows the sheet.
+- **`ChapterHead`** (4). Its sizes are shared by every chapter *including* 03
+  and 05, so scaling them scales the two that must not grow.
+- **`VersoPage`, `PageFoot` and `PageBody`** (7). The drop folios and running
+  heads. These are the furniture the pages are measured *against*; 03 and 05
+  both reserve space for the folio in vh, and a bigger folio invalidates both
+  reservations at once.
+
+**One collision came out of it and it is recorded in the code**: 07's plate
+credit printed through its drop folio (credit 812–827 against a folio at
+820–837, both at x=77 at 1440x900), because `EngravedPlate`'s non-beside figure
+hangs off the foot with `mt-auto` and its bottom margin is a percentage of the
+page's WIDTH while the folio is placed at 7% of its HEIGHT. Fixed by raising
+the margin to 10% and taking the width back off the PICTURE
+(`20vw`/290px → `18.5vw`/268px), because the verso had nothing else to give —
+its subtitle ends at 361 and the plate started at 365. **The margin is `lg`
+only**, which is the second half of the fix: below `lg` the verso is a stacked
+auto-height column where `mt-auto` does nothing, so the same margin only pushed
+the contact rows below it further down — 7px, on a page measured at 390x844
+that is already short.
+
 ### Rules that are not obvious from the code
 
 - **Illustrations are numbered in roman and chapters in arabic**, and 03 is

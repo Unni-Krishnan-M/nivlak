@@ -294,7 +294,7 @@ export function BookSheets() {
                   aria-hidden
                   className="mb-[0.9em] block h-px w-[26%] bg-white/15"
                 />
-                <p className="text-[clamp(0.62rem,0.84vw,0.76rem)] leading-relaxed text-slate-400/65">
+                <p className="text-[clamp(0.62rem,0.966vw,0.866rem)] leading-relaxed text-slate-400/65">
                   <sup className="me-[0.4em] align-super text-[0.7em] tabular-nums">
                     1
                   </sup>
@@ -310,7 +310,7 @@ export function BookSheets() {
               the same value twice. */}
           <p
             data-ink
-            className="absolute bottom-[7%] start-[calc(10%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40"
+            className="absolute bottom-[7%] start-[calc(10%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.92vw,0.798rem)] tracking-[0.35em] text-slate-400/40"
           >
             NIVLAK
           </p>
@@ -524,16 +524,16 @@ function Figure({
       >
         {figure.steps.map((step) => (
           <div key={step.label} className="text-center">
-            <p className="text-[clamp(0.66rem,0.9vw,0.82rem)] leading-none text-slate-200">
+            <p className="text-[clamp(0.66rem,1.035vw,0.935rem)] leading-none text-slate-200">
               {step.label}
             </p>
-            <p className="mt-[0.45em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.16em] text-slate-400/55">
+            <p className="mt-[0.45em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.16em] text-slate-400/55">
               {step.note}
             </p>
           </div>
         ))}
       </div>
-      <figcaption className="mt-[1.3em] text-[clamp(0.52rem,0.74vw,0.64rem)] tracking-[0.26em] text-slate-400/45">
+      <figcaption className="mt-[1.3em] text-[clamp(0.52rem,0.851vw,0.73rem)] tracking-[0.26em] text-slate-400/45">
         {figure.caption.toUpperCase()}
       </figcaption>
     </figure>
@@ -708,7 +708,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
                 // the head that overflows first because a chapter opening
                 // cannot be made shorter -- the numeral, the title and the
                 // rule are what say which chapter this is.
-                className="mt-[0.9em] max-w-[42ch] text-[clamp(0.68rem,0.92vw,0.85rem)] leading-relaxed text-balance text-slate-300/80 [@media(max-height:480px)]:hidden"
+                className="mt-[0.9em] max-w-[42ch] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-balance text-slate-300/80 [@media(max-height:480px)]:hidden"
               >
                 {subtitle}
               </p>
@@ -734,7 +734,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       {subtitle && !isPerspective(page.services) ? (
         <p
           data-ink
-          className="mt-[1em] max-w-[30ch] text-[clamp(0.82rem,1.18vw,1.05rem)] leading-relaxed text-balance text-slate-300/85"
+          className="mt-[1em] max-w-[30ch] text-[clamp(0.82rem,1.357vw,1.197rem)] leading-relaxed text-balance text-slate-300/85"
         >
           {subtitle}
         </p>
@@ -743,7 +743,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       {intro ? (
         <p
           data-ink
-          className="mt-[1.6em] max-w-[44ch] text-[clamp(0.76rem,1.02vw,0.94rem)] leading-relaxed text-slate-300/75 first-letter:float-left first-letter:me-[0.08em] first-letter:mt-[0.04em] first-letter:text-[3.4em] first-letter:leading-[0.82] first-letter:font-light first-letter:text-[#dce7f7]"
+          className="mt-[1.6em] max-w-[44ch] text-[clamp(0.76rem,1.173vw,1.072rem)] leading-relaxed text-slate-300/75 first-letter:float-left first-letter:me-[0.08em] first-letter:mt-[0.04em] first-letter:text-[3.4em] first-letter:leading-[0.82] first-letter:font-light first-letter:text-[#dce7f7]"
         >
           <span className="[font-variant-caps:all-small-caps] tracking-[0.08em] text-slate-200">
             {intro.lead}
@@ -816,7 +816,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             aria-hidden
             className="mb-[0.9em] block h-px w-[26%] bg-white/15"
           />
-          <p className="text-[clamp(0.55rem,0.75vw,0.68rem)] leading-relaxed text-slate-400/60">
+          <p className="text-[clamp(0.55rem,0.862vw,0.775rem)] leading-relaxed text-slate-400/60">
             {(page as BookPage).colophon}
           </p>
         </div>
@@ -911,13 +911,13 @@ function LeadService({ service }: { service: PageService }) {
           />
         ) : null}
         <div className="pt-[0.2em]">
-          <p className="mb-[0.55em] text-[clamp(0.5rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-400/55">
+          <p className="mb-[0.55em] text-[clamp(0.5rem,0.805vw,0.707rem)] tracking-[0.34em] text-slate-400/55">
             PLATE {roman(1)}
           </p>
-          <p className="font-[family-name:var(--font-display)] text-[clamp(1.1rem,1.75vw,1.6rem)] leading-tight font-light text-white">
+          <p className="font-[family-name:var(--font-display)] text-[clamp(1.1rem,2.012vw,1.824rem)] leading-tight font-light text-white">
             {service.title}
           </p>
-          <p className="mt-[0.5em] max-w-[30ch] text-[clamp(0.7rem,0.96vw,0.88rem)] leading-relaxed text-slate-300/75">
+          <p className="mt-[0.5em] max-w-[30ch] text-[clamp(0.7rem,1.104vw,1.003rem)] leading-relaxed text-slate-300/75">
             {service.body}
           </p>
         </div>
@@ -1835,22 +1835,22 @@ function ProjectIndex({ services }: { services: PageService[] }) {
               // on the list is the backstop for a narrower phone still.
               className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[0.7em] lg:pb-[0.7em] motion-reduce:transition-none"
             >
-              <span className="shrink-0 text-[clamp(0.44rem,0.6vw,0.55rem)] tracking-[0.24em] tabular-nums opacity-70">
+              <span className="shrink-0 text-[clamp(0.44rem,0.69vw,0.627rem)] tracking-[0.24em] tabular-nums opacity-70">
                 {service.project!.number}
               </span>
 
               {/* The short label, below `lg` only. WEB / AI / SAAS / MOBILE --
                   four words that fit one line at 390px. */}
-              <span className="text-[clamp(0.52rem,2.4vw,0.66rem)] tracking-[0.22em] uppercase lg:hidden">
+              <span className="text-[clamp(0.52rem,2.76vw,0.752rem)] tracking-[0.22em] uppercase lg:hidden">
                 {service.project!.label}
               </span>
 
               {/* The named row, on the full spread only. */}
               <span className="hidden min-w-0 flex-1 lg:block">
-                <span className="block text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.26em] uppercase">
+                <span className="block text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.26em] uppercase">
                   {service.project!.category}
                 </span>
-                <span className="mt-[0.35em] block font-[family-name:var(--font-display)] text-[clamp(0.78rem,1.06vw,0.98rem)] leading-[1.15] font-light text-balance text-slate-200/90 group-data-[current=true]:text-white">
+                <span className="mt-[0.35em] block font-[family-name:var(--font-display)] text-[clamp(0.78rem,1.219vw,1.117rem)] leading-[1.15] font-light text-balance text-slate-200/90 group-data-[current=true]:text-white">
                   {service.title}
                 </span>
               </span>
@@ -1921,7 +1921,7 @@ function ProjectHeadIndex({ entries }: { entries: PageService[] }) {
           aria-label={`${service.project!.number} ${service.project!.category}`}
           className="group flex cursor-pointer flex-col items-center gap-[0.45em] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
         >
-          <span className="text-[clamp(0.46rem,0.6vw,0.55rem)] tracking-[0.2em] text-slate-400/45 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
+          <span className="text-[clamp(0.46rem,0.69vw,0.627rem)] tracking-[0.2em] text-slate-400/45 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
             {service.project!.number}
           </span>
           {/* The notch, cut deeper where you are. Driven by data-current
@@ -2030,11 +2030,11 @@ function ProjectStage({
             >
               <span
                 aria-hidden
-                className="font-[family-name:var(--font-display)] text-[clamp(1.7rem,3.4vw,3.2rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
+                className="font-[family-name:var(--font-display)] text-[clamp(1.7rem,3.91vw,3.648rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
               >
                 {service.project!.number}
               </span>
-              <h3 className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.7vw,1.55rem)] leading-none font-light text-white">
+              <h3 className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.955vw,1.767rem)] leading-none font-light text-white">
                 {service.project!.category}
               </h3>
             </div>
@@ -2059,13 +2059,13 @@ function ProjectStage({
             aria-hidden={i === 0 ? undefined : "true"}
             className={`flex items-baseline justify-between gap-[1em] ${stacked}`}
           >
-            <p className="text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/75 uppercase">
+            <p className="text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.34em] text-slate-400/75 uppercase">
               {service.project!.status}
             </p>
             {/* Roman, like every other illustration in this book, and
                 restarting at I for this chapter: 03's six are its own series.
                 Arabic here would read as a pointer to a chapter number. */}
-            <p className="shrink-0 text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/50">
+            <p className="shrink-0 text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-400/50">
               PLATE {roman(i + 1)}
             </p>
           </div>
@@ -2110,7 +2110,7 @@ function ProjectStage({
               aria-hidden={i === 0 ? undefined : "true"}
               className={`flex flex-col ${stacked}`}
             >
-              <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.62vw,1.5rem)] leading-tight font-light text-balance text-[#dce7f7]">
+              <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.863vw,1.71rem)] leading-tight font-light text-balance text-[#dce7f7]">
                 {service.title}
               </h4>
               {/* The description goes below 480px of viewport HEIGHT and
@@ -2121,7 +2121,7 @@ function ProjectStage({
                   ~100px short of the sheet with this paragraph in.
                   Everything that is a FACT -- status, the work, the platform
                   -- stays at every size. */}
-              <p className="mt-[0.55em] max-w-[46ch] shrink-0 text-[clamp(0.74rem,1.04vw,0.95rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
+              <p className="mt-[0.55em] max-w-[46ch] shrink-0 text-[clamp(0.74rem,1.196vw,1.083rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
                 {service.body}
               </p>
               {/* What the work is. A `ul` because it is a list and a screen
@@ -2131,7 +2131,7 @@ function ProjectStage({
                   bullets, for 03's reason: four bullets down a
                   column would be the most prominent thing on a page whose
                   picture is the point. */}
-              <ul className="mt-[0.95em] flex shrink-0 flex-wrap items-baseline gap-x-[0.75em] gap-y-[0.25em] text-[clamp(0.64rem,0.88vw,0.8rem)] leading-relaxed text-slate-300/65">
+              <ul className="mt-[0.95em] flex shrink-0 flex-wrap items-baseline gap-x-[0.75em] gap-y-[0.25em] text-[clamp(0.64rem,1.012vw,0.912rem)] leading-relaxed text-slate-300/65">
                 {project.services.map((item, k) => (
                   <li key={item} className="flex items-baseline gap-[0.7em]">
                     {k > 0 ? (
@@ -2149,13 +2149,13 @@ function ProjectStage({
                   only at lg: on the stacked portrait sheet there is no page
                   foot to drop to, only the next block. */}
               <dl className="mt-[1em] grid shrink-0 grid-cols-[auto_1fr] items-baseline gap-x-[1.2em] pt-[0.6em] lg:mt-auto lg:pt-[1.2em]">
-                <dt className="border-t border-white/18 pt-[0.6em] text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/70">
+                <dt className="border-t border-white/18 pt-[0.6em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-400/70">
                   PLATFORM
                 </dt>
-                <dd className="border-t border-white/18 pt-[0.6em] text-[clamp(0.78rem,1.08vw,1rem)] leading-tight text-white">
+                <dd className="border-t border-white/18 pt-[0.6em] text-[clamp(0.78rem,1.242vw,1.14rem)] leading-tight text-white">
                   {project.platform}
                 </dd>
-                <dt className="border-t border-white/10 pt-[0.6em] text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.3em] text-slate-400/70">
+                <dt className="border-t border-white/10 pt-[0.6em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-400/70">
                   ACTION
                 </dt>
                 <dd className="border-t border-white/10 pt-[0.6em]">
@@ -2167,7 +2167,7 @@ function ProjectStage({
                     type="button"
                     data-nav-item
                     data-index={project.cta.chapter}
-                    className="group flex w-fit items-center gap-[0.7em] border-b border-white/25 pb-[0.3em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.28em] text-slate-200 uppercase transition-colors duration-200 outline-none hover:border-white/60 hover:text-white focus-visible:border-white focus-visible:text-white motion-reduce:transition-none"
+                    className="group flex w-fit items-center gap-[0.7em] border-b border-white/25 pb-[0.3em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.28em] text-slate-200 uppercase transition-colors duration-200 outline-none hover:border-white/60 hover:text-white focus-visible:border-white focus-visible:text-white motion-reduce:transition-none"
                   >
                     {project.cta.label}
                     <span
@@ -2202,7 +2202,7 @@ function ProjectStage({
             aria-hidden
             className="mb-[0.9em] block h-px w-[26%] bg-white/15"
           />
-          <p className="text-[clamp(0.55rem,0.75vw,0.68rem)] leading-relaxed text-slate-400/60">
+          <p className="text-[clamp(0.55rem,0.862vw,0.775rem)] leading-relaxed text-slate-400/60">
             {colophon}
           </p>
         </div>
@@ -2255,14 +2255,14 @@ function ServiceEntry({
     >
       {service.image ? <ServicePlate image={service.image} /> : null}
       <div className="min-w-0 flex-1">
-        <p className="mb-[0.5em] text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/60">
+        <p className="mb-[0.5em] text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.34em] text-slate-400/60">
           {roman(index + 1)}
         </p>
-        <p className="font-[family-name:var(--font-display)] text-[clamp(0.9rem,1.32vw,1.22rem)] leading-tight font-light text-balance text-white">
+        <p className="font-[family-name:var(--font-display)] text-[clamp(0.9rem,1.518vw,1.391rem)] leading-tight font-light text-balance text-white">
           {service.title}
         </p>
         {service.body ? (
-          <p className="mt-[0.5em] text-[clamp(0.64rem,0.88vw,0.8rem)] leading-relaxed text-slate-300/75">
+          <p className="mt-[0.5em] text-[clamp(0.64rem,1.012vw,0.912rem)] leading-relaxed text-slate-300/75">
             {service.body}
           </p>
         ) : null}
@@ -2367,13 +2367,13 @@ function ServiceGrid({
               className="mb-[1.1em] w-[clamp(38px,4.9vw,68px)] text-slate-300"
             />
           ) : null}
-          <p className="mb-[0.55em] text-[clamp(0.52rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-400/70">
+          <p className="mb-[0.55em] text-[clamp(0.52rem,0.805vw,0.707rem)] tracking-[0.34em] text-slate-400/70">
             {roman(from + i + 1)}
           </p>
-          <p className="text-[clamp(0.72rem,1.02vw,0.92rem)] leading-tight text-white">
+          <p className="text-[clamp(0.72rem,1.173vw,1.049rem)] leading-tight text-white">
             {service.title}
           </p>
-          <p className="mt-[0.45em] text-[clamp(0.62rem,0.86vw,0.78rem)] leading-relaxed text-slate-300/70">
+          <p className="mt-[0.45em] text-[clamp(0.62rem,0.989vw,0.889rem)] leading-relaxed text-slate-300/70">
             {service.body}
           </p>
         </div>
@@ -2503,14 +2503,14 @@ function SecondaryServices({
             />
           ) : null}
           <div>
-            <p className="mb-[0.3em] text-[clamp(0.46rem,0.62vw,0.55rem)] tracking-[0.32em] text-slate-400/60">
+            <p className="mb-[0.3em] text-[clamp(0.46rem,0.713vw,0.627rem)] tracking-[0.32em] text-slate-400/60">
               {roman(from + i + 1)}
             </p>
-            <p className="text-[clamp(0.72rem,1vw,0.9rem)] leading-tight text-white">
+            <p className="text-[clamp(0.72rem,1.15vw,1.026rem)] leading-tight text-white">
               {service.title}
             </p>
             {service.body ? (
-              <p className="mt-[0.3em] max-w-[32ch] text-[clamp(0.62rem,0.84vw,0.76rem)] leading-relaxed text-slate-300/70">
+              <p className="mt-[0.3em] max-w-[32ch] text-[clamp(0.62rem,0.966vw,0.866rem)] leading-relaxed text-slate-300/70">
                 {service.body}
               </p>
             ) : null}
@@ -2536,7 +2536,7 @@ function MarkPlate({ caption = "THE MARK" }: { caption?: string }) {
         draggable={false}
         className="h-auto w-[clamp(56px,7vw,96px)] opacity-90 select-none"
       />
-      <figcaption className="text-[clamp(0.5rem,0.72vw,0.62rem)] tracking-[0.32em] text-slate-400/45">
+      <figcaption className="text-[clamp(0.5rem,0.828vw,0.707rem)] tracking-[0.32em] text-slate-400/45">
         {caption}
       </figcaption>
     </figure>
@@ -2579,7 +2579,30 @@ function EngravedPlate({
       className={
         beside
           ? "mt-auto mb-[9%] flex items-end gap-[1.4em] pt-[1.6em]"
-          : "mt-auto mb-[7%] w-[clamp(150px,20vw,290px)]"
+          : // 10% on a spread and not 7%, with the plate a size down to pay
+            // for it.
+            //
+            // This figure hangs off the foot with mt-auto, so it lands where
+            // the drop folio is -- and the folio is placed at 7% of the page
+            // HEIGHT while this margin is a percentage of its WIDTH. At 7% of
+            // ~725 the margin is 51px against a folio whose top edge is 75px
+            // up, and once the caption and credit grew with the rest of the
+            // chapter the credit printed straight through "07 - CONNECT" in
+            // the same column. Measured at 1440x900: credit 812-827 against a
+            // folio at 820-837, both at x=77.
+            //
+            // The width comes off the PLATE because the verso has nowhere else
+            // to give: its subtitle ends at 361 and the picture started at
+            // 365. 20vw is 415px of picture where 445 is all there is once the
+            // caption, the credit and the reserved folio are counted.
+            //
+            // The margin is lg-ONLY, and that is not a detail. On a spread this figure
+            // hangs off the foot with mt-auto and the extra margin lifts it
+            // clear of the folio. Below lg the verso is stacked in an
+            // auto-height column where mt-auto does nothing, so the same
+            // margin only pushes the contact rows BELOW it further down --
+            // measured at 390x844 it cost 7px on a page that is already short.
+            "mt-auto mb-[7%] w-[clamp(150px,18.5vw,268px)] lg:mb-[10%]"
       }
     >
       <div
@@ -2611,10 +2634,10 @@ function EngravedPlate({
         }
       />
       <figcaption className={beside ? "pb-[0.4em]" : "mt-[0.9em]"}>
-        <p className="text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.28em] text-slate-400/55">
+        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.28em] text-slate-400/55">
           {plate.caption.toUpperCase()}
         </p>
-        <p className="mt-[0.45em] text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.06em] text-slate-400/35 italic">
+        <p className="mt-[0.45em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.06em] text-slate-400/35 italic">
           {plate.credit}
         </p>
       </figcaption>
@@ -2659,10 +2682,10 @@ function Portrait({ founder }: { founder: NonNullable<BookPage["founder"]> }) {
         </div>
       </div>
       <figcaption className="mt-[0.9em]">
-        <p className="font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.55vw,1.45rem)] leading-tight font-light text-white">
+        <p className="font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.782vw,1.653rem)] leading-tight font-light text-white">
           {founder.name}
         </p>
-        <p className="mt-[0.35em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.32em] text-slate-400/70">
+        <p className="mt-[0.35em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.32em] text-slate-400/70">
           {founder.role.toUpperCase()}
         </p>
       </figcaption>
@@ -2691,13 +2714,13 @@ function StepList({ steps, from }: { steps: PageStep[]; from: number }) {
             <Emblem name={step.emblem} className="w-[58%] text-slate-200" />
           </span>
           <div className="pt-[0.15em]">
-            <p className="mb-[0.35em] text-[clamp(0.5rem,0.68vw,0.6rem)] tracking-[0.34em] text-slate-400/60 tabular-nums">
+            <p className="mb-[0.35em] text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.34em] text-slate-400/60 tabular-nums">
               {String(from + i + 1).padStart(2, "0")}
             </p>
-            <p className="text-[clamp(0.78rem,1.08vw,0.98rem)] leading-tight text-white">
+            <p className="text-[clamp(0.78rem,1.242vw,1.117rem)] leading-tight text-white">
               {step.title}
             </p>
-            <p className="mt-[0.4em] max-w-[34ch] text-[clamp(0.64rem,0.88vw,0.8rem)] leading-relaxed text-slate-300/75">
+            <p className="mt-[0.4em] max-w-[34ch] text-[clamp(0.64rem,1.012vw,0.912rem)] leading-relaxed text-slate-300/75">
               {step.body}
             </p>
           </div>
@@ -2723,7 +2746,7 @@ function FounderPage({ page }: { page: BookPage }) {
         <p
           key={paragraph.slice(0, 24)}
           data-ink
-          className={`max-w-[36ch] text-[clamp(0.7rem,0.98vw,0.9rem)] leading-relaxed text-slate-300/80 ${
+          className={`max-w-[36ch] text-[clamp(0.7rem,1.127vw,1.026rem)] leading-relaxed text-slate-300/80 ${
             i ? "mt-[1em]" : ""
           }`}
         >
@@ -2732,7 +2755,7 @@ function FounderPage({ page }: { page: BookPage }) {
       ))}
       <p
         data-ink
-        className="mt-[1.8em] mb-[0.5em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.34em] text-slate-400/70"
+        className="mt-[1.8em] mb-[0.5em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70"
       >
         {founder.principlesTitle.toUpperCase()}
       </p>
@@ -2743,10 +2766,10 @@ function FounderPage({ page }: { page: BookPage }) {
             data-ink
             className="flex items-baseline gap-[0.9em] border-t border-white/10 py-[0.62em]"
           >
-            <span className="text-[clamp(0.5rem,0.66vw,0.58rem)] tracking-[0.2em] text-slate-400/50">
+            <span className="text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.2em] text-slate-400/50">
               {roman(i + 1)}
             </span>
-            <span className="text-[clamp(0.72rem,1vw,0.9rem)] text-slate-200">
+            <span className="text-[clamp(0.72rem,1.15vw,1.026rem)] text-slate-200">
               {principle}
             </span>
           </li>
@@ -2771,7 +2794,7 @@ function ContactPage({ page }: { page: BookPage }) {
                 name={row.emblem}
                 className="w-[clamp(16px,1.8vw,22px)] shrink-0 text-slate-300"
               />
-              <span className="text-[clamp(0.72rem,1vw,0.92rem)] text-slate-200">
+              <span className="text-[clamp(0.72rem,1.15vw,1.049rem)] text-slate-200">
                 {row.value}
               </span>
             </>
@@ -2798,10 +2821,10 @@ function ContactPage({ page }: { page: BookPage }) {
       </ul>
 
       <div data-ink className="mt-[2em] border-t border-white/12 pt-[1.3em]">
-        <p className="mb-[0.5em] text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.34em] text-slate-400/70">
+        <p className="mb-[0.5em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70">
           {contact.enquiryTitle.toUpperCase()}
         </p>
-        <p className="max-w-[32ch] text-[clamp(0.72rem,1vw,0.92rem)] leading-relaxed text-slate-300/80">
+        <p className="max-w-[32ch] text-[clamp(0.72rem,1.15vw,1.049rem)] leading-relaxed text-slate-300/80">
           {contact.enquiryBody}
         </p>
         {/* Where a reader recognises themselves. Set as a run of short lines
@@ -2813,7 +2836,7 @@ function ContactPage({ page }: { page: BookPage }) {
             {contact.prompts.map((prompt) => (
               <li
                 key={prompt}
-                className="py-[0.42em] text-[clamp(0.64rem,0.86vw,0.78rem)] leading-snug text-slate-300/65"
+                className="py-[0.42em] text-[clamp(0.64rem,0.989vw,0.889rem)] leading-snug text-slate-300/65"
               >
                 {prompt}
               </li>
@@ -2822,7 +2845,7 @@ function ContactPage({ page }: { page: BookPage }) {
         ) : null}
         <a
           href={mail ?? "#"}
-          className="group mt-[1.2em] inline-flex items-center gap-[0.8em] border-b border-white/25 pb-[0.4em] text-[clamp(0.6rem,0.82vw,0.74rem)] tracking-[0.26em] text-white transition-colors duration-300 hover:border-white/60"
+          className="group mt-[1.2em] inline-flex items-center gap-[0.8em] border-b border-white/25 pb-[0.4em] text-[clamp(0.6rem,0.943vw,0.844rem)] tracking-[0.26em] text-white transition-colors duration-300 hover:border-white/60"
         >
           {contact.cta.toUpperCase()}
           <span
@@ -2886,7 +2909,7 @@ function Terms({ page }: { page: BookPage }) {
       {page.termsTitle ? (
         <p
           data-ink
-          className="mb-[1.3em] text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80"
+          className="mb-[1.3em] text-[clamp(0.6rem,1.035vw,0.855rem)] tracking-[0.35em] text-slate-400/80"
         >
           {page.termsTitle.toUpperCase()}
         </p>
@@ -2901,14 +2924,14 @@ function Terms({ page }: { page: BookPage }) {
             {/* The letter is the artwork on this page -- same silver as the
                 lit page edge in the frame, so it reads as pressed into the
                 paper rather than typed onto it. */}
-            <dt className="font-[family-name:var(--font-display)] text-[clamp(1.6rem,3vw,2.8rem)] leading-none font-light text-[#dce7f7]">
+            <dt className="font-[family-name:var(--font-display)] text-[clamp(1.6rem,3.45vw,3.192rem)] leading-none font-light text-[#dce7f7]">
               {term.letter}
             </dt>
             <dd>
-              <p className="mb-[0.4em] text-[clamp(0.85rem,1.25vw,1.1rem)] leading-none text-white">
+              <p className="mb-[0.4em] text-[clamp(0.85rem,1.438vw,1.254rem)] leading-none text-white">
                 {term.term}
               </p>
-              <p className="max-w-[32ch] text-[clamp(0.72rem,1vw,0.92rem)] leading-relaxed text-slate-300/85">
+              <p className="max-w-[32ch] text-[clamp(0.72rem,1.15vw,1.049rem)] leading-relaxed text-slate-300/85">
                 {term.body}
               </p>
             </dd>
@@ -2918,7 +2941,7 @@ function Terms({ page }: { page: BookPage }) {
       {page.termsFoot ? (
         <p
           data-ink
-          className="mt-[1.4em] border-t border-white/10 pt-[1.1em] text-[clamp(0.7rem,0.95vw,0.88rem)] tracking-[0.02em] text-slate-400/75"
+          className="mt-[1.4em] border-t border-white/10 pt-[1.1em] text-[clamp(0.7rem,1.092vw,1.003rem)] tracking-[0.02em] text-slate-400/75"
         >
           {page.termsFoot}
         </p>
@@ -2954,7 +2977,7 @@ function Terms({ page }: { page: BookPage }) {
             draggable={false}
             className="h-auto w-[clamp(74px,9.5vw,128px)] opacity-90 select-none"
           />
-          <figcaption className="text-[clamp(0.5rem,0.72vw,0.62rem)] tracking-[0.32em] text-slate-400/45">
+          <figcaption className="text-[clamp(0.5rem,0.828vw,0.707rem)] tracking-[0.32em] text-slate-400/45">
             THE MARK
           </figcaption>
         </figure>

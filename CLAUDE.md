@@ -720,17 +720,26 @@ before reaching for spacing.** Measured at 1440x900 with the folio at y=820:
 
   | | before | after |
   | --- | --- | --- |
-  | gap between the four sections | 17px | 17px |
-  | benefit row `py` | 0.55em | 0.55em |
-  | diagram questions | `leading-snug` | `lg:leading-loose` |
-  | benefit descriptions | `leading-snug` | `lg:leading-loose` |
-  | call-to-action sentence | `leading-relaxed` | `lg:leading-[1.75]` |
-  | the diagram block | 130px | 154px |
-  | the three benefits | 249px | 296px |
+  | gap between the four sections | 17px | **9–10px** |
+  | benefit row `py` | 0.55em | **`lg:py-[0.35em]`** |
+  | diagram questions | `leading-snug` | **`lg:leading-[2.3]`** |
+  | benefit descriptions | `leading-snug` | **`lg:leading-[2.45]`** |
+  | call-to-action sentence | `leading-relaxed` | **`lg:leading-[2.05]`** |
+  | the diagram block | 130px | **159px** |
+  | the three benefits | 249px | **306px** |
 
-  The buttons land at 811 with 9px to the folio — the same reservation the page
-  always had — and the 1.75 on the last paragraph is not a round number by
-  choice: `leading-loose` put the block at 821, one pixel into the folio.
+  **Every gap on the page was mined for it.** The section gaps came DOWN from
+  17px to 9, the benefit rows lost padding, and the diagram's rule and the
+  benefits list both pulled their top margins in — because on a page that reads
+  as congested, space between blocks is worth less than space between lines,
+  and the rules already do the separating. 99px of block growth, all of it
+  leading, funded by the 86px paragraph and about 13px of reclaimed gap.
+
+  **The buttons land at 811 with 9px to the folio**, which is the reservation
+  this page has always had, and the odd numbers are the reason the tuning
+  stopped where it did: benefit descriptions at 2.55 put the block at 818 with
+  2px left, and the call to action at `leading-loose` put it at 821, one pixel
+  INTO the folio. 2.45 and 2.05 are the last values that clear.
 
   Every one of those is `lg`-scoped. Portrait is untouched and has to be,
   because that sheet already runs 920px into a face showing 781.

@@ -1292,9 +1292,37 @@ function ProcessArc({ labels, note }: { labels: string[]; note?: string }) {
           Dropped below `lg`, where the whole spread collapses onto one 844px
           sheet carrying all six stages: it is the only line here that no
           reader needs in order to follow the procedure, which makes it the
-          right last thing to go. */}
+          right last thing to go.
+
+          IT IS SET AT THE PAGE'S OWN SIZE AND AT 30ch, and both numbers are
+          about the hole this slot used to have in it. The slot is 201px at
+          1440x900 and shared with the verso, which fills it -- chapter head
+          62..206, subtitle to 269. This side had the note at the top in 11px
+          type, three lines ending at 130, and the arc hung off the bottom at
+          232: 102px of nothing between them, on the one spread in the book
+          with no slack anywhere else. `mb-auto` is what opens it, absorbing
+          every spare pixel between the two.
+
+          The fix is neither of the two obvious ones. Moving the note down to
+          the arc only moves the hole to the top of the page; the arc cannot
+          move up because sitting over stage 04's rule is the whole reason it
+          is a running head. So the NOTE fills the slot instead. 11px on a page
+          whose body is 15px was already the caption-block mistake recorded
+          against 05, and correcting it to the verso subtitle's size gets 3
+          lines to 4; 30ch rather than 46 gets it to 5, ending at 204 against
+          an arc at 232. 28px, and no word was cut to find it. The measure is
+          60% of the recto, which is the same fraction of its own page as the
+          verso's 42ch subtitle.
+
+          Measured across the desktop range, since this is the only breakpoint
+          band where the note prints at all: the gap is 42px at 1024, 23 at
+          1280, 28 at 1440 and 66 at 1920, and content clears the slot bottom
+          by 17-18px at every one of them. It grows at 1920 because the type
+          stops at its clamp maximum around 1466px of width while the slot
+          keeps growing with page HEIGHT -- the verso carries 26px of the same
+          slack there, so the two pages stay matched. */}
       {note ? (
-        <p className="mb-auto hidden max-w-[46ch] pb-[1.2em] text-[clamp(0.58rem,0.78vw,0.7rem)] leading-relaxed text-slate-400/70 italic lg:block">
+        <p className="mb-auto hidden max-w-[30ch] pb-[1.2em] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-slate-400/70 italic lg:block">
           {note}
         </p>
       ) : null}

@@ -351,6 +351,30 @@ added back to a row, something else comes out — the page has no slack.**
   stage 04 — a summary of six stages printed halfway down them — for 28px the
   page does not have. It is a device for a SPREAD, where it heads the second
   page; a column has no second page to head.
+- **The recto's note is set at the page's own size and at 30ch, and both
+  numbers close a hole.** The head slot is 201px at 1440x900 and shared with
+  the verso, which fills it. This side had the note pinned to the top in 11px
+  type — three lines ending at 130 — and the arc hung off the bottom at 232:
+  **102px of nothing between them**, on the one spread in the book with no
+  slack anywhere else. `mb-auto` on the note is what opens it, absorbing every
+  spare pixel between the two.
+
+  Neither obvious fix works. Dropping the note down to meet the arc only moves
+  the hole to the top of the page, and the arc cannot come up because sitting
+  over stage 04's rule is the entire reason it is a running head. So the note
+  fills the slot instead: 11px on a page whose body is 15px was already the
+  caption-block mistake recorded against 05, and correcting it to the verso
+  subtitle's size takes the note from 3 lines to 4; 30ch instead of 46 takes it
+  to 5, ending at 204 against an arc at 232. **28px, and no word was cut.** The
+  measure is 60% of the recto — the same fraction of its own page as the
+  verso's 42ch subtitle, which is why the two now read as one spread.
+
+  Measured across the desktop band, the only one where this note prints at all:
+  the gap is 42px at 1024, 23 at 1280, 28 at 1440 and 66 at 1920, and content
+  clears the slot bottom by 17–18px at every width. It opens up at 1920 because
+  the type stops at its clamp maximum near 1466px of width while the slot keeps
+  growing with page HEIGHT; the verso carries 26px of the same slack there, so
+  the pages stay matched rather than one of them holing.
 - **`data-process-run` is a hook for `tools/scroll-shots.mjs`, not styling.**
   Every fit on this spread is a measurement, the slots overflow silently
   because `minmax(0,1fr)` lets them, and a probe that has to guess which div is

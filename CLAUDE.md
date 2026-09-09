@@ -684,6 +684,25 @@ phone and the cuts are in the brief's own priority order:
   the sheet is 475px in a 390px window, so its bottom 45px are off-screen
   before anything is printed and the verso shows about 365.
 
+**The two pages have very different budgets, and it is worth knowing which
+before reaching for spacing.** Measured at 1440x900 with the folio at y=820:
+
+- **The verso had 45px** between its last row and the folio. Its six rows were
+  set at a 61px pitch and are now 65 — the descriptions carry `leading-relaxed`
+  instead of `leading-snug`, which is where the four pixels come from. The
+  row's own `py` was tried at `0.62em` first and put the last row's RULE at
+  y=820, exactly on the folio's top edge, so the padding went back to `0.55em`
+  and the leading kept the gain. The last rule now lands at 806, 14 clear.
+  **The leading is `lg` only**: below that the whole chapter is on one sheet
+  that already runs 920px into a face showing 781.
+- **The recto has 8px and is at its designed limit.** Its call to action is
+  hung off the foot and the page reserves the folio, so there is nowhere for
+  height to go. Both attempts are recorded because they look reasonable and
+  are not: `leading-relaxed` on the three benefit descriptions pushed the
+  buttons to 831 against a folio at 820 — **11px of overprint** — and
+  `leading-normal` still landed at 822, 2px into it. Anything more than about
+  two pixels on this page comes out of its content, not its spacing.
+
 **Three things the brief asked for that this chapter does not do**, all for the
 same reason — it is a photograph of a page, not a stylesheet:
 

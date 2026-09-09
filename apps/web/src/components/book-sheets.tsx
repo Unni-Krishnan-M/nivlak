@@ -1555,7 +1555,7 @@ function PerspectiveIndex({
                   {service.title}
                 </span>
                 {service.perspective ? (
-                  <span className="mt-[0.3em] block text-[clamp(0.6rem,0.98vw,0.88rem)] leading-snug text-slate-300/65">
+                  <span className="mt-[0.3em] block text-[clamp(0.6rem,0.98vw,0.88rem)] leading-snug text-slate-300/65 lg:leading-relaxed">
                     {service.perspective.summary}
                   </span>
                 ) : null}

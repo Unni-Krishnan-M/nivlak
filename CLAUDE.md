@@ -351,41 +351,39 @@ added back to a row, something else comes out — the page has no slack.**
   stage 04 — a summary of six stages printed halfway down them — for 28px the
   page does not have. It is a device for a SPREAD, where it heads the second
   page; a column has no second page to head.
-- **The recto's note is set at the page's own size and at 30ch, and both
-  numbers close a hole.** The head slot is 201px at 1440x900 and shared with
-  the verso, which fills it. This side had the note pinned to the top in 11px
-  type — three lines ending at 130 — and the arc hung off the bottom at 232:
-  **102px of nothing between them**, on the one spread in the book with no
-  slack anywhere else. `mb-auto` on the note is what opens it, absorbing every
-  spare pixel between the two.
+- **The recto's note prints in the FOOT MARGIN, below the drop folio**, which
+  is the only running text in the book set below the last rule of a page. Every
+  number in it is a clearance.
 
-  **Enlarging the note is what closed it — and moving the ink is what does
-  not.** Dropping the note to meet the arc only moves the hole to the top of
-  the page; the slot has to be FILLED. 11px on a page whose body is 15px was
-  already the caption-block mistake recorded against 05, and correcting it to
-  the verso subtitle's size takes the note from 3 lines to 4; 30ch instead of
-  46 takes it to 5. **No word was cut to find any of it.** The measure lands at
-  60% of the recto — the same fraction of its own page as the verso's 42ch
-  subtitle, which is why the two now read as one spread.
+  The trap is that **the sheet element runs to the bottom of the viewport and
+  the photographed page does not.** At 1440x900 the element is 900 tall and the
+  paper's edge is at y=868; a line placed against the element's bottom prints
+  on the plinth under the book, which is exactly what the first attempt did.
+  Stage 06's outcome ends at 817 and the folio occupies 820–837, so the clear
+  paper below the chapter is 817..868 — 51px.
 
-  **The two then swapped ends**, and the fill is what let them: the arc leads
-  the slot and the note hangs off its foot with `mt-auto`. A running head
-  belongs at the TOP of a page, and there it sits level with the ornament that
-  opens the verso, so both pages begin with a horizontal device on the same
-  line — the arc at 62–75 against the ornament at 68. It also puts the note
-  immediately above the stages it qualifies instead of five inches from them.
-  What was lost is the old argument that the arc should sit against stage 04's
-  rule as a running head for the second half; conventional placement won.
+  Three lines at the caption size and tight leading is 42 of those 51. That is
+  why the size did NOT come back up to the page's own 15px: three lines of that
+  is 75 and there is no version of it that fits. The note is held clear of the
+  folio **horizontally** and not vertically — they share the band, the folio at
+  the fore-edge and the note against the gutter, with 18px between them —
+  because there is no room to stack them. `bottom-[4%]` and an `end` inset of
+  the folio's plus `3.4em` are what place it. Proved on the paper at 1024,
+  1280, 1440 and 1920.
 
-  Measured across the desktop band, the only one where this note prints at all:
-  the note clears the slot bottom by **17–18px at every width**, and the space
-  that is left sits between the arc and the note — 55px at 1024, 39 at 1280, 47
-  at 1440 and 84 at 1920. It opens up at 1920 because the type stops at its
-  clamp maximum near 1466px of width while the slot keeps growing with page
-  HEIGHT; the verso carries 26px of the same slack at the foot there, so the
-  pages stay matched rather than one of them holing. That gap reads as a margin
-  under a running head, which is what the original 102px void — space at one
-  end, ink at the other — did not.
+  **The cost is 188px of blank at the top of the recto**, and it is not
+  fixable. The head slot is 201px, it now holds only the 13px arc, and its
+  height is set by the VERSO's chapter head — which fills it exactly. Both
+  halves must share one row template or the six stage rules stop lining up
+  across the gutter, so the slot cannot shrink to fit what is left in it. The
+  note used to fill that slot; the blank is the price of printing it at the
+  foot, and it was accepted deliberately rather than discovered.
+
+  For the record, since it is the thing that will tempt the next reader: at
+  the page's own 15px and 30ch the note is 5 lines, sits at 122..245 in the
+  head slot with stage 04's rule at 267, and leaves no blank anywhere. `git
+  log` has it.
+
 - **`data-process-run` is a hook for `tools/scroll-shots.mjs`, not styling.**
   Every fit on this spread is a measurement, the slots overflow silently
   because `minmax(0,1fr)` lets them, and a probe that has to guess which div is

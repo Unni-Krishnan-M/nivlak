@@ -1263,7 +1263,7 @@ function ArcArrow() {
   );
 }
 
-function ProcessArc({ labels }: { labels: string[] }) {
+function ProcessArc({ labels, note }: { labels: string[]; note?: string }) {
   if (!labels.length) return null;
   return (
     // The arc LEADS the slot and the note hangs off its foot, which is the
@@ -1312,6 +1312,52 @@ function ProcessArc({ labels }: { labels: string[] }) {
           </li>
         ))}
       </ol>
+      {/* The chapter's qualification -- that a reader need not start at stage
+          01 -- printed HERE and not on the verso, where it belongs by rights
+          and where it was.
+
+          The verso ran out of page: its head slot has ~220px and the chapter
+          head takes 189 of them. Hung off the FOOT of this slot it also lands
+          where it is of most use -- immediately above the stages it qualifies,
+          and at the reader halfway through the six rather than at the one who
+          has not begun.
+
+          Dropped below `lg`, where the whole spread collapses onto one 844px
+          sheet carrying all six stages: it is the only line here that no
+          reader needs in order to follow the procedure, which makes it the
+          right last thing to go.
+
+          IT IS SET AT THE PAGE'S OWN SIZE AND AT 30ch, and both numbers are
+          about the hole this slot used to have in it. The slot is 201px at
+          1440x900 and shared with the verso, which fills it -- chapter head
+          62..206, subtitle to 269. This side had the note at the top in 11px
+          type, three lines ending at 130, and the arc hung off the bottom at
+          232: 102px of nothing between them, on the one spread in the book
+          with no slack anywhere else. `mb-auto` is what opens it, absorbing
+          every spare pixel between the two.
+
+          Enlarging the note is what closed it, and it stayed closed when the
+          two later swapped ends -- which is the point: moving the ink around
+          only moves the hole, and the slot has to be FILLED. 11px on a page
+          whose body is 15px was already the caption-block mistake recorded
+          against 05, and correcting it to the verso subtitle's size gets 3
+          lines to 4; 30ch rather than 46 gets it to 5. 28px of gap where there
+          were 102, and no word was cut to find it. The measure is 60% of the
+          recto, the same fraction of its own page as the verso's 42ch
+          subtitle.
+
+          Measured across the desktop range, since this is the only breakpoint
+          band where the note prints at all: the gap is 42px at 1024, 23 at
+          1280, 28 at 1440 and 66 at 1920, and content clears the slot bottom
+          by 17-18px at every one of them. It grows at 1920 because the type
+          stops at its clamp maximum around 1466px of width while the slot
+          keeps growing with page HEIGHT -- the verso carries 26px of the same
+          slack there, so the two pages stay matched. */}
+      {note ? (
+        <p className="mt-auto hidden max-w-[30ch] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-slate-400/70 italic lg:block">
+          {note}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -2434,7 +2480,10 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
           from={halves.verso.length}
           rows={halves.rows}
           head={
-            <ProcessArc labels={page.tailpiece?.arc ?? []} />
+            <ProcessArc
+              labels={page.tailpiece?.arc ?? []}
+              note={page.tailpiece?.note}
+            />
           }
         />
       ) : projects ? (
@@ -3081,7 +3130,6 @@ function PageFoot({ page }: { page: BookPage }) {
 }
 
 function PageBody({ page }: { page: BookPage | BookSpread }) {
-  const plates = isPlateSection(page.services);
   return (
     // --page-index-inset reserves the thumb index. It is measured rather than
     // guessed, and it lives on the recto only, because <BookIndex> is pinned to
@@ -3158,35 +3206,6 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
           className="absolute bottom-[7%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
         >
           {page.number}
-        </p>
-      ) : null}
-
-      {/* 03's qualification, printed in the FOOT MARGIN beside the folio.
-          This is the only running text in the book set below the last rule of
-          a page, and every number in it is a clearance.
-
-          The band is 31px. Measured at 1440x900: the photographed page's
-          bottom edge is at y=868 -- NOT the 900 the sheet element runs to,
-          which is the trap here; the element keeps going and the paper does
-          not, so a line placed against the element's bottom prints on the
-          plinth under the book. Stage 06's outcome ends at 817 and the folio
-          occupies 820-837. So the clear paper below the chapter is 817..868.
-
-          Three lines at the caption size and tight leading is 42 of those 51,
-          which is why the size did NOT come back up to the page's 15px: three
-          lines of that is 75 and there is no version of this that fits. The
-          note is held clear of the folio HORIZONTALLY rather than vertically
-          -- they share the band, the folio at the fore-edge and this against
-          the gutter -- because there is no room to stack them.
-
-          `lg` only, like the arc. Below that the spread collapses onto one
-          sheet whose foot is off-screen already. */}
-      {plates && (page as Partial<BookSpread>).tailpiece?.note ? (
-        <p
-          data-ink
-          className="absolute bottom-[4%] start-[10%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px)+3.4em)] hidden text-[clamp(0.55rem,0.78vw,0.7rem)] leading-tight text-slate-400/55 italic lg:block"
-        >
-          {(page as Partial<BookSpread>).tailpiece?.note}
         </p>
       ) : null}
     </div>

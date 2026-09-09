@@ -1099,6 +1099,14 @@ export const BOOK_PAGES: BookPage[] = [
     rationale: {
       label: "Why it matters",
       headline: "Better thinking. Better decisions. Better products.",
+      // NOT PRINTED. It is kept because it is the only thing on this page that
+      // could be restored in one line, and because it says why it went: it is
+      // a summary of the three benefits below it -- "choose the right
+      // technology" and "create real value" are benefits 01 and 03 almost
+      // word for word -- and the headline directly above says the same arc in
+      // six. Three lines and its margin is 86px on a page whose call to
+      // action had 8 between itself and the drop folio, and that 86 is what
+      // paid for the leading everywhere else on the recto. See <RationalePage>.
       intro:
         "Before we build technology, we ask whether it solves the right problem. Our perspectives help us choose the right technology, simplify complexity and design products that create real value.",
       flowTitle: "From idea to product",

@@ -695,13 +695,30 @@ before reaching for spacing.** Measured at 1440x900 with the folio at y=820:
   and the leading kept the gain. The last rule now lands at 806, 14 clear.
   **The leading is `lg` only**: below that the whole chapter is on one sheet
   that already runs 920px into a face showing 781.
-- **The recto has 8px and is at its designed limit.** Its call to action is
-  hung off the foot and the page reserves the folio, so there is nowhere for
-  height to go. Both attempts are recorded because they look reasonable and
-  are not: `leading-relaxed` on the three benefit descriptions pushed the
-  buttons to 831 against a folio at 820 — **11px of overprint** — and
-  `leading-normal` still landed at 822, 2px into it. Anything more than about
-  two pixels on this page comes out of its content, not its spacing.
+- **The recto had 8px, and getting more meant losing a paragraph.** Its call
+  to action is hung off the foot and the page reserves the folio, so there was
+  nowhere for height to go: `leading-relaxed` on the three benefit descriptions
+  pushed the buttons to 831 against a folio at 820 — **11px of overprint** —
+  and `leading-normal` still landed at 822, 2px into it. Spacing alone could
+  not open this page.
+
+  **`rationale.intro` is what paid for it.** Three lines and its margin is
+  86px, and it is the one thing on the recto that restates another: "choose the
+  right technology" and "create real value" are benefits 01 and 03 almost word
+  for word, and the headline directly above says the same arc in six words. It
+  was already dropped below `lg` for that reason; it is now not printed at all.
+  The copy stays in `book-pages.content.ts` with a comment, because restoring
+  it is one line.
+
+  **The 86px went back as air, and it had to be distributed rather than
+  found.** Removing the paragraph did NOT move the call to action — it is
+  `mt-auto`, so the whole 86 collected as one gap above it and the page looked
+  worse, a 93px hole under the benefits. What the recto carries now, measured:
+  sections 17px apart became 22, the diagram grew 130→139, and the benefits
+  grew **249→297** on `lg:py-[0.85em]` and `lg:leading-relaxed` descriptions.
+  The buttons land at 811 with 9px to the folio — the same reservation the page
+  always had. Every one of those is `lg`-scoped; portrait is untouched, and it
+  has to be, because that sheet already runs 920px into a face showing 781.
 
 **Three things the brief asked for that this chapter does not do**, all for the
 same reason — it is a photograph of a page, not a stylesheet:

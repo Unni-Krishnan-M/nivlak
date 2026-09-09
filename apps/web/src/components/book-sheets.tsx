@@ -1638,7 +1638,7 @@ function IdeaFlow({
             <p className="text-[clamp(0.5rem,0.78vw,0.7rem)] tracking-[0.22em] text-white uppercase">
               {node.label}
             </p>
-            <p className="mt-[0.4em] text-[clamp(0.56rem,0.9vw,0.8rem)] leading-snug text-slate-300/65">
+            <p className="mt-[0.4em] text-[clamp(0.56rem,0.9vw,0.8rem)] leading-snug text-slate-300/65 lg:leading-relaxed">
               {node.note}
             </p>
           </li>
@@ -1672,7 +1672,7 @@ function Benefits({
         {items.map((item) => (
           <li
             key={item.number}
-            className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.9em)] border-b border-white/10 py-[0.55em] [@media(max-height:480px)]:py-[0.25em]"
+            className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.9em)] border-b border-white/10 py-[0.55em] lg:py-[0.85em] [@media(max-height:480px)]:py-[0.25em]"
           >
             <span
               aria-hidden
@@ -1688,7 +1688,7 @@ function Benefits({
                   stay at every size: three of them are still the answer to
                   "what do I get", where the sentence under each elaborates a
                   heading that is already printed. */}
-              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 lg:block">
+              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 lg:block lg:leading-relaxed">
                 {item.body}
               </span>
             </span>
@@ -1789,7 +1789,7 @@ function RationalePage({
       // one lands exactly where the folio is: measured at 1440x900 the buttons
       // reached 835 against a folio whose top edge is 820. In vh because the
       // folio is placed in vh.
-      className="flex min-h-0 flex-col gap-[0.75em] lg:flex-1 lg:gap-[clamp(0.6em,1.9vh,1.5em)] lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:pt-[6%]">
+      className="flex min-h-0 flex-col gap-[0.75em] lg:flex-1 lg:gap-[clamp(0.9em,2.5vh,2.2em)] lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:pt-[6%]">
       <div data-ink className="shrink-0">
         <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.34em] text-slate-400/60 uppercase">
           {rationale.label}
@@ -1797,12 +1797,6 @@ function RationalePage({
         <h3 className="mt-[0.6em] font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.98vw,1.85rem)] leading-[1.1] font-light text-balance text-white">
           {rationale.headline}
         </h3>
-        {/* Dropped below `lg`: the headline above says the same thing in six
-            words, and this page has a diagram, three benefits and a way out to
-            fit onto a sheet that is already carrying the six domains. */}
-        <p className="mt-[0.6em] hidden max-w-[56ch] text-[clamp(0.6rem,0.98vw,0.88rem)] leading-relaxed text-slate-300/70 lg:block">
-          {rationale.intro}
-        </p>
       </div>
 
       <IdeaFlow title={rationale.flowTitle} flow={rationale.flow} />

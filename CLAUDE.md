@@ -62,6 +62,30 @@ stops on "We've detected multiple projects inside your repository" and, in a
 TTY, opens an interactive picker that will hang a scripted run. It still reads
 the ROOT `netlify.toml`, which is what you want.
 
+**`JSONHTTPError: Forbidden` from the CLI means the account is out of
+credits**, and nothing about the message says so. The CLI throws away the
+response body; the deploy is failing at `api.createSiteDeploy` and the body
+reads `Account credit usage exceeded - new deploys are blocked until credits
+are added`. Everything else looks healthy while this is true — `netlify status`
+authenticates, the site is linked and `state: current`, `getAccountBuildStatus`
+reports 0 minutes used and 0 builds active, and the account object even reports
+`credits: {included: 300, used: 0}`. DRAFT deploys still succeed; only
+production ones are blocked, which is the fastest way to tell this apart from a
+permissions problem. To read the real error:
+
+```bash
+TOKEN=$(python3 -c "import json;d=json.load(open('$HOME/.config/netlify/config.json'));print(d['users'][d['userId']]['auth']['token'])")
+curl -s -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -X POST https://api.netlify.com/api/v1/sites/<site_id>/deploys \
+  -d '{"draft":true,"deploy_source":"cli","files":{}}'
+```
+
+Use `draft: true`. A non-draft probe with an empty `files` digest has nothing to
+upload, so it can go straight to ready and PUBLISH AN EMPTY SITE over
+production. Note also that `~/.config/netlify/config.json` holds more than one
+account here — the live one is the entry keyed by the file's own `userId`, not
+the first in `users`.
+
 Two consequences worth holding on to. `apps/server` is **not deployed** — only
 `apps/web` is built and published — so `NEXT_PUBLIC_SERVER_URL` resolves to
 nothing in production and a tRPC procedure added to `packages/api` works in

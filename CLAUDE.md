@@ -720,11 +720,12 @@ before reaching for spacing.** Measured at 1440x900 with the folio at y=820:
 
   | | before | after |
   | --- | --- | --- |
-  | gap between the four sections | 17px | **9–10px** |
+  | gap between the four sections | 17px | **9–11px**, except the one below |
+  | diagram → benefits join | 17px | **21px** (`lg:mt-[0.7em]` on `<Benefits>`) |
   | benefit row `py` | 0.55em | **`lg:py-[0.35em]`** |
   | diagram questions | `leading-snug` | **`lg:leading-[2.3]`** |
   | benefit descriptions | `leading-snug` | **`lg:leading-[2.45]`** |
-  | call-to-action sentence | `leading-relaxed` | **`lg:leading-[2.05]`** |
+  | call-to-action sentence | `leading-relaxed` | **`lg:leading-[1.75]`** |
   | the diagram block | 130px | **159px** |
   | the three benefits | 249px | **306px** |
 
@@ -735,11 +736,22 @@ before reaching for spacing.** Measured at 1440x900 with the folio at y=820:
   and the rules already do the separating. 99px of block growth, all of it
   leading, funded by the 86px paragraph and about 13px of reclaimed gap.
 
+  **One join gets more than the column gap**, and it is the only exception:
+  the diagram ends on four short questions and the benefits open on a tracked
+  label, so at 9px the two read as one block. `lg:mt-[0.7em]` on `<Benefits>`
+  takes that join to 21px. It is paid for by the call to action's sentence,
+  which went back from 2.05 to 1.75 — the least dense block on the page, with a
+  heading above it and two buttons below.
+
   **The buttons land at 811 with 9px to the folio**, which is the reservation
   this page has always had, and the odd numbers are the reason the tuning
   stopped where it did: benefit descriptions at 2.55 put the block at 818 with
-  2px left, and the call to action at `leading-loose` put it at 821, one pixel
-  INTO the folio. 2.45 and 2.05 are the last values that clear.
+  2px left, the call to action at `leading-loose` put it at 821, and the 21px
+  join with the sentence still at 2.05 put it at 822 — each of those one to two
+  pixels INTO the folio. **This page has no slack left anywhere.** The next
+  thing asked of it comes out of its content, and the remaining candidate is
+  that closing sentence: like `rationale.intro` before it, it is `lg`-only and
+  largely restates the heading above it and the two buttons below.
 
   Every one of those is `lg`-scoped. Portrait is untouched and has to be,
   because that sheet already runs 920px into a face showing 781.

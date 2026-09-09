@@ -1664,7 +1664,14 @@ function Benefits({
   items: { number: string; title: string; body: string }[];
 }) {
   return (
-    <section data-ink className="shrink-0">
+    <section
+      data-ink
+      // Extra air above this section only. The rationale column sets one gap
+      // for all four of its blocks, and this is the one join that needed more:
+      // the diagram ends on four short questions and this opens on a tracked
+      // label, so at the column gap alone the two read as one block.
+      className="shrink-0 lg:mt-[0.7em]"
+    >
       <h4 className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
         {title}
       </h4>
@@ -1735,7 +1742,7 @@ function PerspectiveCta({
       {/* Dropped below `lg`. The headline and the two actions are the whole
           of what this block has to do; the sentence between them is the one
           part a reader can act without. */}
-      <p className="mt-[0.5em] hidden max-w-[52ch] text-[clamp(0.58rem,0.94vw,0.85rem)] leading-relaxed text-slate-300/70 lg:block lg:leading-[2.05]">
+      <p className="mt-[0.5em] hidden max-w-[52ch] text-[clamp(0.58rem,0.94vw,0.85rem)] leading-relaxed text-slate-300/70 lg:block lg:leading-[1.75]">
         {cta.body}
       </p>
       <div className="mt-[0.8em] flex flex-wrap items-center gap-x-[1.6em] gap-y-[0.5em]">

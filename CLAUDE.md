@@ -1208,6 +1208,61 @@ spread 02. Like the frame sources, the renders it reads are **not in the repo**
 — it expects them at the repo root. Its header explains the keying, the seeds
 and the tone; read it before changing any of the three.
 
+`tools/build-pencil-plates.sh` redraws all fifteen photographic plates — 02's
+five services, 03's six process pictures and 04's four interfaces — as pencil
+sketches. It is a POST-PASS over `apps/web/public`, not a flag on the other
+three scripts, because their sources are not in this repository and cannot be
+re-run here.
+
+- **It is not idempotent.** Sketching a sketch finds edges in the first pass's
+  own strokes and doubles them. `git checkout apps/web/public/{services,process,work}`
+  before a second run, exactly as `stamp-book-logo.py` requires.
+- **The drawing is struck, not printed.** A pencil sketch is graphite on white
+  paper and white paper is the one thing this book cannot have — a plate
+  lighter than the page is a hole punched in it. The sketch is made on white
+  and then negated, so the ground goes dark and the strokes come up silver,
+  which is what 01's and 07's engravings already do through their masks. The
+  chapter illustrations and the engraved figures are now the same kind of
+  picture.
+- **Tone is `build-process-plates.sh`'s, exactly**, and the audit tests the
+  same statistic against the same pixel: the MEDIAN against a paper luma
+  sampled live off `frame-091` (0.2036). Median and not minimum — a drawing is
+  *supposed* to contain strokes darker than the paper; what it may not be is
+  darker overall. All fifteen land 0.222–0.387.
+- **Two traps, both hit on the way in.** `%[fx:minima]` on an sRGB file is the
+  darkest CHANNEL, and `#233c58` has a red of 0.137 against a luma of 0.235, so
+  the first audit refused every plate. And 02's five are **keyed** — `srgba`,
+  floodfilled transparent by their own build script — so the naive conversion
+  flattened them and their medians went from a quarter to 0.86: five white
+  slabs pasted on the navy. The key is now lifted off, the drawing made on the
+  colour channels, and the key put back; the script refuses any plate whose
+  channel count changed.
+- **Line weight is a fraction of width, not a fixed radius.** The dodge spreads
+  each edge over the blur radius, so a wide radius draws haze *around* objects
+  instead of a line *along* them — the first run used 5px on a 1240px plate and
+  produced a smoky wash. `RADIUS_DIV=1030` puts it at 1.2px there and 0.87 on
+  the 900px services, so one line weight across the book. `POW` comes down with
+  the radius; at 2.0 against 1.2px the fine rules go black.
+- **The redactions survive**, and this was checked rather than assumed. 04's
+  blurred boxes over invented client names are baked into the file this reads,
+  a blurred region has no edges, and a sketch cannot recover what a blur
+  destroyed — verified at 200% on the SaaS and mobile plates.
+
+**What it does not touch, and why.** `plate-telegraphy.webp` is already an 1876
+patent drawing; `perspectives/column.webp` is a luminance MASK rather than a
+picture, so running it through would corrupt the mask instead of restyling the
+art; the logos, because a brand mark is not a sketch of a brand mark.
+
+**And the frames, which is the interesting one.** The same recipe over
+`frame-091` was built and looked at: the photographed book becomes a flat navy
+rectangle with a thin outline. Every reason to keep the frames photographic is
+in that one picture — the paper texture, the gutter shadow, the lit outer edge
+and the fall-off this file tells you never to redraw are all *in the
+photograph*, and the sketch removes them. The pages would still hold type,
+because the ground stays dark, but the book would stop being a photograph of a
+book. It would also need a NEW `/frames/<set>/` directory, since frames are
+served immutable for a year. Not done; the comparison is in the log.
+
 `tools/build-book-frames.sh` decodes `nivlak-book-opening.mp4` (not in the repo)
 into two tiers plus the measured camera track. `tools/stamp-book-logo.py`
 replaces the approximated logo on the cover in the encoded webps; it is not

@@ -1266,10 +1266,22 @@ function ArcArrow() {
 function ProcessArc({ labels, note }: { labels: string[]; note?: string }) {
   if (!labels.length) return null;
   return (
-    // Hung off the BOTTOM of its slot, so it sits directly over the rule that
-    // opens stage 04 and reads as a running head for the second half of the
-    // procedure. Centred in the slot it floated in the middle of a blank
-    // quarter-page and read as a stray caption.
+    // The arc LEADS the slot and the note hangs off its foot, which is the
+    // reverse of how this page was set for two revisions.
+    //
+    // It was the other way round on the argument that a running head for the
+    // second half of the procedure belongs against the thing it heads, sitting
+    // directly over stage 04's rule. This order is the more conventional one
+    // and it costs nothing: a running head sits at the TOP of a page, level
+    // with the ornament that opens the verso, so both pages now begin with a
+    // horizontal device on the same line. It also moves the note to where it
+    // is of most use -- immediately above the stages it qualifies rather than
+    // five inches from them.
+    //
+    // What this slot may NOT have is the space at one end and the ink at the
+    // other. See the note below for the 102px hole that taught that, and why
+    // enlarging the note rather than moving it is what closed it.
+    //
     // Hidden below `lg`, note and all. Down there the spread has collapsed
     // onto one sheet and the arc would sit between stage 03 and stage 04 --
     // a summary of six stages printed halfway down them -- for 28px this
@@ -1277,55 +1289,8 @@ function ProcessArc({ labels, note }: { labels: string[]; note?: string }) {
     // second page; a column has no second page to head.
     <div
       data-ink
-      className="hidden min-h-0 flex-col justify-end pb-[1.1em] lg:flex"
+      className="hidden min-h-0 flex-col pb-[1.1em] lg:flex"
     >
-      {/* The chapter's qualification -- that a reader need not start at stage
-          01 -- printed HERE and not on the verso, where it belongs by rights
-          and where it was.
-
-          The verso ran out of page: its head slot has ~220px and the chapter
-          head takes 189 of them. This slot holds a diagram 20px tall in 187.
-          It also lands the line where it is of most use, which is at the
-          reader halfway through the six rather than at the one who has not
-          begun.
-
-          Dropped below `lg`, where the whole spread collapses onto one 844px
-          sheet carrying all six stages: it is the only line here that no
-          reader needs in order to follow the procedure, which makes it the
-          right last thing to go.
-
-          IT IS SET AT THE PAGE'S OWN SIZE AND AT 30ch, and both numbers are
-          about the hole this slot used to have in it. The slot is 201px at
-          1440x900 and shared with the verso, which fills it -- chapter head
-          62..206, subtitle to 269. This side had the note at the top in 11px
-          type, three lines ending at 130, and the arc hung off the bottom at
-          232: 102px of nothing between them, on the one spread in the book
-          with no slack anywhere else. `mb-auto` is what opens it, absorbing
-          every spare pixel between the two.
-
-          The fix is neither of the two obvious ones. Moving the note down to
-          the arc only moves the hole to the top of the page; the arc cannot
-          move up because sitting over stage 04's rule is the whole reason it
-          is a running head. So the NOTE fills the slot instead. 11px on a page
-          whose body is 15px was already the caption-block mistake recorded
-          against 05, and correcting it to the verso subtitle's size gets 3
-          lines to 4; 30ch rather than 46 gets it to 5, ending at 204 against
-          an arc at 232. 28px, and no word was cut to find it. The measure is
-          60% of the recto, which is the same fraction of its own page as the
-          verso's 42ch subtitle.
-
-          Measured across the desktop range, since this is the only breakpoint
-          band where the note prints at all: the gap is 42px at 1024, 23 at
-          1280, 28 at 1440 and 66 at 1920, and content clears the slot bottom
-          by 17-18px at every one of them. It grows at 1920 because the type
-          stops at its clamp maximum around 1466px of width while the slot
-          keeps growing with page HEIGHT -- the verso carries 26px of the same
-          slack there, so the two pages stay matched. */}
-      {note ? (
-        <p className="mb-auto hidden max-w-[30ch] pb-[1.2em] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-slate-400/70 italic lg:block">
-          {note}
-        </p>
-      ) : null}
       <ol className="flex w-full list-none items-center p-0">
         {labels.map((label, i) => (
           <li
@@ -1347,6 +1312,52 @@ function ProcessArc({ labels, note }: { labels: string[]; note?: string }) {
           </li>
         ))}
       </ol>
+      {/* The chapter's qualification -- that a reader need not start at stage
+          01 -- printed HERE and not on the verso, where it belongs by rights
+          and where it was.
+
+          The verso ran out of page: its head slot has ~220px and the chapter
+          head takes 189 of them. Hung off the FOOT of this slot it also lands
+          where it is of most use -- immediately above the stages it qualifies,
+          and at the reader halfway through the six rather than at the one who
+          has not begun.
+
+          Dropped below `lg`, where the whole spread collapses onto one 844px
+          sheet carrying all six stages: it is the only line here that no
+          reader needs in order to follow the procedure, which makes it the
+          right last thing to go.
+
+          IT IS SET AT THE PAGE'S OWN SIZE AND AT 30ch, and both numbers are
+          about the hole this slot used to have in it. The slot is 201px at
+          1440x900 and shared with the verso, which fills it -- chapter head
+          62..206, subtitle to 269. This side had the note at the top in 11px
+          type, three lines ending at 130, and the arc hung off the bottom at
+          232: 102px of nothing between them, on the one spread in the book
+          with no slack anywhere else. `mb-auto` is what opens it, absorbing
+          every spare pixel between the two.
+
+          Enlarging the note is what closed it, and it stayed closed when the
+          two later swapped ends -- which is the point: moving the ink around
+          only moves the hole, and the slot has to be FILLED. 11px on a page
+          whose body is 15px was already the caption-block mistake recorded
+          against 05, and correcting it to the verso subtitle's size gets 3
+          lines to 4; 30ch rather than 46 gets it to 5. 28px of gap where there
+          were 102, and no word was cut to find it. The measure is 60% of the
+          recto, the same fraction of its own page as the verso's 42ch
+          subtitle.
+
+          Measured across the desktop range, since this is the only breakpoint
+          band where the note prints at all: the gap is 42px at 1024, 23 at
+          1280, 28 at 1440 and 66 at 1920, and content clears the slot bottom
+          by 17-18px at every one of them. It grows at 1920 because the type
+          stops at its clamp maximum around 1466px of width while the slot
+          keeps growing with page HEIGHT -- the verso carries 26px of the same
+          slack there, so the two pages stay matched. */}
+      {note ? (
+        <p className="mt-auto hidden max-w-[30ch] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-slate-400/70 italic lg:block">
+          {note}
+        </p>
+      ) : null}
     </div>
   );
 }

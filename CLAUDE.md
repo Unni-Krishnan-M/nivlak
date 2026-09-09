@@ -359,22 +359,33 @@ added back to a row, something else comes out — the page has no slack.**
   slack anywhere else. `mb-auto` on the note is what opens it, absorbing every
   spare pixel between the two.
 
-  Neither obvious fix works. Dropping the note down to meet the arc only moves
-  the hole to the top of the page, and the arc cannot come up because sitting
-  over stage 04's rule is the entire reason it is a running head. So the note
-  fills the slot instead: 11px on a page whose body is 15px was already the
-  caption-block mistake recorded against 05, and correcting it to the verso
-  subtitle's size takes the note from 3 lines to 4; 30ch instead of 46 takes it
-  to 5, ending at 204 against an arc at 232. **28px, and no word was cut.** The
-  measure is 60% of the recto — the same fraction of its own page as the
-  verso's 42ch subtitle, which is why the two now read as one spread.
+  **Enlarging the note is what closed it — and moving the ink is what does
+  not.** Dropping the note to meet the arc only moves the hole to the top of
+  the page; the slot has to be FILLED. 11px on a page whose body is 15px was
+  already the caption-block mistake recorded against 05, and correcting it to
+  the verso subtitle's size takes the note from 3 lines to 4; 30ch instead of
+  46 takes it to 5. **No word was cut to find any of it.** The measure lands at
+  60% of the recto — the same fraction of its own page as the verso's 42ch
+  subtitle, which is why the two now read as one spread.
+
+  **The two then swapped ends**, and the fill is what let them: the arc leads
+  the slot and the note hangs off its foot with `mt-auto`. A running head
+  belongs at the TOP of a page, and there it sits level with the ornament that
+  opens the verso, so both pages begin with a horizontal device on the same
+  line — the arc at 62–75 against the ornament at 68. It also puts the note
+  immediately above the stages it qualifies instead of five inches from them.
+  What was lost is the old argument that the arc should sit against stage 04's
+  rule as a running head for the second half; conventional placement won.
 
   Measured across the desktop band, the only one where this note prints at all:
-  the gap is 42px at 1024, 23 at 1280, 28 at 1440 and 66 at 1920, and content
-  clears the slot bottom by 17–18px at every width. It opens up at 1920 because
-  the type stops at its clamp maximum near 1466px of width while the slot keeps
-  growing with page HEIGHT; the verso carries 26px of the same slack there, so
-  the pages stay matched rather than one of them holing.
+  the note clears the slot bottom by **17–18px at every width**, and the space
+  that is left sits between the arc and the note — 55px at 1024, 39 at 1280, 47
+  at 1440 and 84 at 1920. It opens up at 1920 because the type stops at its
+  clamp maximum near 1466px of width while the slot keeps growing with page
+  HEIGHT; the verso carries 26px of the same slack at the foot there, so the
+  pages stay matched rather than one of them holing. That gap reads as a margin
+  under a running head, which is what the original 102px void — space at one
+  end, ink at the other — did not.
 - **`data-process-run` is a hook for `tools/scroll-shots.mjs`, not styling.**
   Every fit on this spread is a measurement, the slots overflow silently
   because `minmax(0,1fr)` lets them, and a probe that has to guess which div is
@@ -382,15 +393,13 @@ added back to a row, something else comes out — the page has no slack.**
   `layoutSheets` owns `[data-stage]`, and near-misses on that selector have
   cost a day.
 
-**The arc is at the HEAD of the recto and the brief asked for it at the foot.**
+**The arc leads the recto and the brief asked for it at the foot.**
 That is the one place this chapter knowingly departs from the brief, and the
 reason is the grid: the verso spends its head slot on the chapter opening, so
 the recto has to spend a slot of the same height on something or its three rows
 ride up and none of the six rules line up. So IDEAS → STRATEGY → PRODUCT →
-GROWTH is set there, hung off the bottom of the slot where it reads as a
-running head over the second half. Moving it to the foot costs the alignment of
-all six rows; it is one `justify-end` away if that trade is ever judged the
-wrong way round.
+GROWTH is set there, at the top of the slot where it reads as a running head
+for the page. Moving it to the foot costs the alignment of all six rows.
 
 **The arc is not the arc that was removed.** The old one named the six stages
 and was a restatement of the list beside it. These four are a level up — no

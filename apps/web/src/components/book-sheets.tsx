@@ -1638,7 +1638,7 @@ function IdeaFlow({
             <p className="text-[clamp(0.5rem,0.78vw,0.7rem)] tracking-[0.22em] text-white uppercase">
               {node.label}
             </p>
-            <p className="mt-[0.4em] text-[clamp(0.56rem,0.9vw,0.8rem)] leading-snug text-slate-300/65 lg:leading-relaxed">
+            <p className="mt-[0.4em] text-[clamp(0.56rem,0.9vw,0.8rem)] leading-snug text-slate-300/65 lg:leading-loose">
               {node.note}
             </p>
           </li>
@@ -1672,7 +1672,7 @@ function Benefits({
         {items.map((item) => (
           <li
             key={item.number}
-            className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.9em)] border-b border-white/10 py-[0.55em] lg:py-[0.85em] [@media(max-height:480px)]:py-[0.25em]"
+            className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.9em)] border-b border-white/10 py-[0.55em] [@media(max-height:480px)]:py-[0.25em]"
           >
             <span
               aria-hidden
@@ -1688,7 +1688,7 @@ function Benefits({
                   stay at every size: three of them are still the answer to
                   "what do I get", where the sentence under each elaborates a
                   heading that is already printed. */}
-              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 lg:block lg:leading-relaxed">
+              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 lg:block lg:leading-loose">
                 {item.body}
               </span>
             </span>
@@ -1735,7 +1735,7 @@ function PerspectiveCta({
       {/* Dropped below `lg`. The headline and the two actions are the whole
           of what this block has to do; the sentence between them is the one
           part a reader can act without. */}
-      <p className="mt-[0.5em] hidden max-w-[52ch] text-[clamp(0.58rem,0.94vw,0.85rem)] leading-relaxed text-slate-300/70 lg:block">
+      <p className="mt-[0.5em] hidden max-w-[52ch] text-[clamp(0.58rem,0.94vw,0.85rem)] leading-relaxed text-slate-300/70 lg:block lg:leading-[1.75]">
         {cta.body}
       </p>
       <div className="mt-[0.8em] flex flex-wrap items-center gap-x-[1.6em] gap-y-[0.5em]">
@@ -1789,7 +1789,7 @@ function RationalePage({
       // one lands exactly where the folio is: measured at 1440x900 the buttons
       // reached 835 against a folio whose top edge is 820. In vh because the
       // folio is placed in vh.
-      className="flex min-h-0 flex-col gap-[0.75em] lg:flex-1 lg:gap-[clamp(0.9em,2.5vh,2.2em)] lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:pt-[6%]">
+      className="flex min-h-0 flex-col gap-[0.75em] lg:flex-1 lg:gap-[clamp(0.6em,1.9vh,1.5em)] lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:pt-[6%]">
       <div data-ink className="shrink-0">
         <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.34em] text-slate-400/60 uppercase">
           {rationale.label}

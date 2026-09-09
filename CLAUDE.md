@@ -710,15 +710,30 @@ before reaching for spacing.** Measured at 1440x900 with the folio at y=820:
   The copy stays in `book-pages.content.ts` with a comment, because restoring
   it is one line.
 
-  **The 86px went back as air, and it had to be distributed rather than
-  found.** Removing the paragraph did NOT move the call to action — it is
+  **The 86px went back as LEADING, not as gaps, and the difference is the whole
+  point.** Removing the paragraph did NOT move the call to action — it is
   `mt-auto`, so the whole 86 collected as one gap above it and the page looked
-  worse, a 93px hole under the benefits. What the recto carries now, measured:
-  sections 17px apart became 22, the diagram grew 130→139, and the benefits
-  grew **249→297** on `lg:py-[0.85em]` and `lg:leading-relaxed` descriptions.
+  worse than before: a 93px hole under the benefits. The first distribution
+  spent it on both, widening the section gaps to 22px and the benefit rows to
+  `py-[0.85em]`; that is blank space between blocks, which is not what a
+  congested page needs. It is all inside the text now:
+
+  | | before | after |
+  | --- | --- | --- |
+  | gap between the four sections | 17px | 17px |
+  | benefit row `py` | 0.55em | 0.55em |
+  | diagram questions | `leading-snug` | `lg:leading-loose` |
+  | benefit descriptions | `leading-snug` | `lg:leading-loose` |
+  | call-to-action sentence | `leading-relaxed` | `lg:leading-[1.75]` |
+  | the diagram block | 130px | 154px |
+  | the three benefits | 249px | 296px |
+
   The buttons land at 811 with 9px to the folio — the same reservation the page
-  always had. Every one of those is `lg`-scoped; portrait is untouched, and it
-  has to be, because that sheet already runs 920px into a face showing 781.
+  always had — and the 1.75 on the last paragraph is not a round number by
+  choice: `leading-loose` put the block at 821, one pixel into the folio.
+
+  Every one of those is `lg`-scoped. Portrait is untouched and has to be,
+  because that sheet already runs 920px into a face showing 781.
 
 **Three things the brief asked for that this chapter does not do**, all for the
 same reason — it is a photograph of a page, not a stylesheet:

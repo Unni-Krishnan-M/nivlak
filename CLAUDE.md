@@ -720,14 +720,13 @@ before reaching for spacing.** Measured at 1440x900 with the folio at y=820:
 
   | | before | after |
   | --- | --- | --- |
-  | gap between the four sections | 17px | **9–11px**, except the one below |
-  | diagram → benefits join | 17px | **21px** (`lg:mt-[0.7em]` on `<Benefits>`) |
+  | gap between the four sections | 17px | **26px** |
   | benefit row `py` | 0.55em | **`lg:py-[0.35em]`** |
-  | diagram questions | `leading-snug` | **`lg:leading-[2.3]`** |
-  | benefit descriptions | `leading-snug` | **`lg:leading-[2.45]`** |
-  | call-to-action sentence | `leading-relaxed` | **`lg:leading-[1.75]`** |
-  | the diagram block | 130px | **159px** |
-  | the three benefits | 249px | **306px** |
+  | diagram questions | `leading-snug` | **`lg:leading-[2.7]`** |
+  | benefit descriptions | `leading-snug` | **`lg:leading-[2.6]`** |
+  | call-to-action sentence | printed | **not printed** |
+  | the diagram block | 130px | **184px** |
+  | the three benefits | 249px | **317px** |
 
   **Every gap on the page was mined for it.** The section gaps came DOWN from
   17px to 9, the benefit rows lost padding, and the diagram's rule and the
@@ -736,12 +735,16 @@ before reaching for spacing.** Measured at 1440x900 with the folio at y=820:
   and the rules already do the separating. 99px of block growth, all of it
   leading, funded by the 86px paragraph and about 13px of reclaimed gap.
 
-  **One join gets more than the column gap**, and it is the only exception:
-  the diagram ends on four short questions and the benefits open on a tracked
-  label, so at 9px the two read as one block. `lg:mt-[0.7em]` on `<Benefits>`
-  takes that join to 21px. It is paid for by the call to action's sentence,
-  which went back from 2.05 to 1.75 — the least dense block on the page, with a
-  heading above it and two buttons below.
+  **`cta.body` went the same way as `rationale.intro`, and for the same
+  reason**: the headline above it asks the question and the two actions below
+  answer it, so the sentence between them is the part a reader can act without
+  — the code had said so in a comment since it was first dropped below `lg`.
+  That freed another 77px, and it is what the diagram is now set on: the column
+  gap went from 9px to **26**, the diagram's own rule dropped to
+  `lg:mt-[1.3em]`, and its questions to **2.7**. The block is 184px where it
+  started at 130. Both sentences are still in `book-pages.content.ts` with
+  comments; either is one line to restore, and each costs back what it paid
+  for.
 
   **The buttons land at 811 with 9px to the folio**, which is the reservation
   this page has always had, and the odd numbers are the reason the tuning

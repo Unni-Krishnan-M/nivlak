@@ -1139,7 +1139,13 @@ export const BOOK_PAGES: BookPage[] = [
       ],
       cta: {
         headline: "Have a problem worth solving?",
-        body: "Bring us the challenge. We'll help you think through the opportunity, choose the right direction and build what comes next.",
+        // NOT PRINTED, for the reason rationale.intro is not: the headline
+      // above it asks the question and the two actions below answer it, so
+      // this sentence is the one part of the block a reader can act without.
+      // It was already `lg`-only. Removing it freed 77px, which is what the
+      // diagram opposite is set on -- 26px of air above and below it and 2.7
+      // leading inside it. Restoring it is one line and costs all of that.
+      body: "Bring us the challenge. We'll help you think through the opportunity, choose the right direction and build what comes next.",
         // Both turn to a chapter that exists: 07 Connect and 04 Work.
         actions: [
           { label: "Start a project", chapter: 6 },

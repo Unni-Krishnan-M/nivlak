@@ -1623,7 +1623,7 @@ function IdeaFlow({
       <h4 className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
         {title}
       </h4>
-      <div aria-hidden className="mt-[1.1em] flex items-center gap-[0.35em] lg:mt-[0.7em]">
+      <div aria-hidden className="mt-[1.1em] flex items-center gap-[0.35em] lg:mt-[1.3em]">
         <span className="h-px flex-1 bg-white/22" />
         <ArcArrow />
       </div>
@@ -1638,7 +1638,7 @@ function IdeaFlow({
             <p className="text-[clamp(0.5rem,0.78vw,0.7rem)] tracking-[0.22em] text-white uppercase">
               {node.label}
             </p>
-            <p className="mt-[0.4em] text-[clamp(0.56rem,0.9vw,0.8rem)] leading-snug text-slate-300/65 lg:leading-[2.3]">
+            <p className="mt-[0.4em] text-[clamp(0.56rem,0.9vw,0.8rem)] leading-snug text-slate-300/65 lg:leading-[2.7]">
               {node.note}
             </p>
           </li>
@@ -1664,14 +1664,7 @@ function Benefits({
   items: { number: string; title: string; body: string }[];
 }) {
   return (
-    <section
-      data-ink
-      // Extra air above this section only. The rationale column sets one gap
-      // for all four of its blocks, and this is the one join that needed more:
-      // the diagram ends on four short questions and this opens on a tracked
-      // label, so at the column gap alone the two read as one block.
-      className="shrink-0 lg:mt-[0.7em]"
-    >
+    <section data-ink className="shrink-0">
       <h4 className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
         {title}
       </h4>
@@ -1695,7 +1688,7 @@ function Benefits({
                   stay at every size: three of them are still the answer to
                   "what do I get", where the sentence under each elaborates a
                   heading that is already printed. */}
-              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 lg:block lg:leading-[2.45]">
+              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 lg:block lg:leading-[2.6]">
                 {item.body}
               </span>
             </span>
@@ -1739,12 +1732,6 @@ function PerspectiveCta({
       <h3 className="font-[family-name:var(--font-display)] text-[clamp(0.92rem,1.55vw,1.45rem)] leading-tight font-light text-balance text-white">
         {cta.headline}
       </h3>
-      {/* Dropped below `lg`. The headline and the two actions are the whole
-          of what this block has to do; the sentence between them is the one
-          part a reader can act without. */}
-      <p className="mt-[0.5em] hidden max-w-[52ch] text-[clamp(0.58rem,0.94vw,0.85rem)] leading-relaxed text-slate-300/70 lg:block lg:leading-[1.75]">
-        {cta.body}
-      </p>
       <div className="mt-[0.8em] flex flex-wrap items-center gap-x-[1.6em] gap-y-[0.5em]">
         {cta.actions.map((action, i) => (
           <button
@@ -1796,7 +1783,7 @@ function RationalePage({
       // one lands exactly where the folio is: measured at 1440x900 the buttons
       // reached 835 against a folio whose top edge is 820. In vh because the
       // folio is placed in vh.
-      className="flex min-h-0 flex-col gap-[0.75em] lg:flex-1 lg:gap-[clamp(0.4em,1.05vh,0.85em)] lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:pt-[6%]">
+      className="flex min-h-0 flex-col gap-[0.75em] lg:flex-1 lg:gap-[clamp(0.8em,2.9vh,2.3em)] lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:pt-[6%]">
       <div data-ink className="shrink-0">
         <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.34em] text-slate-400/60 uppercase">
           {rationale.label}

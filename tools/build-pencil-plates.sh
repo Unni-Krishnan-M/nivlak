@@ -28,36 +28,35 @@ set -euo pipefail
 # still cheaper than trusting that sentence: check work/mobile-application.webp
 # at 100% after a run.
 #
-# WHY THE LINES ARE LIGHT AND THE GROUND IS DARK
+# GRAPHITE ON PAPER, AND THE STRUCK VERSION THAT CAME FIRST
 #
-# A pencil sketch is graphite on white paper, and white paper is exactly what
-# this book cannot have. The page is a photograph of navy stock at about
-# rgb(20,41,68); a plate lighter than its surround is a hole punched in the
-# page, which is the failure build-service-plates.sh first shipped and this
-# file's siblings all guard against. So the sketch is struck: the drawing is
-# made on white, then negated, so the ground goes dark and the strokes come up
-# silver.
+# This shipped once as a STRUCK drawing: made on white, negated, so the ground
+# went dark and the strokes came up silver. The argument was that 01's flow
+# chart and 07's telegraphy patent are painted through luminance masks in
+# #dce7f7, and that matching them would stop the chapter illustrations and the
+# engraved figures being two different kinds of picture.
 #
-# That is also what the book already does with the two things in it that are
-# genuinely drawings. 01's flow chart and 07's telegraphy patent are painted
-# through a luminance mask in #dce7f7 -- light line art on the navy. These
-# plates now match them, which is the point: the chapter illustrations and the
-# engraved figures stop being two different kinds of picture.
+# It was unreadable. The ground landed at luma 0.235 against a page of 0.204,
+# so there was no visible plate at all -- 0.03 of separation is nothing -- and
+# what sat on it was one-pixel silver strokes. 03's six print at 132px. The
+# drawings were there and you had to hunt for them, which is not a plate.
 #
-# THE TONE IS build-process-plates.sh's, EXACTLY
+# So it is a pencil sketch the ordinary way round: a light panel with the
+# book's own navy drawn on it. INK is a shade off the page, so a stroke reads
+# as the paper showing through rather than as a black line, and PAPER is
+# deliberately short of white -- a plate at 0.83 is a lit slab stuck on the
+# page, the sticker failure recorded against 07's action panel.
 #
-# Same SHADOW and HIGHLIGHT, because two sets of plates in one book toned by
-# different arithmetic read as two books -- the argument build-work-plates.sh
-# makes at length about copying 03's numbers rather than inventing its own.
-# +level-colors maps input black to SHADOW and input white to HIGHLIGHT, so the
-# darkest pixel a plate can contain is SHADOW by construction:
+#   INK    #22384f   luma 0.21   <- the page itself is 0.204
+#   PAPER  #aec1d6   luma 0.72   <- the old photographs ran 0.29-0.55
 #
-#   SHADOW    #233c58   luma 0.235   <- the recto paper is 0.205
-#   HIGHLIGHT #dfe9f8   luma 0.895
+# THE ONE RULE THAT ACTUALLY BINDS
 #
-# The plate ground therefore sits 0.03 above the paper. That is deliberate and
-# it is what makes these read as drawings ON the page rather than as pictures
-# in a frame: the rectangle all but disappears and the strokes float.
+# A plate may not be DARKER than the paper -- that is the hole-in-the-page
+# failure build-service-plates.sh shipped once and every script here guards
+# against. A LIGHT plate was never the problem; the photographs these replace
+# were light. So the audit below still tests the median against the page, and a
+# graphite drawing clears it by a mile where the struck one cleared it by 0.03.
 #
 # WHY THE BLUR SCALES WITH WIDTH
 #
@@ -90,8 +89,8 @@ command -v magick >/dev/null || { echo "needs ImageMagick (magick)"; exit 1; }
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PUB="$ROOT/apps/web/public"
 
-SHADOW='#233c58'
-HIGHLIGHT='#dfe9f8'
+INK='#22384f'
+PAPER='#aec1d6'
 # Sketch shape, and both numbers are about staying a LINE DRAWING rather than
 # a smoky one. RADIUS_DIV is width/blur, so 1030 puts the radius at 1.2px on a
 # 1240px plate. The first run used 250 -- a 5px radius -- and the result was a
@@ -100,22 +99,22 @@ HIGHLIGHT='#dfe9f8'
 # are one to two pixels and the notebook rules, the wireframe boxes and the
 # dashboard's hairlines all survive as lines.
 #
-# POW deepens the strokes and darkens the ground between them. Applied BEFORE
-# the negate, where the drawing is still dark-on-white, so raising it pushes
-# more of each stroke toward black -- and therefore toward HIGHLIGHT once the
-# image is inverted. At 1.3 the strokes came out mid-grey and the plates read
-# as faint; 1.8 carries them most of the way to the book's silver. Past about
-# 2.4 the photographs' own grain starts coming up as speckle with them.
+# POW deepens the strokes against the paper between them. At 1.3 they came out
+# mid-grey and the plates read as faint; 1.8 carries them most of the way to
+# INK. Past about 2.4 the photographs' own grain comes up as speckle with
+# them.
 #
 # DILATE is the other half, and it is thickness rather than brightness: a 1.2px
 # radius draws a one-pixel line, which at the 132px these print at in 03 is
 # most of a stroke lost to resampling. Disk:1 grows every stroke by a pixel.
 #
-# It runs AFTER the negate and that is not interchangeable. Before it, the
-# ground is white and the strokes are dark, so Dilate -- which grows the BRIGHT
-# region -- would eat the drawing instead of thickening it. One pixel at both
-# widths rather than a fraction of each, because morphology takes whole-pixel
-# kernels and 900 against 1240 does not separate enough to matter.
+# The thickening operator is ERODE and not Dilate, and that follows from which
+# way up the drawing is. Erode grows the DARK region; the strokes are dark now,
+# so Erode is what fattens them. The struck version wanted Dilate for the same
+# reason inverted, and swapping the two without swapping the operator eats the
+# drawing instead of thickening it. One pixel at both widths rather than a
+# fraction of each, because morphology takes whole-pixel kernels and 900
+# against 1240 does not separate enough to matter.
 RADIUS_DIV=1030
 POW=1.8
 DILATE=1
@@ -124,9 +123,9 @@ QUALITY=82
 # The paper these have to stay above, sampled off the real page rather than
 # remembered -- the same pixel of the same frame build-process-plates.sh reads,
 # so the two scripts' audits are comparable numbers and not two conventions.
-PAPER=$(magick "$PUB/frames/v5/hd/frame-091.webp" \
+PAGE_LUMA=$(magick "$PUB/frames/v5/hd/frame-091.webp" \
   -crop 1x1+1200+400 +repage -colorspace Gray -format "%[fx:mean]" info:)
-echo "paper luma $PAPER"
+echo "page luma $PAGE_LUMA"
 
 converted=0
 for dir in services process work; do
@@ -154,18 +153,18 @@ for dir in services process work; do
         -alpha off \
         -colorspace gray -auto-level \
         \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
-        -evaluate pow "$POW" -negate \
-        -morphology Dilate "Disk:$DILATE" \
-        +level-colors "$SHADOW","$HIGHLIGHT" \
+        -evaluate pow "$POW" \
+        -morphology Erode "Disk:$DILATE" \
+        +level-colors "$INK","$PAPER" \
         mpr:key -alpha off -compose copy_opacity -composite \
         -strip -quality "$QUALITY" "$tmp"
     else
       magick "$src" \
         -colorspace gray -auto-level \
         \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
-        -evaluate pow "$POW" -negate \
-        -morphology Dilate "Disk:$DILATE" \
-        +level-colors "$SHADOW","$HIGHLIGHT" \
+        -evaluate pow "$POW" \
+        -morphology Erode "Disk:$DILATE" \
+        +level-colors "$INK","$PAPER" \
         -strip -quality "$QUALITY" "$tmp"
     fi
 
@@ -190,8 +189,8 @@ for dir in services process work; do
     read -r median mean < <(magick "$tmp" -background none -alpha set \
       -trim +repage -alpha off -colorspace Gray \
       -format "%[fx:median] %[fx:mean]\n" info:)
-    awk -v m="$median" -v p="$PAPER" 'BEGIN { if (m <= p) exit 1 }' || {
-      echo "REFUSING $dir/$(basename "$src"): median $median is at or below the paper ($PAPER)" >&2
+    awk -v m="$median" -v p="$PAGE_LUMA" 'BEGIN { if (m <= p) exit 1 }' || {
+      echo "REFUSING $dir/$(basename "$src"): median $median is at or below the page ($PAGE_LUMA)" >&2
       rm -f "$tmp"
       exit 1
     }

@@ -46,15 +46,26 @@ set -euo pipefail
 #
 # So the tone comes back and carries the forms, and the line sits on top of it:
 #
-#   -kuwahara      edge-preserving smoothing FIRST, so texture stops becoming
-#                  line while real edges survive it.
-#   -compose screen the dodge sketch is screened back over that tone rather
-#                  than replacing it. The notebook reads as a light mass
-#                  against a dark desk -- which is what makes it legible small
-#                  -- and the strokes draw its edges.
-#   -posterize     tried and rejected: flattening the tone to 4-5 levels blows
-#                  the light masses to slabs and loses the detail the screen
-#                  had just bought.
+#   -compose screen the dodge sketch is screened back OVER the tone rather than
+#                  replacing it. The notebook reads as a light mass against a
+#                  dark desk -- which is what makes it legible small -- and the
+#                  strokes draw its edges.
+#   -unsharp       and then it is SHARPENED, because the thing that kept being
+#                  wrong was softness.
+#
+# NOTHING IS SMOOTHED, and that is the correction. -kuwahara 4 shipped here for
+# one revision to stop texture becoming line, and it worked and it was the
+# blur: kuwahara is a painterly filter, it smears flat regions into each other,
+# and the plates came out looking like out-of-focus photographs. Two other
+# routes to the same end were tried and are worse:
+#
+#   -level 0%,45%  crushing weak edges to white to leave only strong ones. It
+#                  leaves almost nothing -- the plate goes nearly blank.
+#   -posterize     flat tonal bands. It DITHERS at every boundary, so a clean
+#                  graphic idea comes out speckled with dots.
+#
+# Detail that cannot survive the downscale is better lost to the resize than
+# smeared before it.
 #
 #   GROUND #2c4a68  luma 0.33   <- the page itself is 0.204
 #   HIGH   #c8d8ea  luma 0.80   <- the book's silver INK is 0.895
@@ -102,8 +113,9 @@ PUB="$ROOT/apps/web/public"
 
 GROUND='#2c4a68'
 HIGH='#c8d8ea'
-# Edge-preserving smoothing radius, applied BEFORE anything else.
-SMOOTH=4
+# Sharpening, applied after the line is screened over the tone. There is no
+# smoothing step at all any more -- see the header.
+SHARPEN='0x1.0+1.2+0.02'
 # Sketch shape, and both numbers are about staying a LINE DRAWING rather than
 # a smoky one. RADIUS_DIV is width/blur, so 1030 puts the radius at 1.2px on a
 # 1240px plate. The first run used 250 -- a 5px radius -- and the result was a
@@ -164,22 +176,24 @@ for dir in services process work; do
       magick "$src" \
         \( +clone -alpha extract +write mpr:key +delete \) \
         -alpha off \
-        -colorspace gray -auto-level -kuwahara "$SMOOTH" \
+        -colorspace gray -auto-level \
         \( +clone \
            \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
            -evaluate pow "$POW" -negate -morphology Dilate "Disk:$DILATE" \) \
         -compose screen -composite \
+        -unsharp "$SHARPEN" \
         -sigmoidal-contrast 3,50% \
         +level-colors "$GROUND","$HIGH" \
         mpr:key -alpha off -compose copy_opacity -composite \
         -strip -quality "$QUALITY" "$tmp"
     else
       magick "$src" \
-        -colorspace gray -auto-level -kuwahara "$SMOOTH" \
+        -colorspace gray -auto-level \
         \( +clone \
            \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
            -evaluate pow "$POW" -negate -morphology Dilate "Disk:$DILATE" \) \
         -compose screen -composite \
+        -unsharp "$SHARPEN" \
         -sigmoidal-contrast 3,50% \
         +level-colors "$GROUND","$HIGH" \
         -strip -quality "$QUALITY" "$tmp"

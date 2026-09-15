@@ -1260,12 +1260,21 @@ re-run here.
   screens. Every crumb of texture becomes a stroke, and a drawing of clutter at
   132px is clutter.
 
-  So `-kuwahara` smooths the texture out first while real edges survive it, and
-  the dodge sketch is `-compose screen`ed back OVER that tone rather than
+  So the dodge sketch is `-compose screen`ed back OVER the tone rather than
   replacing it: the notebook reads as a light mass against a dark desk, which
-  is what makes it legible small, and the strokes draw its edges. `-posterize`
-  was tried on the tone and rejected — 4–5 levels blows the light masses to
-  slabs and loses the detail the screen had just bought.
+  is what makes it legible small, and the strokes draw its edges. Then it is
+  **`-unsharp`ed**, because the thing that kept being wrong was softness.
+
+  **Nothing is smoothed, and that is the correction.** `-kuwahara 4` shipped
+  here for one revision to stop texture becoming line. It worked, and it was
+  the blur: kuwahara is a painterly filter that smears flat regions into each
+  other, and the plates came out looking like out-of-focus photographs. Two
+  other routes to the same end are worse and both were built and looked at —
+  `-level 0%,45%`, crushing weak edges to white so only strong ones survive,
+  leaves the plate nearly blank; `-posterize` into flat tonal bands **dithers
+  at every boundary**, so a clean graphic idea comes out speckled with dots.
+  Detail that cannot survive the downscale is better lost to the resize than
+  smeared before it.
 
   `GROUND #2c4a68` (0.33) against a 0.204 page; `HIGH #c8d8ea` (0.80), which
   stays UNDER the book's silver ink at 0.895 — at 0.96 the plates were

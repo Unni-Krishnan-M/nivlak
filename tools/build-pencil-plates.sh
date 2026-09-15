@@ -28,35 +28,40 @@ set -euo pipefail
 # still cheaper than trusting that sentence: check work/mobile-application.webp
 # at 100% after a run.
 #
-# GRAPHITE ON PAPER, AND THE STRUCK VERSION THAT CAME FIRST
+# A STRUCK DRAWING ON A LIFTED GROUND, AND THE TWO VERSIONS THAT WERE WRONG
 #
-# This shipped once as a STRUCK drawing: made on white, negated, so the ground
-# went dark and the strokes came up silver. The argument was that 01's flow
-# chart and 07's telegraphy patent are painted through luminance masks in
-# #dce7f7, and that matching them would stop the chapter illustrations and the
-# engraved figures being two different kinds of picture.
+# The plates are struck: the sketch is made on white, negated, so the ground
+# goes dark and the strokes come up bright. Two earlier settings of the same
+# two colours failed in opposite directions and both are worth knowing.
 #
-# It was unreadable. The ground landed at luma 0.235 against a page of 0.204,
-# so there was no visible plate at all -- 0.03 of separation is nothing -- and
-# what sat on it was one-pixel silver strokes. 03's six print at 132px. The
-# drawings were there and you had to hunt for them, which is not a plate.
+# TOO DARK. The first struck version put the ground at luma 0.235 against a
+# page of 0.204. That is 0.03 of separation, which is no visible plate at all,
+# and on it sat one-pixel silver strokes. 03's six print at 132px. The drawings
+# were there and you had to hunt for them, which is not a plate. Brightening
+# and thickening the strokes did not fix it, because the missing thing was the
+# panel, not the ink.
 #
-# So it is a pencil sketch the ordinary way round: a light panel with the
-# book's own navy drawn on it. INK is a shade off the page, so a stroke reads
-# as the paper showing through rather than as a black line, and PAPER is
-# deliberately short of white -- a plate at 0.83 is a lit slab stuck on the
-# page, the sticker failure recorded against 07's action panel.
+# TOO LIGHT. So it was turned over -- dark lines on a light panel, PAPER at
+# 0.72 -- and that read perfectly and was still wrong: a pale slab on navy
+# stock is a sticker stuck to the page, the failure recorded against 07's
+# action panel, and it made every plate the brightest thing in its chapter.
 #
-#   INK    #22384f   luma 0.21   <- the page itself is 0.204
-#   PAPER  #aec1d6   luma 0.72   <- the old photographs ran 0.29-0.55
+# WHAT IS RIGHT is the middle, and it takes BOTH colours moving. The ground is
+# lifted to 0.37 -- far enough above the page to read as a panel, nowhere near
+# pale enough to read as paper -- and the strokes go to near white, brighter
+# than the book's own silver, so the drawing is the brightest thing inside the
+# plate rather than in the chapter.
+#
+#   GROUND  #31506f   luma 0.37   <- the page itself is 0.204
+#   STROKE  #f2f7fd   luma 0.96   <- the book's silver ink is 0.895
 #
 # THE ONE RULE THAT ACTUALLY BINDS
 #
-# A plate may not be DARKER than the paper -- that is the hole-in-the-page
-# failure build-service-plates.sh shipped once and every script here guards
-# against. A LIGHT plate was never the problem; the photographs these replace
-# were light. So the audit below still tests the median against the page, and a
-# graphite drawing clears it by a mile where the struck one cleared it by 0.03.
+# A plate may not be DARKER than the page -- the hole-in-the-page failure
+# build-service-plates.sh shipped once and every script here guards against.
+# The audit below tests the median against a live sample of the page, and a
+# 0.37 ground clears it by 0.17 where the first struck version cleared it by
+# 0.03.
 #
 # WHY THE BLUR SCALES WITH WIDTH
 #
@@ -89,8 +94,8 @@ command -v magick >/dev/null || { echo "needs ImageMagick (magick)"; exit 1; }
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PUB="$ROOT/apps/web/public"
 
-INK='#22384f'
-PAPER='#aec1d6'
+GROUND='#31506f'
+STROKE='#f2f7fd'
 # Sketch shape, and both numbers are about staying a LINE DRAWING rather than
 # a smoky one. RADIUS_DIV is width/blur, so 1030 puts the radius at 1.2px on a
 # 1240px plate. The first run used 250 -- a 5px radius -- and the result was a
@@ -99,21 +104,21 @@ PAPER='#aec1d6'
 # are one to two pixels and the notebook rules, the wireframe boxes and the
 # dashboard's hairlines all survive as lines.
 #
-# POW deepens the strokes against the paper between them. At 1.3 they came out
-# mid-grey and the plates read as faint; 1.8 carries them most of the way to
-# INK. Past about 2.4 the photographs' own grain comes up as speckle with
-# them.
+# POW deepens the strokes before the negate, where the drawing is still dark
+# on white, so raising it carries each stroke further toward STROKE once the
+# image is inverted. At 1.3 they came out mid-grey; 1.8 takes them most of the
+# way. Past about 2.4 the photographs' own grain comes up as speckle too.
 #
 # DILATE is the other half, and it is thickness rather than brightness: a 1.2px
 # radius draws a one-pixel line, which at the 132px these print at in 03 is
 # most of a stroke lost to resampling. Disk:1 grows every stroke by a pixel.
 #
-# The thickening operator is ERODE and not Dilate, and that follows from which
-# way up the drawing is. Erode grows the DARK region; the strokes are dark now,
-# so Erode is what fattens them. The struck version wanted Dilate for the same
-# reason inverted, and swapping the two without swapping the operator eats the
-# drawing instead of thickening it. One pixel at both widths rather than a
-# fraction of each, because morphology takes whole-pixel kernels and 900
+# The thickening operator follows which way up the drawing is, and it has been
+# both. Dilate grows the BRIGHT region; struck, the strokes are bright, so
+# Dilate is what fattens them. The graphite version wanted Erode for the same
+# reason inverted. Turn the drawing over without turning the operator over and
+# it eats the drawing instead of thickening it. One pixel at both widths rather
+# than a fraction of each, because morphology takes whole-pixel kernels and 900
 # against 1240 does not separate enough to matter.
 RADIUS_DIV=1030
 POW=1.8
@@ -153,18 +158,18 @@ for dir in services process work; do
         -alpha off \
         -colorspace gray -auto-level \
         \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
-        -evaluate pow "$POW" \
-        -morphology Erode "Disk:$DILATE" \
-        +level-colors "$INK","$PAPER" \
+        -evaluate pow "$POW" -negate \
+        -morphology Dilate "Disk:$DILATE" \
+        +level-colors "$GROUND","$STROKE" \
         mpr:key -alpha off -compose copy_opacity -composite \
         -strip -quality "$QUALITY" "$tmp"
     else
       magick "$src" \
         -colorspace gray -auto-level \
         \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
-        -evaluate pow "$POW" \
-        -morphology Erode "Disk:$DILATE" \
-        +level-colors "$INK","$PAPER" \
+        -evaluate pow "$POW" -negate \
+        -morphology Dilate "Disk:$DILATE" \
+        +level-colors "$GROUND","$STROKE" \
         -strip -quality "$QUALITY" "$tmp"
     fi
 

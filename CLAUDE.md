@@ -1217,28 +1217,35 @@ re-run here.
 - **It is not idempotent.** Sketching a sketch finds edges in the first pass's
   own strokes and doubles them. `git checkout apps/web/public/{services,process,work}`
   before a second run, exactly as `stamp-book-logo.py` requires.
-- **It is graphite on paper, and it shipped struck first.** The first version
-  was made on white and then NEGATED — dark ground, silver strokes — to match
-  01's and 07's engravings, which are painted through luminance masks in
-  `#dce7f7`. It was unreadable. The ground landed at luma 0.235 against a page
-  of 0.204, which is no visible plate at all, and what sat on it was one-pixel
-  silver strokes; 03's six print at 132px. **The rule that actually binds is
-  only that a plate may not be DARKER than the page** — the hole-in-the-page
-  failure — and a light plate was never the problem: the photographs these
-  replace ran 0.29–0.55. So it is a pencil sketch the ordinary way round now, a
-  light panel with the book's own navy drawn on it, and the medians run
-  0.65–0.75.
-- **`INK` is a shade off the page and `PAPER` stops short of white.** A stroke
-  at `#22384f` (0.21) against a page of 0.204 reads as the paper showing
-  through rather than as a black line; `PAPER` at `#aec1d6` (0.72) rather than
-  0.83 keeps the plate from being a lit slab stuck on the page — the sticker
-  failure recorded against 07's action panel. The audit is still
-  `build-process-plates.sh`'s: the MEDIAN against a page luma sampled live off
-  `frame-091` (0.2036). Median and not minimum — a drawing is *supposed* to
-  contain strokes as dark as the page; what it may not be is darker overall.
-- **`PAPER` is the colour and `PAGE_LUMA` is the measurement.** They were both
-  called `PAPER` for one revision and the sampled luma overwrote the colour,
-  which would have fed `+level-colors` a number where it wanted a hex.
+- **It is struck on a LIFTED ground, and both colours had to move to get
+  there.** Two earlier settings of the same two colours failed in opposite
+  directions and both are worth knowing.
+
+  **Too dark.** The first struck version put the ground at luma 0.235 against a
+  page of 0.204 — 0.03 of separation, which is no visible plate at all — with
+  one-pixel silver strokes on it. 03's six print at 132px; nothing read.
+  Brightening and thickening the strokes twice did not fix it, because the
+  missing thing was the PANEL, not the ink.
+
+  **Too light.** So it was turned over: dark lines on a pale panel at 0.72.
+  That read perfectly and was still wrong — a pale slab on navy stock is a
+  sticker stuck to the page, the failure recorded against 07's action panel,
+  and it made every plate the brightest thing in its chapter.
+
+  **The middle is right.** `GROUND #31506f` (0.37) is far enough above the page
+  to read as a panel and nowhere near pale enough to read as paper;
+  `STROKE #f2f7fd` (0.96) is brighter than the book's own silver (0.895), so
+  the drawing is the brightest thing inside the plate rather than in the
+  chapter. Medians run 0.30–0.42.
+- **The audit is `build-process-plates.sh`'s**: the MEDIAN against a page luma
+  sampled live off `frame-091` (0.2036). Median and not minimum — a drawing is
+  *supposed* to contain strokes near the page's own value; what it may not be
+  is darker overall. The 0.37 ground clears it by 0.17 where the first struck
+  version cleared it by 0.03.
+- **The colour is `GROUND`/`STROKE`; the measurement is `PAGE_LUMA`.** The
+  light-panel revision called its colour `PAPER` and the sampled luma `PAPER`
+  too, and the second assignment silently overwrote the first — which would
+  have fed `+level-colors` a number where it wanted a hex.
 - **Two traps, both hit on the way in.** `%[fx:minima]` on an sRGB file is the
   darkest CHANNEL, and `#233c58` has a red of 0.137 against a luma of 0.235, so
   the first audit refused every plate. And 02's five are **keyed** — `srgba`,
@@ -1262,13 +1269,14 @@ re-run here.
   up as speckle with them. `DILATE=1` is the other half and it is thickness
   rather than brightness: one pixel added to every stroke.
 
-  **The thickening operator follows which way up the drawing is.** `Erode`
-  grows the DARK region, and the strokes are dark, so `Erode` is what fattens
-  them; the struck version wanted `Dilate` for the same reason inverted.
-  Swapping the drawing over without swapping the operator eats it instead of
-  thickening it. Whole pixels at both widths rather than a fraction of each,
-  because morphology takes whole-pixel kernels and 900 against 1240 does not
-  separate enough to matter.
+  **The thickening operator follows which way up the drawing is, and it has
+  been both.** `Dilate` grows the BRIGHT region; struck, the strokes are
+  bright, so `Dilate` fattens them. The light-panel revision needed `Erode` for
+  the same reason inverted. **Turn the drawing over without turning the
+  operator over and it eats the drawing instead of thickening it.** Whole
+  pixels at both widths rather than a fraction of each, because morphology
+  takes whole-pixel kernels and 900 against 1240 does not separate enough to
+  matter.
 - **The redactions survive**, and this was checked rather than assumed. 04's
   blurred boxes over invented client names are baked into the file this reads,
   a blurred region has no edges, and a sketch cannot recover what a blur

@@ -1247,29 +1247,30 @@ re-run here.
 - **It is not idempotent.** Sketching a sketch finds edges in the first pass's
   own strokes and doubles them. `git checkout apps/web/public/{services,process,work}`
   before a second run, exactly as `stamp-book-logo.py` requires.
-- **It is struck on a LIFTED ground, and both colours had to move to get
-  there.** Two earlier settings of the same two colours failed in opposite
-  directions and both are worth knowing.
+- **It is TONE AND LINE, and three pure-outline versions were not legible.** A
+  pencil sketch has shading in it, not just outline, and that turned out to be
+  the whole problem. The settings tried: struck on a 0.235 ground (no visible
+  panel at all against a 0.204 page); struck on a 0.37 ground (a panel, but
+  line-only); graphite on 0.72 paper (legible, and a pale slab stuck on navy
+  stock).
 
-  **Too dark.** The first struck version put the ground at luma 0.235 against a
-  page of 0.204 — 0.03 of separation, which is no visible plate at all — with
-  one-pixel silver strokes on it. 03's six print at 132px; nothing read.
-  Brightening and thickening the strokes twice did not fix it, because the
-  missing thing was the PANEL, not the ink.
+  **The second is the instructive failure.** Brightening the strokes to 0.96
+  and thickening them by a pixel made each LINE clearer and the PLATE no
+  clearer — because these sources are photographs of cluttered desks and
+  screens. Every crumb of texture becomes a stroke, and a drawing of clutter at
+  132px is clutter.
 
-  **Too light.** So it was turned over: dark lines on a pale panel at 0.72.
-  That read perfectly and was still wrong — a pale slab on navy stock is a
-  sticker stuck to the page, the failure recorded against 07's action panel,
-  and it made every plate the brightest thing in its chapter.
+  So `-kuwahara` smooths the texture out first while real edges survive it, and
+  the dodge sketch is `-compose screen`ed back OVER that tone rather than
+  replacing it: the notebook reads as a light mass against a dark desk, which
+  is what makes it legible small, and the strokes draw its edges. `-posterize`
+  was tried on the tone and rejected — 4–5 levels blows the light masses to
+  slabs and loses the detail the screen had just bought.
 
-  **The middle is right.** `GROUND #31506f` (0.37) is far enough above the page
-  to read as a panel and nowhere near pale enough to read as paper. `STROKE`
-  was `#f2f7fd` (0.96) for one revision, which made the drawing brighter than
-  the headline set beside it — a plate that outshouts its own chapter heading
-  is competing with the page rather than illustrating it. It is `#bacbdf`
-  (0.78) now: bright against a 0.37 ground and a step UNDER the book's silver
-  ink at 0.895, so the type stays the lightest thing on the paper. Medians run
-  0.30–0.42.
+  `GROUND #2c4a68` (0.33) against a 0.204 page; `HIGH #c8d8ea` (0.80), which
+  stays UNDER the book's silver ink at 0.895 — at 0.96 the plates were
+  brighter than the headline beside them, and a plate that outshouts its own
+  chapter heading competes with the page instead of illustrating it.
 - **The audit is `build-process-plates.sh`'s**: the MEDIAN against a page luma
   sampled live off `frame-091` (0.2036). Median and not minimum — a drawing is
   *supposed* to contain strokes near the page's own value; what it may not be

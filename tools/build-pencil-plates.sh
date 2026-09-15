@@ -28,46 +28,46 @@ set -euo pipefail
 # still cheaper than trusting that sentence: check work/mobile-application.webp
 # at 100% after a run.
 #
-# A STRUCK DRAWING ON A LIFTED GROUND, AND THE TWO VERSIONS THAT WERE WRONG
+# TONE AND LINE, AND THE THREE PURE-OUTLINE VERSIONS THAT WERE NOT LEGIBLE
 #
-# The plates are struck: the sketch is made on white, negated, so the ground
-# goes dark and the strokes come up bright. Two earlier settings of the same
-# two colours failed in opposite directions and both are worth knowing.
+# A pencil sketch has SHADING in it, not just outline, and that turned out to
+# be the whole problem. Three settings of a pure edge drawing were tried and
+# none of them read at the size these actually print:
 #
-# TOO DARK. The first struck version put the ground at luma 0.235 against a
-# page of 0.204. That is 0.03 of separation, which is no visible plate at all,
-# and on it sat one-pixel silver strokes. 03's six print at 132px. The drawings
-# were there and you had to hunt for them, which is not a plate. Brightening
-# and thickening the strokes did not fix it, because the missing thing was the
-# panel, not the ink.
+#   struck, ground 0.235   no visible panel at all against a 0.204 page
+#   struck, ground 0.37    a panel, but line-only on a cluttered subject
+#   graphite on 0.72 paper legible, and a pale slab stuck on navy stock
 #
-# TOO LIGHT. So it was turned over -- dark lines on a light panel, PAPER at
-# 0.72 -- and that read perfectly and was still wrong: a pale slab on navy
-# stock is a sticker stuck to the page, the failure recorded against 07's
-# action panel, and it made every plate the brightest thing in its chapter.
+# The second is the interesting failure. Brightening the strokes to 0.96 and
+# thickening them by a pixel did make each LINE clearer and the plate no
+# clearer, because these sources are photographs of cluttered desks and
+# screens: every crumb of texture becomes a stroke, and a drawing of clutter at
+# 132px is clutter. 03's six print at 132px.
 #
-# WHAT IS RIGHT is the middle, and it takes BOTH colours moving. The ground is
-# lifted to 0.37 -- far enough above the page to read as a panel, nowhere near
-# pale enough to read as paper -- and the strokes come up to 0.78, which is
-# bright against a 0.37 ground and still a step under the book's own silver.
+# So the tone comes back and carries the forms, and the line sits on top of it:
 #
-#   GROUND  #31506f   luma 0.37   <- the page itself is 0.204
-#   STROKE  #bacbdf   luma 0.78   <- the book's silver INK is 0.895
+#   -kuwahara      edge-preserving smoothing FIRST, so texture stops becoming
+#                  line while real edges survive it.
+#   -compose screen the dodge sketch is screened back over that tone rather
+#                  than replacing it. The notebook reads as a light mass
+#                  against a dark desk -- which is what makes it legible small
+#                  -- and the strokes draw its edges.
+#   -posterize     tried and rejected: flattening the tone to 4-5 levels blows
+#                  the light masses to slabs and loses the detail the screen
+#                  had just bought.
 #
-# STROKE sits BELOW the type, not above it. It was 0.96 for one revision, which
-# made the drawing the brightest thing on the spread -- brighter than the
-# headline set beside it -- and a plate that outshouts the chapter's own
-# heading is a plate competing with the page instead of illustrating it. At
-# 0.78 the drawing still carries at the 132px 03 prints it at and the type
-# stays the lightest ink on the paper.
+#   GROUND #2c4a68  luma 0.33   <- the page itself is 0.204
+#   HIGH   #c8d8ea  luma 0.80   <- the book's silver INK is 0.895
+#
+# HIGH stays UNDER the type. It was 0.96 for one revision, which made the
+# plates brighter than the headline beside them; a plate that outshouts its own
+# chapter heading competes with the page instead of illustrating it.
 #
 # THE ONE RULE THAT ACTUALLY BINDS
 #
 # A plate may not be DARKER than the page -- the hole-in-the-page failure
 # build-service-plates.sh shipped once and every script here guards against.
-# The audit below tests the median against a live sample of the page, and a
-# 0.37 ground clears it by 0.17 where the first struck version cleared it by
-# 0.03.
+# The audit below tests the median against a live sample of the page.
 #
 # WHY THE BLUR SCALES WITH WIDTH
 #
@@ -100,8 +100,10 @@ command -v magick >/dev/null || { echo "needs ImageMagick (magick)"; exit 1; }
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PUB="$ROOT/apps/web/public"
 
-GROUND='#31506f'
-STROKE='#bacbdf'
+GROUND='#2c4a68'
+HIGH='#c8d8ea'
+# Edge-preserving smoothing radius, applied BEFORE anything else.
+SMOOTH=4
 # Sketch shape, and both numbers are about staying a LINE DRAWING rather than
 # a smoky one. RADIUS_DIV is width/blur, so 1030 puts the radius at 1.2px on a
 # 1240px plate. The first run used 250 -- a 5px radius -- and the result was a
@@ -162,20 +164,24 @@ for dir in services process work; do
       magick "$src" \
         \( +clone -alpha extract +write mpr:key +delete \) \
         -alpha off \
-        -colorspace gray -auto-level \
-        \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
-        -evaluate pow "$POW" -negate \
-        -morphology Dilate "Disk:$DILATE" \
-        +level-colors "$GROUND","$STROKE" \
+        -colorspace gray -auto-level -kuwahara "$SMOOTH" \
+        \( +clone \
+           \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
+           -evaluate pow "$POW" -negate -morphology Dilate "Disk:$DILATE" \) \
+        -compose screen -composite \
+        -sigmoidal-contrast 3,50% \
+        +level-colors "$GROUND","$HIGH" \
         mpr:key -alpha off -compose copy_opacity -composite \
         -strip -quality "$QUALITY" "$tmp"
     else
       magick "$src" \
-        -colorspace gray -auto-level \
-        \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
-        -evaluate pow "$POW" -negate \
-        -morphology Dilate "Disk:$DILATE" \
-        +level-colors "$GROUND","$STROKE" \
+        -colorspace gray -auto-level -kuwahara "$SMOOTH" \
+        \( +clone \
+           \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
+           -evaluate pow "$POW" -negate -morphology Dilate "Disk:$DILATE" \) \
+        -compose screen -composite \
+        -sigmoidal-contrast 3,50% \
+        +level-colors "$GROUND","$HIGH" \
         -strip -quality "$QUALITY" "$tmp"
     fi
 

@@ -100,11 +100,25 @@ HIGHLIGHT='#dfe9f8'
 # are one to two pixels and the notebook rules, the wireframe boxes and the
 # dashboard's hairlines all survive as lines.
 #
-# POW deepens the strokes and darkens the ground between them. It has to come
-# DOWN with the radius: at 2.0 against a 1.2px radius the fine work goes black
-# and only the heavy outlines are left.
+# POW deepens the strokes and darkens the ground between them. Applied BEFORE
+# the negate, where the drawing is still dark-on-white, so raising it pushes
+# more of each stroke toward black -- and therefore toward HIGHLIGHT once the
+# image is inverted. At 1.3 the strokes came out mid-grey and the plates read
+# as faint; 1.8 carries them most of the way to the book's silver. Past about
+# 2.4 the photographs' own grain starts coming up as speckle with them.
+#
+# DILATE is the other half, and it is thickness rather than brightness: a 1.2px
+# radius draws a one-pixel line, which at the 132px these print at in 03 is
+# most of a stroke lost to resampling. Disk:1 grows every stroke by a pixel.
+#
+# It runs AFTER the negate and that is not interchangeable. Before it, the
+# ground is white and the strokes are dark, so Dilate -- which grows the BRIGHT
+# region -- would eat the drawing instead of thickening it. One pixel at both
+# widths rather than a fraction of each, because morphology takes whole-pixel
+# kernels and 900 against 1240 does not separate enough to matter.
 RADIUS_DIV=1030
-POW=1.3
+POW=1.8
+DILATE=1
 QUALITY=82
 
 # The paper these have to stay above, sampled off the real page rather than
@@ -141,6 +155,7 @@ for dir in services process work; do
         -colorspace gray -auto-level \
         \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
         -evaluate pow "$POW" -negate \
+        -morphology Dilate "Disk:$DILATE" \
         +level-colors "$SHADOW","$HIGHLIGHT" \
         mpr:key -alpha off -compose copy_opacity -composite \
         -strip -quality "$QUALITY" "$tmp"
@@ -149,6 +164,7 @@ for dir in services process work; do
         -colorspace gray -auto-level \
         \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
         -evaluate pow "$POW" -negate \
+        -morphology Dilate "Disk:$DILATE" \
         +level-colors "$SHADOW","$HIGHLIGHT" \
         -strip -quality "$QUALITY" "$tmp"
     fi

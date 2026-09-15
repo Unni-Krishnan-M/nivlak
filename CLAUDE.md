@@ -1241,8 +1241,23 @@ re-run here.
   each edge over the blur radius, so a wide radius draws haze *around* objects
   instead of a line *along* them — the first run used 5px on a 1240px plate and
   produced a smoky wash. `RADIUS_DIV=1030` puts it at 1.2px there and 0.87 on
-  the 900px services, so one line weight across the book. `POW` comes down with
-  the radius; at 2.0 against 1.2px the fine rules go black.
+  the 900px services, so one line weight across the book.
+- **Brightness and thickness are two different knobs, and the first pass got
+  neither.** At `POW=1.3` the strokes came out mid-grey and the plates read as
+  faint — 03's six print at 132px, where a one-pixel mid-grey line is most of a
+  stroke lost to resampling. `POW` is applied BEFORE the negate, where the
+  drawing is still dark-on-white, so raising it pushes each stroke toward black
+  and therefore toward HIGHLIGHT once inverted; **1.8** carries them most of the
+  way to the book's silver, and past about 2.4 the photographs' own grain comes
+  up as speckle with them. `DILATE=1` is the other half and it is thickness
+  rather than brightness: one pixel added to every stroke.
+
+  **The dilate runs AFTER the negate and the order is not interchangeable.**
+  Before it, the ground is white and the strokes dark, so `Dilate` — which
+  grows the BRIGHT region — eats the drawing instead of thickening it. Whole
+  pixels at both widths rather than a fraction of each, because morphology
+  takes whole-pixel kernels and 900 against 1240 does not separate enough to
+  matter.
 - **The redactions survive**, and this was checked rather than assumed. 04's
   blurred boxes over invented client names are baked into the file this reads,
   a blurred region has no edges, and a sketch cannot recover what a blur

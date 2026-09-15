@@ -184,7 +184,37 @@ export function planAt(
   // is free then the bars have nothing to buy. Desktop is untouched: at
   // 1440x900 the constraint never bound, held already equals cover, and the
   // lerp is between a number and itself.
-  const scale = lerp(held, cover, credit);
+  // ...but NEVER taller than the window, and that clamp is the whole of the
+  // different-aspect story.
+  //
+  // `cover` fills the viewport by taking the larger of the two ratios, so on
+  // anything WIDER than the footage's 16:9 it is the width that drives and the
+  // frame overflows vertically. The paper is full bleed top to bottom in this
+  // clip, and <BookSheets> sizes every sheet to the paper, so a vertical
+  // overflow is not bare margin coming off -- it is the page itself, with the
+  // type on it, hanging past the window. Measured before this clamp:
+  //
+  //   2560x1080  aspect 2.37   sheet 1236x1440  172px off the top, 188 the foot
+  //   1600x740   aspect 2.16   sheet  773x900    75                 85
+  //    844x390   aspect 2.16   sheet  407x475    40                 45
+  //
+  // 844x390 is the one that has been paid for three times over in
+  // `book-sheets.tsx` -- 04's colophon changes page there, 05's index rows
+  // tighten, 03's activity run goes -- and all three were working around this.
+  //
+  // Clamping to height/FRAME_H costs side bars on those aspects, in the
+  // letterbox colour the section is already painted, which is the correct
+  // trade: a book standing whole between two dark margins is what a wide
+  // window should show, not a book with its head and feet cut off.
+  //
+  // Nothing at or below 16:9 moves, and that matters because the note above
+  // about phones is still live. Where the viewport is TALLER than the footage
+  // -- every portrait phone, and every 16:10 laptop -- `cover` is already the
+  // height ratio, so `Math.min` returns it unchanged and this line is a no-op.
+  // Verified: 1440x900, 1920x1080, 1366x768 and 390x844 all clip 0 before and
+  // after.
+  const fitted = Math.min(cover, height / FRAME_H);
+  const scale = lerp(held, fitted, credit);
 
   const drawWidth = FRAME_W * scale;
   const drawHeight = FRAME_H * scale;

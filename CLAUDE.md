@@ -987,6 +987,36 @@ exercised against a local webhook: `not-configured`, `delivered`, `unreachable`
   NUMERAL SYSTEM: plates roman, chapters arabic, engraved figures their own
   sentence-case series. Nothing in the book ever refers to a plate from
   outside the chapter it is in, which is what makes restarting safe.
+- **The final frame is clamped to the window HEIGHT, and that is what makes
+  odd aspect ratios work.** `planAt` ends the reveal at `cover`, which fills
+  the viewport by taking the larger of the two ratios — so on anything WIDER
+  than the footage's 16:9 the width drives and the frame overflows vertically.
+  The paper is full bleed top to bottom in this clip and `layoutSheets` sizes
+  every sheet to the paper, so that overflow is not margin coming off; it is
+  the page, with the type on it, hanging past the window. Measured before the
+  clamp:
+
+  | viewport | aspect | sheet | off the top | off the foot |
+  | --- | --- | --- | --- | --- |
+  | 1440x900 | 1.60 | 773x900 | 0 | 0 |
+  | 1920x1080 | 1.778 | 927x1080 | 0 | 0 |
+  | **2560x1080** | **2.37** | 1236x**1440** | **172** | **188** |
+  | **1600x740** | **2.16** | 773x**900** | **75** | **85** |
+  | **844x390** | **2.16** | 407x**475** | **40** | **45** |
+  | 390x844 | 0.46 | 390x844 | 0 | 0 |
+
+  `Math.min(cover, height / FRAME_H)` takes every one of those to zero. **844x390
+  is the one that had been paid for three times over** — 04's colophon changes
+  page there, 05's index rows tighten, 03's activity run goes — and all three
+  were working around this.
+
+  It costs side bars on wide aspects, in the letterbox colour the section is
+  already painted, which is the right trade: a book standing whole between two
+  dark margins is what a wide window should show, not a book with its head and
+  feet cut off. **Nothing at or below 16:9 moves** — where the viewport is
+  taller than the footage, `cover` already IS the height ratio and the `min` is
+  a no-op, which is why the phone note above is still live and 1440x900,
+  1920x1080, 1366x768 and 390x844 are byte-identical either side of it.
 - **Geometry comes from the camera, never from CSS.** Sheets sit on the real
   gutter because `spreadAt()` runs the same arithmetic the painter runs. A
   hardcoded `50%` will drift apart from the photograph on resize.
@@ -1233,10 +1263,13 @@ re-run here.
   and it made every plate the brightest thing in its chapter.
 
   **The middle is right.** `GROUND #31506f` (0.37) is far enough above the page
-  to read as a panel and nowhere near pale enough to read as paper;
-  `STROKE #f2f7fd` (0.96) is brighter than the book's own silver (0.895), so
-  the drawing is the brightest thing inside the plate rather than in the
-  chapter. Medians run 0.30–0.42.
+  to read as a panel and nowhere near pale enough to read as paper. `STROKE`
+  was `#f2f7fd` (0.96) for one revision, which made the drawing brighter than
+  the headline set beside it — a plate that outshouts its own chapter heading
+  is competing with the page rather than illustrating it. It is `#bacbdf`
+  (0.78) now: bright against a 0.37 ground and a step UNDER the book's silver
+  ink at 0.895, so the type stays the lightest thing on the paper. Medians run
+  0.30–0.42.
 - **The audit is `build-process-plates.sh`'s**: the MEDIAN against a page luma
   sampled live off `frame-091` (0.2036). Median and not minimum — a drawing is
   *supposed* to contain strokes near the page's own value; what it may not be

@@ -48,12 +48,18 @@ set -euo pipefail
 #
 # WHAT IS RIGHT is the middle, and it takes BOTH colours moving. The ground is
 # lifted to 0.37 -- far enough above the page to read as a panel, nowhere near
-# pale enough to read as paper -- and the strokes go to near white, brighter
-# than the book's own silver, so the drawing is the brightest thing inside the
-# plate rather than in the chapter.
+# pale enough to read as paper -- and the strokes come up to 0.78, which is
+# bright against a 0.37 ground and still a step under the book's own silver.
 #
 #   GROUND  #31506f   luma 0.37   <- the page itself is 0.204
-#   STROKE  #f2f7fd   luma 0.96   <- the book's silver ink is 0.895
+#   STROKE  #bacbdf   luma 0.78   <- the book's silver INK is 0.895
+#
+# STROKE sits BELOW the type, not above it. It was 0.96 for one revision, which
+# made the drawing the brightest thing on the spread -- brighter than the
+# headline set beside it -- and a plate that outshouts the chapter's own
+# heading is a plate competing with the page instead of illustrating it. At
+# 0.78 the drawing still carries at the 132px 03 prints it at and the type
+# stays the lightest ink on the paper.
 #
 # THE ONE RULE THAT ACTUALLY BINDS
 #
@@ -95,7 +101,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PUB="$ROOT/apps/web/public"
 
 GROUND='#31506f'
-STROKE='#f2f7fd'
+STROKE='#bacbdf'
 # Sketch shape, and both numbers are about staying a LINE DRAWING rather than
 # a smoky one. RADIUS_DIV is width/blur, so 1030 puts the radius at 1.2px on a
 # 1240px plate. The first run used 250 -- a 5px radius -- and the result was a

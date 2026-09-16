@@ -367,8 +367,6 @@ export type PageContact = {
   action?: string;
   /** Print a copy button: for what people paste rather than click. */
   copy?: boolean;
-  /** Set as one of the two large actions at the head of the page. */
-  primary?: boolean;
 };
 
 export type BookPage = {
@@ -514,19 +512,19 @@ export type BookPage = {
    * and its API route. `git log` has all three.
    */
   contact?: {
-    /** Heads the right-hand page. */
-    directTitle: string;
-    /** One sentence under it saying what to send. */
+    /** The recto's eyebrow, headline and one line under it. */
+    eyebrow: string;
+    headline: string;
     directBody: string;
-    /** Email and phone first, as large actions; then the rest. */
+    /** The two buttons. Each points at a row by its `emblem`. */
+    actions: { label: string; emblem: EmblemName; solid?: boolean }[];
+    /** The details table. */
+    detailsTitle: string;
     rows: PageContact[];
-    /** The verso: what the studio can help with, as plain lines. */
+    /** The verso: short tags for what the studio helps with. */
     helpTitle: string;
     help: string[];
-    /**
-     * What happens after a visitor gets in touch. Nothing here may promise
-     * more than a reply: no response time, no free call.
-     */
+    /** Three steps on a drawn rule. Promises a reply and nothing more. */
     next?: { title: string; steps: { title: string; body: string }[] };
   };
 };
@@ -1246,66 +1244,64 @@ export const BOOK_PAGES: BookPage[] = [
       // the page is for getting in touch and the engraving took half of it.
     },
     contact: {
-      directTitle: "Get in Touch",
+      eyebrow: "Get in Touch",
+      headline: "Let's talk about your project.",
       directBody:
-        "Call or write, whichever is easier. A few lines about what you're working on is plenty.",
+        "Email or call — whichever is easier. A few lines about what you're working on is plenty.",
+      actions: [
+        { label: "Email us", emblem: "mail", solid: true },
+        { label: "Call us", emblem: "phone" },
+      ],
+      detailsTitle: "Contact Details",
       rows: [
         {
           emblem: "mail",
-          label: "Email us",
+          label: "Email",
           value: "nivlak.work@gmail.com",
           // The subject is filled in so the message is recognisable in an
           // inbox; the body is left for the visitor.
           href: "mailto:nivlak.work@gmail.com?subject=Project%20enquiry",
+          action: "Write",
           copy: true,
-          primary: true,
         },
         {
           emblem: "phone",
-          label: "Call us",
+          label: "Phone",
           value: "+91 97873 04869",
           href: "tel:+919787304869",
+          action: "Call",
           copy: true,
-          primary: true,
         },
         {
           emblem: "globe",
           label: "Website",
           value: "www.nivlak.com",
           href: "https://www.nivlak.com",
-          action: "Visit",
+          action: "Open",
         },
         {
           emblem: "pin",
-          label: "Based in",
+          label: "Location",
           value: "Nagercoil, Tamil Nadu, India",
           href: "https://www.google.com/maps/search/?api=1&query=Nagercoil%2C%20Tamil%20Nadu%2C%20India",
           action: "Map",
         },
       ],
-      helpTitle: "What We Can Help With",
+      helpTitle: "We Can Help With",
+      // The five "You have an idea." lines, as the thing each one names.
       help: [
-        "You have an idea.",
-        "You have a product already.",
-        "You need a redesign.",
-        "You need engineering support.",
-        "You need AI or automation.",
+        "New ideas",
+        "Existing products",
+        "Redesigns",
+        "Engineering support",
+        "AI & automation",
       ],
       next: {
-        title: "What Happens Next",
+        title: "How It Works",
         steps: [
-          {
-            title: "Reach out",
-            body: "Email or call — a few lines about the idea is enough.",
-          },
-          {
-            title: "We read it",
-            body: "We look at what you've shared about the work.",
-          },
-          {
-            title: "We get back to you",
-            body: "By email or phone, whichever you used.",
-          },
+          { title: "Reach out", body: "Email or call with a few lines about the idea." },
+          { title: "We review", body: "We read what you've shared about the work." },
+          { title: "We reply", body: "By email or phone, whichever you used." },
         ],
       },
     },

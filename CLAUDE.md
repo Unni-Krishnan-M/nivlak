@@ -921,21 +921,26 @@ to get in touch, not be asked questions — along with Fig. 2, the telegraphy
 engraving on the verso. `git log` has the dialog, the route and the plate.
 `public/plates/plate-telegraphy.webp` is still in the tree and unused.
 
-- **Recto: two large actions, then the rest.** `contact.rows` entries with
-  `primary: true` (Email us, Call us) are set as bordered panels — the 2px
-  rule and 6% wash the inquiry panel had — each with a Copy button OUTSIDE the
-  link (a button inside an anchor is invalid). The email link pre-fills a
-  subject. Website and "Based in" (a Maps search) follow as labelled rows with
-  a verb; those two open a new tab, `tel:`/`mailto:` do not.
-- **Verso: two plain columns under the chapter head** — `help` (what we can
-  help with, not clickable) and `next` (three steps that promise only a reply,
-  no response time). `lg`-only; below that the chapter is one sheet and the
-  ways to reach a person come first.
-- **Size rules, each measured.** The panels' emblem and arrow are `xl`-only
-  and gone below 480px of height: with them in, the address broke mid-word at
-  390x844, 844x390 and 1024x768. Below 480px of height the sentence under
-  "Get in touch" goes and everything tightens, or the last row printed into
-  the folio at 844x390.
+- **Recto: set like a professional services contact page** — eyebrow,
+  headline ("Let's talk about your project."), one line, then two buttons and
+  a details table. `contact.actions` names the buttons and points each at a
+  row by `emblem`; "Email us" is `solid` — the ONE filled object in the book,
+  asked for after two rounds of hairline panels read as not professional
+  enough — and "Call us" is outlined. The email link pre-fills a subject.
+- **The details table** (`<dl>`) is label / value / actions: the value is the
+  link, Copy is a separate button outside it (a button inside an anchor is
+  invalid), and a verb button (Write, Call, Open, Map) repeats the link for
+  sighted users with `aria-hidden` and `tabIndex={-1}`. Website and Maps open
+  a new tab; `tel:`/`mailto:` do not.
+- **Verso: tags and a drawn timeline** — `help` as rounded tags (the five old
+  "You have an idea." lines, as the thing each names) and `next` as three
+  stations on one rule with 03's chevron, 05's diagram language; `<HowItWorks>`
+  is its own component because `<IdeaFlow>` is hard-set to four columns and
+  05's 2.7 leading. It promises a reply and no response time. `lg`-only.
+- **Size rules, each measured.** Below `xl` the table's label sits ABOVE its
+  value and the verb buttons go: beside it at 1024 and 844x390 the address
+  broke to "@gmail / .com". Below 480px of height the sentence and the table's
+  title go and everything tightens. Verb buttons are also gone below `sm`.
 - **05's second action now reads "Get in touch"**, not "Start a project" —
   it still turns to 07, and there is no project form there any more.
 

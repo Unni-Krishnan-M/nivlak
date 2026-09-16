@@ -17,7 +17,6 @@ import {
   type BookPage,
   type BookSpread,
   type PageFigure,
-  type PageContact,
   type PageMask,
   type PageMember,
   type PagePlate,
@@ -2922,132 +2921,129 @@ function TeamPage({ team }: { team: NonNullable<BookPage["team"]> }) {
 }
 
 /**
- * The contact spread's right-hand page: two large ways to reach a person, then
- * the rest.
+ * The contact spread's right-hand page, set the way a professional services
+ * page sets it: a headline, two buttons, then a details table.
  *
- * It led with a panel that opened an eight-step project inquiry, and a list of
- * prompts that opened it too. A visitor asked for none of that -- they wanted
- * to get in touch -- so the page now does exactly that: email and telephone
- * as the two largest things on it, each with its own copy button, and the
- * website and the town beneath them.
+ * The buttons are the page's ONE filled object. Everything else in this book
+ * acts through ruled lines and hairline panels, and this page tried both --
+ * an inquiry panel, then two bordered panels -- before the brief asked for
+ * something plainly professional. A solid "Email us" beside an outlined "Call
+ * us" is the convention a visitor already knows how to read.
  */
 function ContactPage({ page }: { page: BookPage }) {
   const contact = page.contact;
   if (!contact) return null;
-  const primary = contact.rows.filter((row) => row.primary);
-  const rest = contact.rows.filter((row) => !row.primary);
+  const byEmblem = (emblem: string) =>
+    contact.rows.find((row) => row.emblem === emblem);
   return (
-    <>
-      <div data-ink>
-        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70 uppercase">
-          {contact.directTitle}
-        </p>
-        <p className="mt-[0.6em] max-w-[36ch] text-[clamp(0.72rem,1.1vw,1rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
-          {contact.directBody}
-        </p>
-      </div>
+    <div data-ink className="flex flex-col">
+      <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70 uppercase">
+        {contact.eyebrow}
+      </p>
+      <h3 className="mt-[0.45em] font-[family-name:var(--font-display)] text-[clamp(1.3rem,2.4vw,2.2rem)] leading-[1.08] font-light text-balance text-white">
+        {contact.headline}
+      </h3>
+      {/* Gone below 480px of viewport height: at 844x390 the recto has ~330px
+          and the details table is what must not be clipped. */}
+      <p className="mt-[0.7em] max-w-[38ch] text-[clamp(0.7rem,1.06vw,0.96rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
+        {contact.directBody}
+      </p>
 
-      {/* The two actions, set as PANELS -- the one place on this page that is.
-          The 2px rule and the wash are the treatment the old "Start a
-          project" panel had, moved to the things a visitor actually came for.
-          The copy button sits OUTSIDE the link: a button inside an anchor is
-          invalid, and on a laptop that cannot dial, copying the number is the
-          action.
-
-          The emblem and the arrow are xl-only and gone on short screens. Below
-          1280 the recto is 240px (1024, after the thumb index) or less, and
-          with both in, the address broke mid-word at every size measured:
-          "nivlak.work@gmail.c / om" at 390x844, "@gmail / .com" at 844x390.
-          A bordered panel with a verb in capitals reads as a button without
-          them. */}
-      <ul data-ink className="mt-[1.3em] flex flex-col gap-[0.8em] xl:gap-[1em] [@media(max-height:480px)]:mt-[0.7em] [@media(max-height:480px)]:gap-[0.5em]">
-        {primary.map((row) => (
-          <li
-            key={row.value}
-            className="flex items-stretch border-2 border-[#dce7f7]/45 bg-[#dce7f7]/[0.06] transition-colors duration-300 hover:border-[#dce7f7]/80 motion-reduce:transition-none"
-          >
+      <div className="mt-[1.2em] flex flex-wrap gap-[0.7em] [@media(max-height:480px)]:mt-[0.6em]">
+        {contact.actions.map((action) => {
+          const row = byEmblem(action.emblem);
+          if (!row?.href) return null;
+          return (
             <a
+              key={action.label}
               href={row.href}
-              className="group flex min-w-0 flex-1 items-center gap-[1em] px-[1em] py-[0.9em] outline-none focus-visible:bg-[#dce7f7]/[0.12] xl:py-[1.25em] [@media(max-height:480px)]:py-[0.5em]"
+              className={`group inline-flex items-center gap-[0.7em] px-[1.3em] py-[0.8em] text-[clamp(0.56rem,0.86vw,0.78rem)] font-medium tracking-[0.24em] uppercase transition-colors duration-300 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#dce7f7] motion-reduce:transition-none [@media(max-height:480px)]:py-[0.55em] ${
+                action.solid
+                  ? "bg-[#dce7f7] text-[#0b1728] hover:bg-white"
+                  : "border border-[#dce7f7]/55 text-white hover:border-[#dce7f7] hover:bg-[#dce7f7]/10"
+              }`}
             >
-              <Emblem
-                name={row.emblem}
-                className="hidden w-[clamp(20px,2.2vw,30px)] shrink-0 text-[#dce7f7] xl:block [@media(max-height:480px)]:hidden"
-              />
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.6vw,1.45rem)] leading-tight tracking-[0.06em] text-white uppercase">
-                  {row.label}
-                </span>
-                <span className="mt-[0.2em] break-words text-[clamp(0.68rem,1.02vw,0.94rem)] text-slate-300/85">
-                  {row.value}
-                </span>
-              </span>
+              <Emblem name={action.emblem} className="w-[1.35em] shrink-0" />
+              {action.label}
               <span
                 aria-hidden
-                className="hidden shrink-0 text-[clamp(1.2rem,2vw,1.8rem)] leading-none text-[#dce7f7] xl:block [@media(max-height:480px)]:hidden transition-transform duration-300 group-hover:translate-x-[0.15em] motion-reduce:transition-none"
+                className="transition-transform duration-300 group-hover:translate-x-[0.2em] motion-reduce:transition-none"
               >
                 &rarr;
               </span>
             </a>
-            {row.copy ? (
-              <span className="flex items-center border-s border-[#dce7f7]/20 px-[0.7em]">
+          );
+        })}
+      </div>
+
+      {/* The details, as a table a visitor can scan: what it is, the value,
+          and what can be done with it. Copy sits outside the link -- a button
+          inside an anchor is invalid -- and on a laptop that cannot dial,
+          copying the number IS the action. */}
+      <p className="mt-[2em] text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase xl:mt-[3em] [@media(max-height:480px)]:hidden">
+        {contact.detailsTitle}
+      </p>
+      <dl className="mt-[0.6em] border-t border-white/18 [@media(max-height:480px)]:mt-[0.8em]">
+        {contact.rows.map((row) => (
+          <div
+            key={row.value}
+            // The label sits ABOVE the value below xl and BESIDE it from xl. Beside
+            // it at 1024 and 844x390 the address broke to "@gmail / .com".
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-[0.8em] gap-y-[0.15em] border-b border-white/10 py-[0.6em] xl:grid-cols-[minmax(0,5.2em)_minmax(0,1fr)_auto] xl:py-[0.95em] [@media(max-height:480px)]:py-[0.3em]"
+          >
+            <dt className="col-span-2 text-[clamp(0.44rem,0.64vw,0.58rem)] tracking-[0.24em] text-slate-400/65 uppercase xl:col-span-1">
+              {row.label}
+            </dt>
+            <dd className="min-w-0 break-words text-[clamp(0.68rem,1.02vw,0.94rem)] text-slate-100">
+              {row.href ? (
+                <a
+                  href={row.href}
+                  {...(row.href.startsWith("http")
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                  className="underline decoration-white/0 underline-offset-4 transition-colors duration-300 outline-none hover:decoration-white/60 focus-visible:decoration-white motion-reduce:transition-none"
+                >
+                  {row.value}
+                </a>
+              ) : (
+                row.value
+              )}
+            </dd>
+            <dd className="flex items-center gap-[0.4em]">
+              {row.copy ? (
                 <CopyButton
                   value={row.value}
                   label={row.emblem === "phone" ? "Phone number" : "Email address"}
                 />
-              </span>
-            ) : null}
-          </li>
+              ) : null}
+              {row.href && row.action ? (
+                // Hidden in the 1024-1280 band and on short screens, where the
+                // recto is too narrow for value, copy and a verb on one line;
+                // the value itself is the link.
+                <a
+                  href={row.href}
+                  tabIndex={-1}
+                  aria-hidden
+                  {...(row.href.startsWith("http")
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                  className="border border-white/15 px-[0.6em] py-[0.35em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.2em] text-slate-300/80 uppercase transition-colors duration-300 hover:border-white/45 hover:text-white motion-reduce:transition-none max-sm:hidden lg:max-xl:hidden [@media(max-height:480px)]:hidden"
+                >
+                  {row.action}
+                </a>
+              ) : null}
+            </dd>
+          </div>
         ))}
-      </ul>
-
-      <ul data-ink className="mt-[1.4em] flex flex-col xl:mt-[2em] [@media(max-height:480px)]:mt-[0.7em]">
-        {rest.map((row) => (
-          <li
-            key={row.value}
-            className="flex items-center gap-[0.6em] border-t border-white/10 last:border-b"
-          >
-            {row.href ? (
-              <a
-                href={row.href}
-                {...(row.href.startsWith("http")
-                  ? { target: "_blank", rel: "noopener noreferrer" }
-                  : {})}
-                className="group flex min-w-0 flex-1 items-center gap-[0.9em] py-[0.55em] outline-none focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[#dce7f7]/70 xl:py-[0.85em] [@media(max-height:480px)]:py-[0.28em]"
-              >
-                <ContactLine row={row} />
-                {row.action ? (
-                  // aria-hidden: the label already names the link.
-                  <span
-                    aria-hidden
-                    className="ms-auto flex shrink-0 items-center gap-[0.4em] text-[clamp(0.48rem,0.7vw,0.62rem)] tracking-[0.22em] text-slate-400/70 uppercase transition-colors duration-300 group-hover:text-white motion-reduce:transition-none"
-                  >
-                    {row.action}
-                    <span
-                      aria-hidden
-                      className="transition-transform duration-300 group-hover:translate-x-[0.2em] motion-reduce:transition-none"
-                    >
-                      &rarr;
-                    </span>
-                  </span>
-                ) : null}
-              </a>
-            ) : (
-              <span className="flex min-w-0 flex-1 items-center gap-[0.9em] py-[0.55em]">
-                <ContactLine row={row} />
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
-    </>
+      </dl>
+    </div>
   );
 }
 
 /**
- * 07's verso under the chapter head: what the studio can help with, then what
- * happens after a visitor gets in touch. Plain lines -- nothing here opens
- * anything. lg-only: below that the whole chapter is one sheet and the ways to
+ * 07's verso under the chapter head: what the studio helps with, as tags, and
+ * how getting in touch works, as three stations on a drawn rule. Nothing here
+ * is clickable. lg-only: below that the chapter is one sheet and the ways to
  * reach a person come first.
  */
 function ContactVerso({
@@ -3056,53 +3052,24 @@ function ContactVerso({
   contact: NonNullable<BookPage["contact"]>;
 }) {
   return (
-    <div
-      data-ink
-      className="mt-[1.8em] hidden grid-cols-2 gap-x-[clamp(1.2em,2.6vw,2.4em)] lg:grid"
-    >
-      <div className="min-w-0">
-        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70 uppercase">
+    <div data-ink className="mt-[2.2em] hidden flex-col gap-[2.4em] lg:flex">
+      <section>
+        <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
           {contact.helpTitle}
         </p>
-        <ul className="mt-[0.8em] flex flex-col border-t border-white/12">
-          {contact.help.map((line) => (
+        <ul className="mt-[0.9em] flex flex-wrap gap-[0.55em]">
+          {contact.help.map((tag) => (
             <li
-              key={line}
-              className="border-b border-white/10 py-[0.7em] text-[clamp(0.66rem,1.02vw,0.94rem)] xl:py-[0.95em] leading-snug text-slate-300/80"
+              key={tag}
+              className="rounded-full border border-white/22 px-[0.95em] py-[0.4em] text-[clamp(0.6rem,0.92vw,0.84rem)] text-slate-200"
             >
-              {line}
+              {tag}
             </li>
           ))}
         </ul>
-      </div>
-      {contact.next ? <NextSteps next={contact.next} /> : null}
+      </section>
+      {contact.next ? <HowItWorks next={contact.next} /> : null}
     </div>
-  );
-}
-
-/**
- * One contact row's content: the emblem, what the row is, and the value.
- *
- * The LABEL is new, and it is the difference between a list of strings and a
- * list of ways in. Four emblems at 20px are not enough to tell a telephone
- * from a pin at a glance; "CALL", "EMAIL", "WEBSITE" and "BASED IN" are.
- */
-function ContactLine({ row }: { row: PageContact }) {
-  return (
-    <>
-      <Emblem
-        name={row.emblem}
-        className="w-[clamp(16px,1.8vw,22px)] shrink-0 text-slate-300"
-      />
-      <span className="flex min-w-0 flex-col">
-        <span className="text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.28em] text-slate-400/60 uppercase">
-          {row.label}
-        </span>
-        <span className="break-words text-[clamp(0.7rem,1.08vw,0.98rem)] text-slate-200 transition-colors duration-300 group-hover:text-white motion-reduce:transition-none">
-          {row.value}
-        </span>
-      </span>
-    </>
   );
 }
 
@@ -3140,45 +3107,45 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 }
 
 /**
- * WHAT HAPPENS NEXT, on 07's verso beside what the studio can help with.
- *
- * The one question a visitor has at this point -- what happens if I write? --
- * and the answer is only ever a reply. Nothing here promises a response time.
+ * HOW IT WORKS: three stations on one drawn rule, in 05's diagram language --
+ * a continuous line with a tick dropped at each stage and the book's one
+ * chevron at the end -- rather than three boxes and arrows. It promises a
+ * reply and nothing more: no response time.
  */
-function NextSteps({
+function HowItWorks({
   next,
 }: {
   next: NonNullable<NonNullable<BookPage["contact"]>["next"]>;
 }) {
   return (
-    <div className="min-w-0">
-      <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70 uppercase">
+    <section>
+      <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
         {next.title}
       </p>
-      <ol className="mt-[0.8em] flex flex-col border-t border-white/12">
+      <div aria-hidden className="mt-[1.3em] flex items-center gap-[0.35em]">
+        <span className="h-px flex-1 bg-white/22" />
+        <ArcArrow />
+      </div>
+      <ol className="grid grid-cols-3 gap-x-[clamp(0.8em,1.6vw,1.4em)]">
         {next.steps.map((step, i) => (
-          <li
-            key={step.title}
-            className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-[0.9em] border-b border-white/10 py-[0.8em]"
-          >
+          <li key={step.title} className="relative pt-[1em]">
             <span
               aria-hidden
-              className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.6vw,1.5rem)] leading-none font-light text-[#dce7f7]/70 tabular-nums"
-            >
+              className="absolute top-[-1px] left-0 block h-[9px] w-px bg-white/45"
+            />
+            <p className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.6vw,1.45rem)] leading-none font-light text-[#dce7f7]/75 tabular-nums">
               {String(i + 1).padStart(2, "0")}
-            </span>
-            <span>
-              <span className="block text-[clamp(0.72rem,1.1vw,1rem)] leading-tight text-white">
-                {step.title}
-              </span>
-              <span className="mt-[0.35em] block text-[clamp(0.62rem,0.95vw,0.86rem)] leading-relaxed text-slate-300/70">
-                {step.body}
-              </span>
-            </span>
+            </p>
+            <p className="mt-[0.55em] text-[clamp(0.52rem,0.8vw,0.72rem)] tracking-[0.22em] text-white uppercase">
+              {step.title}
+            </p>
+            <p className="mt-[0.45em] text-[clamp(0.6rem,0.92vw,0.84rem)] leading-relaxed text-slate-300/70">
+              {step.body}
+            </p>
           </li>
         ))}
       </ol>
-    </div>
+    </section>
   );
 }
 

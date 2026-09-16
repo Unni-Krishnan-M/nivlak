@@ -1154,7 +1154,11 @@ export const BOOK_PAGES: BookPage[] = [
       },
     },
     columnPlate: {
-      src: "/perspectives/column.webp",
+      // A levelled copy of column.webp (`-level 4%,58%,1.3`). The original's
+      // brightest pixel is 0.56, so as a luminance mask it printed at half
+      // strength at best; this one reaches 0.98 with the ground held at 0.
+      // A new filename rather than an overwrite, so no cached copy survives.
+      src: "/perspectives/column-bright.webp",
       ratio: "420 / 760",
       alt: "The chapter's drawing in the outer margin: an interface panel, a measured dial and a plotted grid, struck in the page's own silver.",
     },

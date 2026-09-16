@@ -1610,7 +1610,7 @@ function PerspectiveColumn({ plate }: { plate: PageMask }) {
       // the index, whose longest summary already ends flush against the
       // column at 1440 and would wrap to a second line on a page with 14px of
       // slack under its last rule.
-      className="hidden w-[clamp(88px,11.7vw,170px)] shrink-0 self-stretch opacity-85 lg:block lg:-mr-[clamp(0px,2.2vw,32px)]"
+      className="hidden w-[clamp(88px,11.7vw,170px)] shrink-0 self-stretch lg:block lg:-mr-[clamp(0px,2.2vw,32px)]"
     />
   );
 }

@@ -963,6 +963,54 @@ look successful would be a fake backend by another name. All four branches were
 exercised against a local webhook: `not-configured`, `delivered`, `unreachable`
 (502) and validation (422/400).
 
+### Navigating the book, and why a narrow window needed three things
+
+Walked in a real browser at 443x872 — which is a perfectly ordinary window —
+and the page had no navigation a visitor could use. Three separate causes:
+
+- **`<BookNav>` fades out when the pages arrive**, by design: it spans the
+  window and would cut across the gutter, so the thumb index takes over.
+- **`<BookIndex>` shows its titles from `lg` up only.** Below that a reader had
+  seven numerals and nothing else — no way to guess that 04 is the work.
+- **Those numerals were `clamp(0.5rem,…)` at `text-slate-400/45`** — 8px at 45%
+  opacity, which is the floor a narrow window renders. Effectively invisible.
+- **And the cover said nothing about scrolling.** 8.8 viewports of page behind
+  a photograph of a closed book, with no affordance on the first screen.
+
+What is there now:
+
+- **`SCROLL TO OPEN ↓` under the wordmark**, inside the kicker `<p>` so it
+  inherits the one tween that already fades that block before the reveal
+  starts. A second element would need a second ref and a second tween kept in
+  step. It is a cue, not a control — `pointer-events-none` is inherited, and a
+  control there would compete with the index for the same job.
+- **`<BookRunningHead>`** — the chapter, top-right, `lg:hidden`. Filled by
+  `syncNav`, which is where the current chapter is already worked out for
+  `data-current`, and guarded by the same `current === lastCurrent` return, so
+  a callback that fires every scrubbed frame touches the DOM about seven times
+  a pass. `aria-hidden`: every tab already carries `aria-label="04 Work"` and
+  the page prints its own folio, so a third voice is noise.
+- **The index numerals at `clamp(0.6rem,…)` and `/80`**, with the notch at
+  `/35`, and `py-[0.35rem]` on the `<li>` for a tappable target. The padding is
+  on the LI and not the button because the button is the flex row the notch
+  sits in — padding there pushes the notch off the fore-edge.
+
+**Why the title is not simply shown below `lg`, which was tried twice.** In
+FLOW it reserves width, and `layoutSheets` measures the index container's left
+edge to publish `--page-index-inset`; at 443 the widest title takes about 108px
+off a 443px column, a quarter of the measure. Out of FLOW it prints over the
+page — measured, `PERSPECTIVES` covered 663px² of 05's recto headline — and a
+scrim behind it only turned the collision into a box sitting on the headline.
+The right margin there is 10% of 443, about 44px, against a 103px title, so no
+placement inside the margin holds it. The running head goes in the empty strip
+at the top instead, which is where a book prints one.
+
+**The palm-tree button bottom-right in dev is TanStack Query Devtools**
+(`tsqd-open-btn-container`, z-index 100000), from `<ReactQueryDevtools />` in
+`providers.tsx`. It renders `null` in production builds, so it is not a
+shipping bug — but it is not part of the design and it is what you are looking
+at in `pnpm dev`.
+
 ### Rules that are not obvious from the code
 
 - **Illustrations are numbered in roman and chapters in arabic**, and 03 is

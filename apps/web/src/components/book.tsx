@@ -15,7 +15,7 @@ import {
   planAt,
 } from "@/components/book-camera";
 import { ProjectInquiry } from "@/components/book-inquiry";
-import { BookIndex, BookNav } from "@/components/book-nav";
+import { BookIndex, BookNav, BookRunningHead } from "@/components/book-nav";
 import {
   BOOK_PAGES,
   BOOK_SPREADS,
@@ -338,6 +338,8 @@ export function Book() {
         ),
       ];
       const headNav = section.querySelector<HTMLElement>("[data-book-nav]");
+      const runningHead =
+        section.querySelector<HTMLElement>("[data-running-head]");
       const thumbIndex = section.querySelector<HTMLElement>("[data-book-index]");
       let goTo = (_index: number) => {};
       // Every nav item carries a CHAPTER, which is what the running head and
@@ -724,6 +726,18 @@ export function Book() {
           const index = Number(el.dataset.index);
           if (index >= 0) el.dataset.current = String(index === chapter);
         }
+        // The running head, below `lg` only -- see <BookRunningHead>. Written
+        // here and not from a scroll listener because this is the one place
+        // that already knows which chapter is face up, and it is guarded by
+        // the `current === lastCurrent` return above, so a callback that fires
+        // on every scrubbed frame touches the DOM about seven times a pass.
+        if (runningHead) {
+          const page = chapter >= 0 ? BOOK_PAGES[chapter] : undefined;
+          runningHead.textContent = page
+            ? `${page.number} \u2014 ${page.title.toUpperCase()}`
+            : "";
+          runningHead.style.opacity = page ? "1" : "0";
+        }
       };
       tl.eventCallback("onUpdate", syncNav);
       syncNav();
@@ -789,12 +803,32 @@ export function Book() {
             className="mb-3 -me-[0.3em] text-xs tracking-[0.3em] text-slate-300/80 uppercase"
           >
             Nivlak Technologies
+            {/* The one thing the cover did not say. This page is 8.8 viewports
+                of scroll behind a closed book, and a visitor who does not
+                scroll sees a photograph of a book and leaves -- there is no
+                other affordance on the first screen, because the top nav is
+                seven numerals and the book itself is an image.
+
+                It lives INSIDE the kicker rather than beside it so it inherits
+                the one tween that already fades this block out before the
+                reveal starts; a second element would need a second ref and a
+                second tween kept in step with it. `pointer-events-none` is
+                inherited from the wrapper, which is correct -- this is a cue
+                and not a control, and a control here would compete with the
+                thumb index for the same job. */}
+            <span className="mt-[1.8vh] flex items-center justify-center gap-[0.8em] text-[0.58rem] tracking-[0.34em] text-slate-400/70 portrait:justify-center landscape:justify-start">
+              Scroll to open
+              <span aria-hidden className="text-[0.9rem] leading-none">
+                &darr;
+              </span>
+            </span>
           </p>
         </div>
 
         {reduced ? null : <BookSheets />}
 
         <BookNav />
+        <BookRunningHead />
         <BookIndex />
       </section>
 

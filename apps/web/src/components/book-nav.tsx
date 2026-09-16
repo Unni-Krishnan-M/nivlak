@@ -100,33 +100,84 @@ export function BookIndex() {
     >
       <ul className="flex flex-col items-end gap-[clamp(0.5rem,1.3vh,0.9rem)]">
         {BOOK_PAGES.map((page, index) => (
-          <li key={page.number}>
+          // Padding on the LI and not the button: the button is the flex
+          // row the notch and numeral sit in, and padding there would push the
+          // notch off the fore-edge. These numerals are 10px tall and this is
+          // the only navigation a phone gets.
+          <li key={page.number} className="py-[0.35rem]">
             <button
               type="button"
               data-nav-item
               data-index={index}
               data-current="false"
               aria-label={`${page.number} ${page.title}`}
-              className="group flex cursor-pointer items-center justify-end gap-[0.75em]"
+              className="group relative flex cursor-pointer items-center justify-end gap-[0.75em]"
             >
               {/* The titles are hidden until a tab is current or hovered, so
                   the index is a column of numerals at rest and names itself
-                  only where you are looking. */}
-              <span className="hidden translate-x-[0.4em] text-[clamp(0.5rem,0.66vw,0.62rem)] lg:inline tracking-[0.26em] text-slate-300 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-70 group-data-[current=true]:translate-x-0 group-data-[current=true]:opacity-100">
+                  only where you are looking. They stay `lg`-only, and two
+                  things that were tried below it are the reason.
+
+                  In FLOW the label reserves width, and `layoutSheets` measures
+                  this container's left edge to publish `--page-index-inset`,
+                  the reservation that keeps the recto's type off the tabs. At
+                  1440 that is what it is for; at 443 the widest title would
+                  take about 108px off a 443px column, a quarter of the
+                  measure. Out of FLOW it prints over the page instead --
+                  measured, PERSPECTIVES covered 663px of 05's recto headline,
+                  and a scrim behind it only turned the collision into a box
+                  sitting on the headline. The page's right margin there is 10%
+                  of 443, about 44px, against a 103px title: no placement in
+                  the margin can hold it.
+
+                  So below `lg` the name is not here at all. <BookRunningHead>
+                  puts it in the empty strip at the top of the window, which is
+                  where a book prints a running head and the one band on this
+                  page with nothing in it. */}
+              <span className="hidden translate-x-[0.4em] text-[clamp(0.6rem,0.66vw,0.66rem)] tracking-[0.26em] whitespace-nowrap text-slate-200 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-70 group-data-[current=true]:translate-x-0 group-data-[current=true]:opacity-100 motion-reduce:transition-none lg:inline">
                 {page.title.toUpperCase()}
               </span>
-              <span className="text-[clamp(0.5rem,0.66vw,0.62rem)] tabular-nums tracking-[0.2em] text-slate-400/45 transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white">
+              <span className="text-[clamp(0.6rem,0.66vw,0.66rem)] tabular-nums tracking-[0.2em] text-slate-400/80 transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
                 {page.number}
               </span>
               {/* The notch. The current tab is cut deeper into the edge. */}
               <span
                 aria-hidden
-                className="block h-px w-[10px] bg-white/20 transition-all duration-300 group-hover:w-[16px] group-hover:bg-white/45 group-data-[current=true]:w-[24px] group-data-[current=true]:bg-white/75"
+                className="block h-px w-[10px] bg-white/35 transition-all duration-300 group-hover:w-[16px] group-hover:bg-white/55 group-data-[current=true]:w-[24px] group-data-[current=true]:bg-white/85 motion-reduce:transition-none"
               />
             </button>
           </li>
         ))}
       </ul>
     </div>
+  );
+}
+
+
+/**
+ * The running head: which chapter is face up, below `lg` only.
+ *
+ * <BookNav> fades out when the pages arrive and the thumb index takes over,
+ * and the index shows its titles only from `lg` up -- see the note there for
+ * the two placements that were measured and rejected. That left a narrow
+ * window with seven unlabelled numerals as its entire navigation, which is a
+ * page a visitor cannot form a map of.
+ *
+ * It is `aria-hidden` on purpose. Every tab in the index already carries
+ * `aria-label="04 Work"`, and the page prints its own drop folio; a third
+ * voice saying the same words is noise to a screen reader. This is an
+ * orientation cue for the eye.
+ *
+ * <Book>'s syncNav fills it, because that is where the current chapter is
+ * already worked out for `data-current` -- and it writes only when the answer
+ * changes, which matters on a callback that runs every scrubbed frame.
+ */
+export function BookRunningHead() {
+  return (
+    <p
+      data-running-head
+      aria-hidden
+      className="pointer-events-none absolute end-0 top-0 z-[100] pt-[2.1vh] pe-[clamp(0.9rem,2vw,2rem)] text-[0.6rem] tracking-[0.3em] text-slate-300/75 tabular-nums opacity-0 transition-opacity duration-500 motion-reduce:transition-none lg:hidden"
+    />
   );
 }

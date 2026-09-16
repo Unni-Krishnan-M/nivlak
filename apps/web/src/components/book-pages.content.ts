@@ -359,8 +359,26 @@ export type PageTerm = { letter: string; term: string; body: string };
 /** One line of contact detail. */
 export type PageContact = {
   emblem: EmblemName;
+  /** What this row IS, set as a label in front of it: Call, Email... */
+  label: string;
   value: string;
   href?: string;
+  /** The verb at the end of the row, which says what a click will do. */
+  action?: string;
+  /** Print a copy button: for what people paste rather than click. */
+  copy?: boolean;
+};
+
+/**
+ * One of 07's "is this you?" lines, and the answer it fills in if picked.
+ *
+ * The preset's values must be options the inquiry actually offers, word for
+ * word -- see STEPS in book-inquiry.tsx. A line with no clear single answer
+ * carries no preset and simply opens the inquiry.
+ */
+export type PagePrompt = {
+  label: string;
+  preset?: { stage?: string; needs?: string[]; building?: string };
 };
 
 export type BookPage = {
@@ -528,8 +546,15 @@ export type BookPage = {
      * questions rather than as segments because the reader is meant to answer
      * one, not to be sorted by it.
      */
-    prompts?: string[];
-    cta: string;
+    prompts?: PagePrompt[];
+    /**
+     * What happens after a visitor gets in touch, set beside Fig. 2 on the
+     * verso. Every step is something the inquiry's own confirmation already
+     * promises -- "we'll review the details and get back to you through the
+     * contact information you provided" -- and nothing more: no response
+     * time, no free call, no process this studio has not described.
+     */
+    next?: { title: string; steps: { title: string; body: string }[] };
   };
 };
 
@@ -1255,36 +1280,78 @@ export const BOOK_PAGES: BookPage[] = [
       rows: [
         {
           emblem: "phone",
+          label: "Call",
           value: "+91 97873 04869",
           href: "tel:+919787304869",
+          action: "Call",
+          copy: true,
         },
         {
           emblem: "mail",
+          label: "Email",
           value: "nivlak.work@gmail.com",
           href: "mailto:nivlak.work@gmail.com",
+          action: "Write",
+          copy: true,
         },
         {
           emblem: "globe",
+          label: "Website",
           value: "www.nivlak.com",
           href: "https://www.nivlak.com",
+          action: "Visit",
         },
-        { emblem: "pin", value: "Nagercoil, Tamil Nadu, India" },
+        {
+          emblem: "pin",
+          label: "Based in",
+          value: "Nagercoil, Tamil Nadu, India",
+          href: "https://www.google.com/maps/search/?api=1&query=Nagercoil%2C%20Tamil%20Nadu%2C%20India",
+          action: "Map",
+        },
       ],
       primary: {
         label: "Start a Project",
         body: "Eight short questions about the work. We'll ask who you are at the end.",
       },
       enquiryTitle: "What We Can Help With",
-      enquiryBody: "Any of these is a place to begin:",
+      // It used to say "Any of these is a place to begin" over five lines of
+      // plain type that looked like choices and did nothing. They are buttons
+      // now, and the sentence says so.
+      enquiryBody: "Pick the one that sounds like you:",
       prompts: [
-        "You have an idea.",
-        "You have a product already.",
-        "You need a redesign.",
-        "You need engineering support.",
-        "You need AI or automation.",
+        { label: "You have an idea.", preset: { stage: "Just an Idea" } },
+        {
+          label: "You have a product already.",
+          preset: { stage: "Existing Product" },
+        },
+        { label: "You need a redesign.", preset: { needs: ["UX / UI Design"] } },
+        // No single answer: engineering support is four of the seven needs.
+        { label: "You need engineering support." },
+        {
+          label: "You need AI or automation.",
+          preset: { needs: ["AI Integration"] },
+        },
       ],
+      next: {
+        title: "What Happens Next",
+        steps: [
+          {
+            title: "Tell us about it",
+            body: "Eight short questions — or just call or write.",
+          },
+          {
+            title: "We read it",
+            body: "We review the details you share about the work.",
+          },
+          {
+            title: "We get back to you",
+            body: "By the email or phone number you give us.",
+          },
+        ],
+      },
+      // "Contact Us ->" used to sit under the rows and was a second mailto
+      // link with a vaguer name. Every row now says what it does, so it went.
       directTitle: "Prefer to Talk Directly?",
-      cta: "Contact Us",
     },
   },
 ];

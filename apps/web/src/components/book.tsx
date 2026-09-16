@@ -14,7 +14,7 @@ import {
   pickTier,
   planAt,
 } from "@/components/book-camera";
-import { ProjectInquiry } from "@/components/book-inquiry";
+import { type InquiryPreset, ProjectInquiry } from "@/components/book-inquiry";
 import { BookIndex, BookNav, BookRunningHead } from "@/components/book-nav";
 import {
   BOOK_PAGES,
@@ -92,6 +92,9 @@ const BATCH = 8;
 export function Book() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [inquiry, setInquiry] = useState(false);
+  const [inquiryPreset, setInquiryPreset] = useState<InquiryPreset | null>(
+    null,
+  );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const kickerRef = useRef<HTMLParagraphElement>(null);
 
@@ -112,7 +115,19 @@ export function Book() {
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       if (!target?.closest) return;
-      if (target.closest("[data-inquiry-open]")) setInquiry(true);
+      const opener = target.closest<HTMLElement>("[data-inquiry-open]");
+      if (!opener) return;
+      // 07's prompts carry the answer they stand for; the panel carries none.
+      let preset: InquiryPreset | null = null;
+      try {
+        preset = opener.dataset.inquiryPreset
+          ? (JSON.parse(opener.dataset.inquiryPreset) as InquiryPreset)
+          : null;
+      } catch {
+        preset = null;
+      }
+      setInquiryPreset(preset);
+      setInquiry(true);
     };
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
@@ -837,7 +852,11 @@ export function Book() {
           The dialog itself renders nothing until showModal() puts it in the
           top layer, which is also what lifts it clear of the pinned section's
           transforms without a portal. */}
-      <ProjectInquiry open={inquiry} onClose={() => setInquiry(false)} />
+      <ProjectInquiry
+        open={inquiry}
+        preset={inquiryPreset}
+        onClose={() => setInquiry(false)}
+      />
 
       {/* Appended after the section rather than swapped into it, so React only
           ever adds a child at the end of this wrapper -- an append needs no

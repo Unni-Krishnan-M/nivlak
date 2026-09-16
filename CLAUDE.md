@@ -952,6 +952,35 @@ in `book-pages.content.ts`, in that order.
   `primary.body`, printed under the action where it is of use. Neither page
   prints the other's half.
 
+**07 was made easier to act on, and every change is a way in, not a word.**
+
+- **The five "You have an idea." lines are buttons.** They looked like choices
+  and did nothing. Each carries `data-inquiry-open` and, where there is one
+  clear answer, `data-inquiry-preset` (JSON): the delegated listener in
+  `book.tsx` passes it to `<ProjectInquiry preset>`, which MERGES it — a
+  choice fills only an empty answer, `needs` is a union — so a half-finished
+  inquiry survives being reopened from another line. Preset values must be
+  option strings from `STEPS`, word for word. "Engineering support" carries no
+  preset: it is four of the seven needs. Verified in a browser: idea → stage
+  "Just an Idea"; redesign then AI → needs `["UX / UI Design", "AI Integration"]`.
+- **Every contact row says what it is and what it does**: a label (Call, Email,
+  Website, Based in), the value, a trailing verb (`aria-hidden`: the label
+  already names the link), and a Copy button on the phone and the address. The
+  location links to a Maps search; the web and map links open a new tab, `tel:`
+  and `mailto:` do not. "Contact Us →" is gone — it was a second mailto with a
+  vaguer name.
+- **"What happens next" sits beside Fig. 2** on the verso, in the width the
+  268px plate leaves. Its three steps promise only what the inquiry's own
+  confirmation already does — review the details, reply by the contact given —
+  and no response time. `lg`-only, like the plate.
+- **Three size rules, each measured.** At 1024–1280 the verb is hidden: the
+  recto is ~240px after the thumb index and the email was being truncated to
+  "nivlak.work@gm…" (values now wrap rather than truncate). Below 480px of
+  HEIGHT the prompt list and the verbs are hidden and the rows tighten: at
+  844x390 the telephone and email rows were clipped off the foot. Below `lg`
+  the rows' padding drops to 0.45em, which lifted "Map" clear of the folio at
+  390x844.
+
 ### The project inquiry
 
 `book-inquiry.tsx`. Eight steps: six about the PROJECT, then a name, then an

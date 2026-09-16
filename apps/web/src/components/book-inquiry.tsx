@@ -357,12 +357,20 @@ const FIELD =
 const LABEL =
   "mb-[0.6em] block text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.3em] text-slate-400/80 uppercase";
 
+/**
+ * Answers filled in by whatever opened the inquiry -- 07's "You have an
+ * idea." fills in the stage. Values must be options in STEPS, word for word.
+ */
+export type InquiryPreset = Partial<Pick<Answers, "building" | "stage" | "needs">>;
+
 export function ProjectInquiry({
   open,
   onClose,
+  preset,
 }: {
   open: boolean;
   onClose: () => void;
+  preset?: InquiryPreset | null;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -412,6 +420,23 @@ export function ProjectInquiry({
     setErrors({});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only on opening
   }, [open]);
+
+  // A preset is MERGED, never replaced: a visitor who closed a half-finished
+  // inquiry and reopens it from a different prompt keeps what they wrote.
+  // `needs` is a union; a choice only fills in an empty answer. Declared after
+  // the reset above, so on a reopen after a finished inquiry this lands on the
+  // fresh answers rather than being wiped by them.
+  useEffect(() => {
+    if (!open || !preset) return;
+    setAnswers((a) => ({
+      ...a,
+      building: a.building || preset.building || "",
+      stage: a.stage || preset.stage || "",
+      needs: preset.needs
+        ? Array.from(new Set([...a.needs, ...preset.needs]))
+        : a.needs,
+    }));
+  }, [open, preset]);
 
   // The scrub runs on window scroll, so a wheel over the backdrop would turn
   // pages behind the dialog and leave the reader somewhere else when it

@@ -628,6 +628,12 @@ attaches to 04 alone, which is the only window left in the book.
   listed in `tools/build-perspective-plates.sh` rather than deleted: each was
   measured against ink coverage and proofed on the real paper, and restoring
   one is a single `key` line.
+- **The column runs the full height of the index beside it.** At its own
+  520:941 ratio and 138px wide it was 250px tall and stopped level with row
+  01, leaving ~300px of empty margin beside rows 02–06. `StruckPlate` takes a
+  `fill` prop: no `aspect-ratio`, `mask-size: cover`, and `self-stretch` in the
+  row, so the artwork is cropped at the sides instead. The dial and plotted
+  grid are its middle and survive the crop.
 - **`mask-mode: luminance` still has to be declared** on the one plate that is
   left. The files are greyscale with no alpha, so under the default
   `match-source` the browser reads their alpha — opaque everywhere — and the

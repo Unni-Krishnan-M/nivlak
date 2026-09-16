@@ -1457,17 +1457,23 @@ function isPerspective(services: PageService[] | undefined) {
 function StruckPlate({
   plate,
   className = "",
+  fill = false,
 }: {
   plate: PageMask;
   className?: string;
+  // Take the box's height from the layout instead of from the plate's ratio,
+  // and cover it -- the artwork is cropped at the sides rather than
+  // letterboxed inside a box taller than it is.
+  fill?: boolean;
 }) {
+  const size = fill ? "cover" : "contain";
   return (
     <div
       role="img"
       aria-label={plate.alt}
       className={className}
       style={{
-        aspectRatio: plate.ratio,
+        aspectRatio: fill ? undefined : plate.ratio,
         backgroundColor: "#dce7f7",
         maskImage: `url("${plate.src}")`,
         WebkitMaskImage: `url("${plate.src}")`,
@@ -1478,8 +1484,8 @@ function StruckPlate({
         // Six of those on one spread is what the first render of this chapter
         // actually produced.
         maskMode: "luminance",
-        maskSize: "contain",
-        WebkitMaskSize: "contain",
+        maskSize: size,
+        WebkitMaskSize: size,
         maskRepeat: "no-repeat",
         WebkitMaskRepeat: "no-repeat",
         maskPosition: "center",
@@ -1588,11 +1594,18 @@ function PerspectiveColumn({ plate }: { plate: PageMask }) {
   return (
     <StruckPlate
       plate={plate}
+      // FULL HEIGHT of the index beside it -- the intro through perspective 06
+      // -- where at its own 520:941 ratio it was 250px tall and stopped level
+      // with row 01, leaving 300px of empty margin beside rows 02-06. The row
+      // stretches it (`self-stretch`) and the mask covers the box, so the
+      // artwork is cropped at the sides; the dial and the plotted grid are its
+      // middle and survive the crop.
+      fill
       // Narrower than it was, and the width came off the PLATE rather than off
       // the type. At 166px the index had 374px of measure and two of the six
       // summaries wrapped to a second line at the larger sizes -- 38px of a
       // page that has none. At 138 the widest of them sets on one line.
-      className="hidden w-[clamp(88px,9.5vw,138px)] shrink-0 opacity-85 lg:block"
+      className="hidden w-[clamp(88px,9.5vw,138px)] shrink-0 self-stretch opacity-85 lg:block"
     />
   );
 }

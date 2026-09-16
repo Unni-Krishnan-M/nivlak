@@ -1286,42 +1286,42 @@ spread 02. Like the frame sources, the renders it reads are **not in the repo**
 — it expects them at the repo root. Its header explains the keying, the seeds
 and the tone; read it before changing any of the three.
 
-`tools/build-pencil-plates.sh` draws pencil lines over all fifteen
-photographic plates — 02's five services, 03's six process pictures and 04's
-four interfaces. It is a POST-PASS over `apps/web/public`, not a flag on the
-other three scripts, because their sources are not in this repository.
+`tools/build-pencil-plates.sh` redraws all fifteen photographic plates — 02's
+five services, 03's six process pictures and 04's four interfaces — as graphite
+pencil drawings printed in the book's ink. It is a POST-PASS over
+`apps/web/public`, because the other three scripts' sources are not in this
+repository.
 
-- **It is not idempotent, and its input is 445aec1, not HEAD.** Inking an inked
-  plate doubles every stroke. Before a run:
+- **It is not idempotent, and its input is 445aec1, not HEAD.** Drawing a
+  drawing doubles every stroke. Before a run:
   `git checkout 445aec1 -- apps/web/public/services apps/web/public/process apps/web/public/work`.
-- **The plate keeps its own tone; the pencil is a multiply layer on top.** Seven
-  revisions REBUILT each plate out of a sketch — a dodge drawing screened over
-  grey and recoloured between two hand-picked greys — and every one was rejected
-  as blurred, washed out or not visible. The rebuild threw away the toning the
-  three build scripts had measured against the navy page. What was asked for,
-  in the end, was "the old theme but only the pencil sketch design": the toned
-  plate exactly, with graphite lines following its edges. White in the line
-  layer multiplies to nothing, so only the strokes print.
-- **`INK=35` is the darkest a stroke may go** (`+level 35%,100%` on the line
-  layer). 55 is a faint trace at 122px; 0 is a black outline that turns 03's
-  desks into woodcuts.
-- **Drawn at the size it is SHOWN — that was the blur.** 03's plates are
-  1240px files printed at 122px (10×; 18× at a 443px window), 02's 900 at 236,
-  04's 1240 at 431, and a one-pixel line averaged over a 10×10 block is grey
-  haze. Each family is resized FIRST (`TARGET_process=320`,
-  `TARGET_services=620`, `TARGET_work=1000`, about 2.5× display) and inked
-  after, with one fixed `BLUR=1.1`. `-kuwahara`, `-posterize` and edge-crushing
-  `-level` were all tried on the way and are worse; see `git log`.
+- **A pencil drawing is three layers and every earlier revision missed one.**
+  LINE (a colour-dodge sketch), HATCH (diagonal motion-blurred noise, laid only
+  where the photo is dark) and SHADE (the photo's own luma, lifted), multiplied
+  on white and then mapped `INK #1a2d47` → `PAPER #c3d1e0`. Line alone was
+  unreadable at 122px; line screened over a recoloured tone read as embossed
+  grey slabs; line multiplied over the untouched photo read as a photo with
+  outlines. The hatching is what makes it read as DRAWN.
+- **Blue-grey paper, not white.** A white-paper version was rejected as a pale
+  slab on navy stock. `PAPER` stays under the silver type (0.81 vs 0.895).
+  The first cut used `#0f1c30`/`#aabdd2` and printed every dark plate dim.
+- **`-clahe` before drawing.** 02's renders and 03's night desks are mostly
+  dark; a global `-auto-level` leaves their detail in the bottom fifth and the
+  hatching buries it. `HATCH_GATE=20` keeps hatching to the deepest shadows.
+- **Drawn at the size it is SHOWN — that was the blur.** 03's plates are 1240px
+  files printed at 122px (10×; 18× at a 443px window), 02's 900 at 236, 04's
+  1240 at 431. Each family is resized FIRST (`TARGET_process=320`,
+  `TARGET_services=620`, `TARGET_work=1000`, ~2.5× display) and drawn after.
+  `-kuwahara`, `-posterize` and edge-crushing `-level` were tried and are worse.
 - **A keyed plate loses its key BEFORE the resize.** Resizing srgba zeroes the
-  colour under every transparent pixel; 02's five once came out as flat silver
-  silhouettes (colour std 0.004). Colour and key are resized separately and the
-  key goes back on; the script refuses a changed channel count.
-- **The audit**: median above a page luma sampled off `frame-091` (0.2036) —
-  multiply only darkens, so this is the check that can now fail, and 02's
-  keyed renders sit closest (0.22–0.27) — and a std of at least 0.05, because a
-  blank plate passes the median test.
+  colour under transparent pixels; 02's five once came out as flat silhouettes.
+  Colour and key are resized separately; a changed channel count is refused.
+- **The hatch noise is seeded** (`-seed 7`), so rebuilds are comparable.
+- **The audit**: median above the page luma sampled off `frame-091` (0.2036)
+  — `INK` is darker than the page, so a mostly-ink plate is a hole — and a std
+  of at least 0.05, because a blank plate passes the median test.
 - **The redactions survive.** 04's blurred boxes over invented client names are
-  baked into the input, and a blurred region has no edges to ink.
+  baked into the input, and a blurred region has no edges to draw.
 
 **What it does not touch, and why.** `plate-telegraphy.webp` is already an 1876
 patent drawing; `perspectives/column.webp` is a luminance MASK rather than a

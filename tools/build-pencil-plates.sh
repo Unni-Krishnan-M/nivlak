@@ -80,13 +80,13 @@ set -euo pipefail
 # build-service-plates.sh shipped once and every script here guards against.
 # The audit below tests the median against a live sample of the page.
 #
-# WHY THE BLUR SCALES WITH WIDTH
+# ONE LINE WEIGHT
 #
-# The dodge sketch's line weight is set by the blur radius, in PIXELS. The
-# service plates are 900px wide and the process and work plates 1240, so one
-# fixed radius draws the services a third heavier than everything else -- two
-# line weights in one book, which is the same mistake as two tones. RADIUS_DIV
-# makes the radius a constant FRACTION of the width instead.
+# The dodge sketch's line weight is set by the blur radius, in PIXELS, so it is
+# only one weight on screen if every plate is drawn at the same multiple of its
+# displayed size. That used to be done with RADIUS_DIV, a blur that scaled with
+# the file's width; it is now done by resizing each family first -- see TARGET
+# below -- and using one fixed BLUR.
 #
 # WHAT IS NOT CONVERTED, AND WHY EACH IS DELIBERATE
 #
@@ -115,7 +115,7 @@ GROUND='#2c4a68'
 HIGH='#c8d8ea'
 # Sharpening, applied after the line is screened over the tone. There is no
 # smoothing step at all any more -- see the header.
-SHARPEN='0x1.0+1.2+0.02'
+SHARPEN='0x0.8+1.4+0.02'
 # Sketch shape, and both numbers are about staying a LINE DRAWING rather than
 # a smoky one. RADIUS_DIV is width/blur, so 1030 puts the radius at 1.2px on a
 # 1240px plate. The first run used 250 -- a 5px radius -- and the result was a
@@ -140,7 +140,36 @@ SHARPEN='0x1.0+1.2+0.02'
 # it eats the drawing instead of thickening it. One pixel at both widths rather
 # than a fraction of each, because morphology takes whole-pixel kernels and 900
 # against 1240 does not separate enough to matter.
-RADIUS_DIV=1030
+# DRAWN AT THE SIZE IT IS SHOWN, and that is what finally took the blur out.
+#
+# Four revisions tuned the sketch itself -- radius, power, dilate, a smoothing
+# pass, a sharpening pass -- and every one of them was drawing a 1-2px line on
+# a 1240px file that the browser then shows at 122px. Measured in the page:
+#
+#   plate         shown at 1440   file   downscale   shown at 443   downscale
+#   process (03)       122px      1240     10.2x          70px         17.7x
+#   services (02)      236px       900      3.8x         105px          8.6x
+#   work (04)          431px      1240      2.9x         327px          3.8x
+#
+# A one-pixel pencil line averaged over a 10x10 block is a tenth of a pixel of
+# faint grey. That is the blur, and no amount of sharpening at 1240 survives
+# it, because the sharpening is averaged away by exactly the same resize. So
+# each family is RESIZED FIRST to about two and a half times its displayed
+# width -- enough for a 2x screen -- and the drawing is made at that size,
+# where a stroke is a stroke the display will actually keep.
+#
+# Proved by rendering the same plate both ways and scaling each to 122px and
+# 70px with point filtering: sketched-then-resized is smudge, resized-then-
+# sketched draws the magnifier ring, the notebook edges and the pen as lines.
+#
+# Every family ends up at roughly the same multiple of its display size, so one
+# fixed BLUR is one line weight on screen -- which is what RADIUS_DIV, the
+# width fraction this replaced, was trying to be and could not while the
+# sources were three different sizes shown at three different sizes.
+TARGET_process=320
+TARGET_services=620
+TARGET_work=1000
+BLUR=1.1
 POW=1.8
 DILATE=1
 QUALITY=82
@@ -157,10 +186,9 @@ for dir in services process work; do
   for src in "$PUB/$dir"/*.webp; do
     [ -e "$src" ] || continue
     width=$(magick identify -format '%w' "$src")
-    # Floor at 0.6: below that the blur stops separating from the source and
-    # the dodge returns flat white. It is not reached at any width we ship --
-    # the narrowest plate is 900px, which asks for 0.87.
-    blur=$(awk -v w="$width" -v d="$RADIUS_DIV" 'BEGIN{ r = w/d; printf "%.2f", (r < 0.6 ? 0.6 : r) }')
+    target_var="TARGET_$dir"
+    target="${!target_var}"
+    blur="$BLUR"
     tmp="$(mktemp -u).webp"
 
     # 02's five plates are KEYED -- build-service-plates.sh floodfills their
@@ -173,9 +201,13 @@ for dir in services process work; do
     keyed=$(magick identify -format '%[channels]' "$src" | grep -c 'a' || true)
 
     if [ "$keyed" != "0" ]; then
+      # The key comes off BEFORE the resize. Resizing an srgba image zeroes the
+      # colour under every transparent pixel, and -auto-level then spends the
+      # whole range on that black: the five plates came out as flat silver
+      # silhouettes with a colour std of 0.004 and no drawing in them.
       magick "$src" \
-        \( +clone -alpha extract +write mpr:key +delete \) \
-        -alpha off \
+        \( +clone -alpha extract -resize "${target}x" +write mpr:key +delete \) \
+        -alpha off -resize "${target}x" \
         -colorspace gray -auto-level \
         \( +clone \
            \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
@@ -187,8 +219,19 @@ for dir in services process work; do
         mpr:key -alpha off -compose copy_opacity -composite \
         -strip -quality "$QUALITY" "$tmp"
     else
-      magick "$src" \
-        -colorspace gray -auto-level \
+      # Light-mode interfaces are turned over before they are drawn. Their
+      # source median is 0.80 and 0.85 (saas, web) where every other opaque
+      # source is under 0.59, and the screen blend then saturates the whole
+      # plate toward HIGH: 04's web plate printed as a pale slab with its lines
+      # lost in it, median 0.79. Negated it reads as the same interface in dark
+      # mode -- median 0.36, lines clear. Photographs are never turned over,
+      # which is why the bar is 0.7 and not 0.5: a negative photo is a film
+      # negative, not a drawing.
+      invert=$(magick "$src" -colorspace gray -auto-level \
+        -format '%[fx:median > 0.7 ? 1 : 0]' info:)
+      neg=(); [ "$invert" = "1" ] && neg=(-negate)
+      magick "$src" -resize "${target}x" \
+        -colorspace gray "${neg[@]}" -auto-level \
         \( +clone \
            \( +clone -negate -blur "0x$blur" \) -compose colordodge -composite \
            -evaluate pow "$POW" -negate -morphology Dilate "Disk:$DILATE" \) \
@@ -217,9 +260,16 @@ for dir in services process work; do
     # own bounding box, so a plate that is nine tenths transparent is judged on
     # the tenth that prints. On the ten full-bleed plates there is no uniform
     # border to trim and this is a no-op.
-    read -r median mean < <(magick "$tmp" -background none -alpha set \
+    read -r median mean std < <(magick "$tmp" -background none -alpha set \
       -trim +repage -alpha off -colorspace Gray \
-      -format "%[fx:median] %[fx:mean]\n" info:)
+      -format "%[fx:median] %[fx:mean] %[fx:standard_deviation]\n" info:)
+    # A plate with no drawing in it -- the flat-silhouette failure above --
+    # passes the median test, so it gets its own.
+    awk -v s="$std" 'BEGIN { if (s < 0.05) exit 1 }' || {
+      echo "REFUSING $dir/$(basename "$src"): std $std, nothing is drawn" >&2
+      rm -f "$tmp"
+      exit 1
+    }
     awk -v m="$median" -v p="$PAGE_LUMA" 'BEGIN { if (m <= p) exit 1 }' || {
       echo "REFUSING $dir/$(basename "$src"): median $median is at or below the page ($PAGE_LUMA)" >&2
       rm -f "$tmp"
@@ -227,8 +277,8 @@ for dir in services process work; do
     }
 
     mv "$tmp" "$src"
-    printf '  %-30s %5spx  blur %-5s median %-8s mean %s\n' \
-      "$dir/$(basename "$src")" "$width" "$blur" "$median" "$mean"
+    printf '  %-40s %5s -> %-5s blur %-4s median %-8s mean %s\n' \
+      "$dir/$(basename "$src")" "$width" "$target" "$blur" "$median" "$mean"
     converted=$((converted + 1))
   done
 done

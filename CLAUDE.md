@@ -1345,11 +1345,24 @@ re-run here.
   slabs pasted on the navy. The key is now lifted off, the drawing made on the
   colour channels, and the key put back; the script refuses any plate whose
   channel count changed.
-- **Line weight is a fraction of width, not a fixed radius.** The dodge spreads
-  each edge over the blur radius, so a wide radius draws haze *around* objects
-  instead of a line *along* them — the first run used 5px on a 1240px plate and
-  produced a smoky wash. `RADIUS_DIV=1030` puts it at 1.2px there and 0.87 on
-  the 900px services, so one line weight across the book.
+- **The plates are drawn at the size they are SHOWN, and that was the blur.**
+  Measured in the browser, 03's plates are 1240px files printed at 122px (10×;
+  18× at a 443px window), 02's are 900 at 236, 04's 1240 at 431. A one-pixel
+  line drawn at 1240 and shrunk ten times is a grey smudge whatever the
+  sharpening. Each family is now resized FIRST — `TARGET_process=320`,
+  `TARGET_services=620`, `TARGET_work=1000`, about 2.5× display so a DPR-2
+  screen still has pixels — and sketched after, with one fixed `BLUR=1.1`.
+  The fifteen went from 960K to 268K as a side effect.
+- **A keyed plate loses its key BEFORE the resize.** Resizing an srgba image
+  zeroes the colour under every transparent pixel, and `-auto-level` then
+  spends the range on that black: 02's five came out as flat silver
+  silhouettes, colour std 0.004. The audit now also refuses any plate with a
+  std under 0.05, because a blank plate passes the median test.
+- **Light-mode interfaces are turned over before they are drawn.** 04's web
+  and SaaS sources have a median of 0.85 and 0.80 (every other opaque source
+  is under 0.59); screened over that tone the whole plate saturates to `HIGH`
+  and the lines vanish. Negated, they read as the same UI in dark mode. The
+  bar is 0.7 so that no photograph is ever inverted — that is a film negative.
 - **Brightness and thickness are two different knobs, and the first pass got
   neither.** At `POW=1.3` the strokes came out mid-grey and the plates read as
   faint — 03's six print at 132px, where a one-pixel mid-grey line is most of a

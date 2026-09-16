@@ -5,9 +5,21 @@
 // mockup lays out as scrolling cards is set here as book spreads instead: the
 // words are theirs, the setting is the book's.
 //
-// The one thing not in here is the founder's photograph. `founder.portrait`
-// takes a path under public/ and the page draws a keyline plate until there is
-// one to point it at.
+// The team's portraits are the one thing not transcribed from it: they are
+// photographs supplied separately and printed in the book's ink by
+// tools/build-team-portraits.sh.
+
+/** One person on the team spread. */
+export type PageMember = {
+  name: string;
+  role: string;
+  /** A path under public/ -- built by tools/build-team-portraits.sh. */
+  portrait: string;
+  /** Three words, set as a run under the name. */
+  focus: string[];
+  /** One sentence about what this person does for a client. */
+  line: string;
+};
 
 /** A plate: one of the line cuts in book-emblems.tsx. */
 export type EmblemName =
@@ -473,15 +485,17 @@ export type BookPage = {
   terms?: PageTerm[];
   /** A closing line under the terms. */
   termsFoot?: string;
-  /** The founder spread. */
-  founder?: {
-    name: string;
-    role: string;
-    /** A path under public/, e.g. "/founder.jpg". */
-    portrait?: string;
-    bio: string[];
+  /**
+   * The team spread: a head slot on each page and one member to a row, two
+   * rows a page, on one shared grid so the rows line up across the gutter.
+   */
+  team?: {
+    /** The recto's head slot: the studio's founding belief... */
+    belief: string;
+    /** ...under a running line of the leadership principles. */
     principlesTitle: string;
     principles: string[];
+    members: PageMember[];
   };
   /** The contact spread. */
   contact?: {
@@ -1165,17 +1179,19 @@ export const BOOK_PAGES: BookPage[] = [
   },
   {
     number: "06",
-    title: "Founder",
+    title: "Team",
     facing: {
-      headline: "Meet the Founder.",
+      headline: "Meet the Team.",
+      // Echoes 02's "all of them built by the people you meet" -- this is the
+      // page where the reader does.
+      subtitle: "The people you meet when you work with Nivlak.",
     },
-    founder: {
-      name: "Laxman S",
-      role: "Founder & CEO",
-      bio: [
+    team: {
+      // Laxman's bio used to open the recto in two paragraphs. The first is
+      // the STUDIO's belief rather than one person's, so it heads the page
+      // here; the second is condensed into Laxman's own row below.
+      belief:
         "Nivlak Technologies was founded with a simple belief: technology should create opportunities, solve meaningful problems, and leave a lasting impact.",
-        "Driven by curiosity, continuous learning, and a passion for engineering, Laxman leads Nivlak with a long-term vision of building intelligent digital products that help businesses grow with confidence.",
-      ],
       principlesTitle: "Leadership Principles",
       principles: [
         "Think Long-Term.",
@@ -1183,6 +1199,41 @@ export const BOOK_PAGES: BookPage[] = [
         "Lead With Integrity.",
         "Never Stop Learning.",
         "Create Lasting Value.",
+      ],
+      // ONLY the names and roles were given. Laxman's words come from the
+      // founder bio this chapter carried before; the other three members'
+      // focus words and sentences are written from their ROLE and nothing
+      // else -- no credentials, no results, no history. Replace them with
+      // each person's own words when there are some.
+      members: [
+        {
+          name: "Laxman S",
+          role: "Founder & CEO",
+          portrait: "/team/laxman.webp",
+          focus: ["Vision", "Engineering", "Continuous learning"],
+          line: "Leads Nivlak with a long-term vision of building intelligent digital products that help businesses grow with confidence.",
+        },
+        {
+          name: "Unni Krishnan M",
+          role: "Co-Founder",
+          portrait: "/team/unni-krishnan-m.webp",
+          focus: ["Direction", "Delivery", "Partnership"],
+          line: "Builds Nivlak alongside Laxman, shaping what the studio takes on and how it gets delivered.",
+        },
+        {
+          name: "Ashok",
+          role: "Sales & Marketing",
+          portrait: "/team/ashok.webp",
+          focus: ["Clients", "Outreach", "Growth"],
+          line: "Often the first conversation with Nivlak: understanding what you need and finding the right place to start.",
+        },
+        {
+          name: "Gokul",
+          role: "Sales & Marketing",
+          portrait: "/team/gokul.webp",
+          focus: ["Brand", "Story", "Client care"],
+          line: "Tells the Nivlak story and keeps clients close, from the first enquiry to the launch.",
+        },
       ],
     },
   },

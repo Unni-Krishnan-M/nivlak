@@ -17,6 +17,7 @@ import {
   type BookSpread,
   type PageFigure,
   type PageMask,
+  type PageMember,
   type PagePlate,
   type PageService,
   type PageStep,
@@ -673,6 +674,34 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
     );
   }
 
+  // THE TEAM SPREAD's verso: the chapter opening in the head slot, then the
+  // first half of the members, one to a row -- on the same kind of shared grid
+  // as the process spread, and for the same reason. Two portraits a page apart
+  // that do not sit on one line read as a layout that slipped.
+  if ((page as BookPage).team) {
+    const { verso, rows } = teamHalves((page as BookPage).team!.members);
+    return (
+      <TeamRun
+        members={verso}
+        from={0}
+        rows={rows}
+        head={
+          <div className="flex min-h-0 flex-col">
+            <ChapterHead page={page} headline={headline} />
+            {subtitle ? (
+              <p
+                data-ink
+                className="mt-[0.9em] max-w-[42ch] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-balance text-slate-300/80 [@media(max-height:480px)]:hidden"
+              >
+                {subtitle}
+              </p>
+            ) : null}
+          </div>
+        }
+      />
+    );
+  }
+
   // The PROCESS SPREAD's verso: the chapter opening in the head slot, then the
   // first half of the six stages, one to a row.
   //
@@ -878,7 +907,6 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       ) : null}
 
       {page.facing.plate ? <EngravedPlate plate={page.facing.plate} /> : null}
-      {page.founder ? <Portrait founder={page.founder} /> : null}
       {page.contact && !page.facing.plate ? (
         <MarkPlate caption="NIVLAK TECHNOLOGIES" />
       ) : null}
@@ -2713,54 +2741,6 @@ function EngravedPlate({
 }
 
 /**
- * The founder's plate.
- *
- * A book prints a portrait as a plate with a keyline and the sitter's name
- * under it, so that is the frame. There is no photograph in the repo yet:
- * until `founder.portrait` points at one under public/, the keyline holds an
- * empty ground with the mark in it, which is a plate awaiting its cut rather
- * than a broken image.
- */
-function Portrait({ founder }: { founder: NonNullable<BookPage["founder"]> }) {
-  return (
-    <figure data-ink className="mt-auto mb-[6%] lg:mt-auto">
-      <div className="relative w-[clamp(120px,15vw,200px)] border border-white/15 p-[6px]">
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-white/[0.03]">
-          {founder.portrait ? (
-            <img
-              src={founder.portrait}
-              alt={`${founder.name}, ${founder.role}`}
-              draggable={false}
-              className="h-full w-full object-cover select-none"
-            />
-          ) : (
-            <span className="absolute inset-0 flex items-center justify-center">
-              <img
-                src="/logo-mark.webp"
-                alt=""
-                aria-hidden="true"
-                width={192}
-                height={192}
-                draggable={false}
-                className="h-auto w-[42%] opacity-25 select-none"
-              />
-            </span>
-          )}
-        </div>
-      </div>
-      <figcaption className="mt-[0.9em]">
-        <p className="font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.782vw,1.653rem)] leading-tight font-light text-white">
-          {founder.name}
-        </p>
-        <p className="mt-[0.35em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.32em] text-slate-400/70">
-          {founder.role.toUpperCase()}
-        </p>
-      </figcaption>
-    </figure>
-  );
-}
-
-/**
  * A numbered procedure, run down the page as a ruled sequence.
  *
  * sample.jpeg draws this as six circles on one horizontal line, which is a
@@ -2798,51 +2778,167 @@ function StepList({ steps, from }: { steps: PageStep[]; from: number }) {
 }
 
 /**
- * The founder spread's right-hand page: the bio, then the principles.
+ * THE TEAM SPREAD: four people, two to a page, portrait left and words right.
  *
- * The portrait belongs on the verso beside the heading, so this page is prose
- * against a ruled list. The principles are numbered and ruled rather than
- * bulleted, because a book does not use bullets.
+ * It borrows the process spread's shared grid -- a head slot and then equal
+ * rows, the same template on both pages -- so member 01 sits on exactly the
+ * line member 03 does and the rules run straight across the gutter. `rows` is
+ * the larger half, so an odd team leaves the recto's last row blank rather
+ * than respacing one page against the other.
  */
-function FounderPage({ page }: { page: BookPage }) {
-  const founder = page.founder;
-  if (!founder) return null;
+// Under 1, where 03's is 1.11: this verso's head is a chapter head and ONE
+// line of subtitle, and at 1.1 it left ~90px of blank above member 01 while
+// the portraits went short. At 0.82 the head fills its slot and the rows are
+// the tallest part of the page, which is what a spread of faces wants.
+const TEAM_HEAD_SLOT = 0.82;
+
+function teamHalves(members: PageMember[]) {
+  const cut = Math.ceil(members.length / 2);
+  return {
+    verso: members.slice(0, cut),
+    recto: members.slice(cut),
+    rows: cut,
+  };
+}
+
+function TeamRun({
+  members,
+  from,
+  rows,
+  head,
+}: {
+  members: PageMember[];
+  from: number;
+  rows: number;
+  head?: React.ReactNode;
+}) {
+  if (!members.length) return null;
   return (
-    <>
-      {founder.bio.map((paragraph, i) => (
-        <p
-          key={paragraph.slice(0, 24)}
-          data-ink
-          className={`max-w-[36ch] text-[clamp(0.7rem,1.127vw,1.026rem)] leading-relaxed text-slate-300/80 ${
-            i ? "mt-[1em]" : ""
-          }`}
-        >
-          {paragraph}
-        </p>
+    <div
+      data-team-run
+      // The same three decisions as <StageRun>, for the same measured
+      // reasons: the row template is lg-only (below lg both grids stack in
+      // one column and `flex-1` hands the second one zero height), and the
+      // bottom padding reserves the drop folio in vh because the folio is
+      // placed in vh.
+      className="grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 lg:pb-[clamp(14px,2vh,24px)] lg:[grid-template-rows:var(--team-rows)]"
+      style={
+        {
+          "--team-rows": `minmax(0, ${TEAM_HEAD_SLOT}fr) repeat(${rows}, minmax(0, 1fr))`,
+        } as React.CSSProperties
+      }
+    >
+      {head}
+      {members.map((member, i) => (
+        <MemberRow key={member.name} member={member} index={from + i} />
       ))}
-      <p
-        data-ink
-        className="mt-[1.8em] mb-[0.5em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70"
+    </div>
+  );
+}
+
+/**
+ * One member: a keyline plate on the left, the letterpress on the right.
+ *
+ * The plate takes its HEIGHT from the row and its width from the 4:5 portrait,
+ * so four rows of one height give four plates of one size on both pages --
+ * the one thing a row of faces a reader compares may not get wrong. Below lg
+ * the rows are content-height, so the plate is given a width instead.
+ */
+function MemberRow({ member, index }: { member: PageMember; index: number }) {
+  return (
+    <article
+      data-ink
+      className="flex min-h-0 items-stretch gap-[clamp(0.9em,1.7vw,1.6em)] border-t border-white/15 py-[clamp(0.6em,1.3vh,1.1em)]"
+    >
+      <figure
+        // Capped in vw as well as sized by the row. At 1024 the row alone made
+        // the plate 150px of a 280px recto, and Ashok's sentence ran to six
+        // lines beside it; the cap narrows the plate there and object-cover
+        // crops the shoulders rather than the face.
+        className="w-[clamp(78px,22vw,110px)] shrink-0 self-start border border-white/15 p-[4px] [@media(max-height:480px)]:w-[56px] lg:aspect-[4/5] lg:h-full lg:w-auto lg:max-w-[9vw] lg:self-stretch xl:max-w-[clamp(100px,12.5vw,200px)]"
       >
-        {founder.principlesTitle.toUpperCase()}
-      </p>
-      <ul className="flex flex-col">
-        {founder.principles.map((principle, i) => (
-          <li
-            key={principle}
-            data-ink
-            className="flex items-baseline gap-[0.9em] border-t border-white/10 py-[0.62em]"
-          >
-            <span className="text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.2em] text-slate-400/50">
-              {roman(i + 1)}
-            </span>
-            <span className="text-[clamp(0.72rem,1.15vw,1.026rem)] text-slate-200">
-              {principle}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </>
+        <img
+          src={member.portrait}
+          alt={`${member.name}, ${member.role}`}
+          width={360}
+          height={450}
+          draggable={false}
+          className="block aspect-[4/5] w-full object-cover select-none lg:h-full"
+        />
+      </figure>
+      <div className="flex min-w-0 flex-col justify-center">
+        <p className="flex items-baseline gap-[0.8em] text-[clamp(0.5rem,0.74vw,0.66rem)] tracking-[0.14em] text-slate-400/75 uppercase xl:tracking-[0.3em]">
+          <span aria-hidden className="tabular-nums text-slate-400/50">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          {member.role}
+        </p>
+        <h3 className="mt-[0.35em] font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.9vw,1.75rem)] leading-[1.1] font-light text-white">
+          {member.name}
+        </h3>
+        <ul className="mt-[0.55em] flex flex-wrap items-center gap-x-[0.55em] gap-y-[0.2em] text-[clamp(0.56rem,0.82vw,0.74rem)] tracking-[0.08em] text-[#dce7f7]/85">
+          {/* The dot trails its word rather than leading the next, so a run
+              that wraps (it does at 1024) ends a line with one instead of
+              starting a line with one. */}
+          {member.focus.map((word, i) => (
+            <li key={word} className="flex items-center gap-[0.55em]">
+              {word}
+              {i < member.focus.length - 1 ? (
+                <span aria-hidden className="text-slate-400/45">
+                  ·
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+        {/* Dropped below 480px of viewport HEIGHT. At 844x390 the sheet shows
+            about 330px under a chapter head of 150, which is 90 a row, and a
+            row with its sentence is 130: Unni's printed off the foot. Role,
+            name and focus are the facts; the sentence elaborates them. */}
+        <p className="mt-[0.6em] max-w-[40ch] text-[clamp(0.64rem,0.98vw,0.9rem)] leading-relaxed text-slate-300/75 [@media(max-height:480px)]:hidden">
+          {member.line}
+        </p>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * The team spread's recto: the principles as a running line and the studio's
+ * founding belief in the head slot, then the second half of the members.
+ */
+function TeamPage({ team }: { team: NonNullable<BookPage["team"]> }) {
+  const { recto, verso, rows } = teamHalves(team.members);
+  return (
+    <TeamRun
+      members={recto}
+      from={verso.length}
+      rows={rows}
+      head={
+        // Hidden below lg, like 03's arc and note: there the spread is one
+        // column and this would print between member 02 and member 03.
+        <div data-ink className="hidden min-h-0 flex-col pb-[1.1em] lg:flex">
+          <p className="text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.3em] text-slate-400/60 uppercase">
+            {team.principlesTitle}
+          </p>
+          {/* Two columns, numbered, rather than one run with dots: a run of
+              five wrapped at 434px and started two lines with a stray "·". */}
+          <ol className="mt-[0.7em] grid grid-cols-2 gap-x-[1.2em] gap-y-[0.45em] text-[clamp(0.5rem,0.72vw,0.64rem)] tracking-[0.08em] text-slate-200/85 uppercase xl:tracking-[0.2em]">
+            {team.principles.map((principle, i) => (
+              <li key={principle} className="flex items-baseline gap-[0.7em]">
+                <span aria-hidden className="text-slate-400/50">
+                  {roman(i + 1)}
+                </span>
+                {principle.replace(/\.$/, "")}
+              </li>
+            ))}
+          </ol>
+          <p className="mt-auto max-w-[40ch] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-slate-300/75 italic">
+            {team.belief}
+          </p>
+        </div>
+      }
+    />
   );
 }
 
@@ -3164,8 +3260,8 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
               left rather than under copy that reaches the foot. */}
           {page.plate ? <EngravedPlate plate={page.plate} beside /> : null}
         </>
-      ) : page.founder ? (
-        <FounderPage page={page} />
+      ) : (page as BookPage).team ? (
+        <TeamPage team={(page as BookPage).team!} />
       ) : page.contact ? (
         <ContactPage page={page} />
       ) : page.terms ? (

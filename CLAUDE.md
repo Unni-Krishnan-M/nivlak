@@ -873,6 +873,46 @@ auto-height column where `mt-auto` does nothing, so the same margin only pushed
 the contact rows below it further down — 7px, on a page measured at 390x844
 that is already short.
 
+**06 is the team: four people, two to a page, portrait left and words right.**
+It was a founder spread — one portrait plate on the verso, a bio and a list of
+principles on the recto — and the plate was an empty keyline with the mark in
+it, because there was no photograph. `founder` is gone from `BookPage`;
+`team` replaces it (`belief`, `principlesTitle`, `principles`, `members`).
+
+- **It borrows 03's shared grid.** `<TeamRun>` is `<StageRun>`'s template with
+  two rows: a head slot, then one member per row, the same template on both
+  pages, so member 01 sits on member 03's line and the rules run straight
+  across the gutter. `TEAM_HEAD_SLOT` is 0.82, under 03's 1.11, because this
+  verso's head is a chapter head and one line: at 1.1 it left ~90px blank
+  above member 01. `teamHalves()` cuts the run; an odd team leaves the recto's
+  last row empty rather than respacing it.
+- **The plate takes its height from the row** (`lg:h-full`, 4:5), so four
+  rows of one height are four portraits of one size. It is also capped in vw
+  (`lg:max-w-[9vw]`, `xl:` 12.5vw): at 1024 the recto is ~240px after the
+  thumb index's inset, the uncapped plate was 150 of it, and a sentence ran six
+  lines beside it. `object-cover` crops shoulders, not faces.
+- **The recto's head slot** carries the leadership principles as a numbered
+  two-column list and the founding belief under them — the first paragraph of
+  the old founder bio, which is the STUDIO's belief rather than one person's.
+  A dotted run of five wrapped at 434px and started lines with a stray "·".
+  Hidden below `lg`, like 03's arc.
+- **Below 480px of viewport height** the portrait drops to 56px and the
+  member's sentence is not printed: at 844x390 a row has ~90px and needs 130
+  with it. Role, name and focus words stay.
+- **Only names and roles were given.** Laxman's focus words and sentence come
+  from the old bio. Unni's, Ashok's and Gokul's are written from their ROLE and
+  nothing else, and say so in a comment above the data — replace them with
+  each person's own words.
+- **The portraits are built, not dropped in.** `tools/build-team-portraits.sh`
+  reads the four photographs from the repo root (not committed, like every
+  other plate source), keys the studio white by floodfilling the FULL frame's
+  corners (a head-and-shoulders crop has the suit in its corners), crops each
+  to 4:5 so the four heads are one size at one height, lays the subject on a
+  grey the ramp maps to a navy just above the page, draws a light pencil line
+  over it, and maps it through the plates' ramp (`#16283f` → `#34557f` →
+  `#b4cbe6`). A white-background portrait untouched would be a white card on
+  navy stock.
+
 **07 is a chapter with a door in it.** The spread is still a spread — a
 chapter head and a description on the verso, Fig. 2 and the four ways to reach
 a person on the recto — but the recto now leads with a PANEL, and the panel

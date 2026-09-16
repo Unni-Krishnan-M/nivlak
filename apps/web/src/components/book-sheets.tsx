@@ -1605,7 +1605,12 @@ function PerspectiveColumn({ plate }: { plate: PageMask }) {
       // the type. At 166px the index had 374px of measure and two of the six
       // summaries wrapped to a second line at the larger sizes -- 38px of a
       // page that has none. At 138 the widest of them sets on one line.
-      className="hidden w-[clamp(88px,9.5vw,138px)] shrink-0 self-stretch opacity-85 lg:block"
+      // Widened by growing OUTWARD, into the verso's gutter-side margin, with a
+      // negative right margin of the same amount -- not by taking width from
+      // the index, whose longest summary already ends flush against the
+      // column at 1440 and would wrap to a second line on a page with 14px of
+      // slack under its last rule.
+      className="hidden w-[clamp(88px,11.7vw,170px)] shrink-0 self-stretch opacity-85 lg:block lg:-mr-[clamp(0px,2.2vw,32px)]"
     />
   );
 }

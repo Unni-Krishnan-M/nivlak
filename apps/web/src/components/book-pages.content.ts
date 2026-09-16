@@ -367,18 +367,8 @@ export type PageContact = {
   action?: string;
   /** Print a copy button: for what people paste rather than click. */
   copy?: boolean;
-};
-
-/**
- * One of 07's "is this you?" lines, and the answer it fills in if picked.
- *
- * The preset's values must be options the inquiry actually offers, word for
- * word -- see STEPS in book-inquiry.tsx. A line with no clear single answer
- * carries no preset and simply opens the inquiry.
- */
-export type PagePrompt = {
-  label: string;
-  preset?: { stage?: string; needs?: string[]; building?: string };
+  /** Set as one of the two large actions at the head of the page. */
+  primary?: boolean;
 };
 
 export type BookPage = {
@@ -515,44 +505,27 @@ export type BookPage = {
     principles: string[];
     members: PageMember[];
   };
-  /** The contact spread. */
+  /**
+   * The contact spread: ways to reach a person, and nothing to fill in.
+   *
+   * It carried a panel that opened an eight-step project inquiry, and a list
+   * of prompts that opened it too. Both went on request -- the visitor wanted
+   * to CONTACT the studio, not be asked questions -- and with them the dialog
+   * and its API route. `git log` has all three.
+   */
   contact?: {
-    rows: PageContact[];
-    /**
-     * The dominant action on the page, and the only one that opens the
-     * project inquiry.
-     *
-     * It is a PANEL and not a line of type with an arrow after it, which is
-     * what every other action in this book is. That is the one place 07
-     * departs from the house treatment and it is deliberate: an action a
-     * visitor is meant to find without looking cannot be set at the same
-     * weight as "Enquire about this" three chapters back. `body` is the half
-     * of the chapter's own description that belongs next to the action -- the
-     * verso asks the question, this answers what happens when you say yes --
-     * so the sentence is not printed twice on one spread.
-     */
-    primary: { label: string; body: string };
-    enquiryTitle: string;
-    enquiryBody: string;
-    /** Heads the four ways to reach a person without the questionnaire. */
+    /** Heads the right-hand page. */
     directTitle: string;
+    /** One sentence under it saying what to send. */
+    directBody: string;
+    /** Email and phone first, as large actions; then the rest. */
+    rows: PageContact[];
+    /** The verso: what the studio can help with, as plain lines. */
+    helpTitle: string;
+    help: string[];
     /**
-     * Where a reader recognises themselves before they write.
-     *
-     * These belong on the contact page and not at the end of 03, which is
-     * where the brief put them. 03 answers "how does this work"; a reader
-     * still deciding whether they are the right shape of client is asking
-     * something else, and they ask it at the point of writing to us. Set as
-     * questions rather than as segments because the reader is meant to answer
-     * one, not to be sorted by it.
-     */
-    prompts?: PagePrompt[];
-    /**
-     * What happens after a visitor gets in touch, set beside Fig. 2 on the
-     * verso. Every step is something the inquiry's own confirmation already
-     * promises -- "we'll review the details and get back to you through the
-     * contact information you provided" -- and nothing more: no response
-     * time, no free call, no process this studio has not described.
+     * What happens after a visitor gets in touch. Nothing here may promise
+     * more than a reply: no response time, no free call.
      */
     next?: { title: string; steps: { title: string; body: string }[] };
   };
@@ -1187,7 +1160,7 @@ export const BOOK_PAGES: BookPage[] = [
       body: "Bring us the challenge. We'll help you think through the opportunity, choose the right direction and build what comes next.",
         // Both turn to a chapter that exists: 07 Connect and 04 Work.
         actions: [
-          { label: "Start a project", chapter: 6 },
+          { label: "Get in touch", chapter: 6 },
           { label: "Explore our work", chapter: 3 },
         ],
       },
@@ -1269,30 +1242,31 @@ export const BOOK_PAGES: BookPage[] = [
       headline: "Let's Build What Comes Next.",
       subtitle:
         "Have a product, problem or opportunity worth exploring? Tell us what you're working on.",
-      plate: {
-        src: "/plates/plate-telegraphy.webp",
-        ratio: "431 / 620",
-        caption: "Fig. 2 — Telegraphy, 1876",
-        credit: "A. G. Bell, US 174,465. Public domain.",
-      },
+      // No plate. Fig. 2 (Bell's telegraphy patent) was removed on request:
+      // the page is for getting in touch and the engraving took half of it.
     },
     contact: {
+      directTitle: "Get in Touch",
+      directBody:
+        "Call or write, whichever is easier. A few lines about what you're working on is plenty.",
       rows: [
         {
-          emblem: "phone",
-          label: "Call",
-          value: "+91 97873 04869",
-          href: "tel:+919787304869",
-          action: "Call",
+          emblem: "mail",
+          label: "Email us",
+          value: "nivlak.work@gmail.com",
+          // The subject is filled in so the message is recognisable in an
+          // inbox; the body is left for the visitor.
+          href: "mailto:nivlak.work@gmail.com?subject=Project%20enquiry",
           copy: true,
+          primary: true,
         },
         {
-          emblem: "mail",
-          label: "Email",
-          value: "nivlak.work@gmail.com",
-          href: "mailto:nivlak.work@gmail.com",
-          action: "Write",
+          emblem: "phone",
+          label: "Call us",
+          value: "+91 97873 04869",
+          href: "tel:+919787304869",
           copy: true,
+          primary: true,
         },
         {
           emblem: "globe",
@@ -1309,49 +1283,31 @@ export const BOOK_PAGES: BookPage[] = [
           action: "Map",
         },
       ],
-      primary: {
-        label: "Start a Project",
-        body: "Eight short questions about the work. We'll ask who you are at the end.",
-      },
-      enquiryTitle: "What We Can Help With",
-      // It used to say "Any of these is a place to begin" over five lines of
-      // plain type that looked like choices and did nothing. They are buttons
-      // now, and the sentence says so.
-      enquiryBody: "Pick the one that sounds like you:",
-      prompts: [
-        { label: "You have an idea.", preset: { stage: "Just an Idea" } },
-        {
-          label: "You have a product already.",
-          preset: { stage: "Existing Product" },
-        },
-        { label: "You need a redesign.", preset: { needs: ["UX / UI Design"] } },
-        // No single answer: engineering support is four of the seven needs.
-        { label: "You need engineering support." },
-        {
-          label: "You need AI or automation.",
-          preset: { needs: ["AI Integration"] },
-        },
+      helpTitle: "What We Can Help With",
+      help: [
+        "You have an idea.",
+        "You have a product already.",
+        "You need a redesign.",
+        "You need engineering support.",
+        "You need AI or automation.",
       ],
       next: {
         title: "What Happens Next",
         steps: [
           {
-            title: "Tell us about it",
-            body: "Eight short questions — or just call or write.",
+            title: "Reach out",
+            body: "Email or call — a few lines about the idea is enough.",
           },
           {
             title: "We read it",
-            body: "We review the details you share about the work.",
+            body: "We look at what you've shared about the work.",
           },
           {
             title: "We get back to you",
-            body: "By the email or phone number you give us.",
+            body: "By email or phone, whichever you used.",
           },
         ],
       },
-      // "Contact Us ->" used to sit under the rows and was a second mailto
-      // link with a vaguer name. Every row now says what it does, so it went.
-      directTitle: "Prefer to Talk Directly?",
     },
   },
 ];

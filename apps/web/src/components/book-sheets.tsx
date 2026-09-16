@@ -20,7 +20,6 @@ import {
   type PageContact,
   type PageMask,
   type PageMember,
-  type PagePrompt,
   type PagePlate,
   type PageService,
   type PageStep,
@@ -909,21 +908,8 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
         </div>
       ) : null}
 
-      {page.facing.plate ? (
-        page.contact?.next ? (
-          // Top-aligned, so the steps start level with the engraving; the
-          // figure keeps its own foot margin, which is what clears the folio.
-          <div className="mt-auto flex items-start gap-[clamp(1.2em,2.6vw,2.4em)]">
-            <EngravedPlate plate={page.facing.plate} />
-            <NextSteps next={page.contact.next} />
-          </div>
-        ) : (
-          <EngravedPlate plate={page.facing.plate} />
-        )
-      ) : null}
-      {page.contact && !page.facing.plate ? (
-        <MarkPlate caption="NIVLAK TECHNOLOGIES" />
-      ) : null}
+      {page.facing.plate ? <EngravedPlate plate={page.facing.plate} /> : null}
+      {page.contact ? <ContactVerso contact={page.contact} /> : null}
     </>
   );
 }
@@ -2619,27 +2605,6 @@ function SecondaryServices({
   );
 }
 
-/** The mark, struck at the foot of a page that would otherwise trail off. */
-function MarkPlate({ caption = "THE MARK" }: { caption?: string }) {
-  return (
-    <figure data-ink className="mt-auto mb-[8%] flex items-center gap-[1.1em]">
-      <img
-        src="/logo-mark.webp"
-        alt=""
-        aria-hidden="true"
-        width={192}
-        height={192}
-        loading="lazy"
-        decoding="async"
-        draggable={false}
-        className="h-auto w-[clamp(56px,7vw,96px)] opacity-90 select-none"
-      />
-      <figcaption className="text-[clamp(0.5rem,0.828vw,0.707rem)] tracking-[0.32em] text-slate-400/45">
-        {caption}
-      </figcaption>
-    </figure>
-  );
-}
 
 /**
  * An engraved plate.
@@ -2956,139 +2921,162 @@ function TeamPage({ team }: { team: NonNullable<BookPage["team"]> }) {
   );
 }
 
-/** The contact spread's right-hand page: the details, then the invitation. */
+/**
+ * The contact spread's right-hand page: two large ways to reach a person, then
+ * the rest.
+ *
+ * It led with a panel that opened an eight-step project inquiry, and a list of
+ * prompts that opened it too. A visitor asked for none of that -- they wanted
+ * to get in touch -- so the page now does exactly that: email and telephone
+ * as the two largest things on it, each with its own copy button, and the
+ * website and the town beneath them.
+ */
 function ContactPage({ page }: { page: BookPage }) {
   const contact = page.contact;
   if (!contact) return null;
+  const primary = contact.rows.filter((row) => row.primary);
+  const rest = contact.rows.filter((row) => !row.primary);
   return (
     <>
-      {/* THE PROJECT FIRST, THE VISITOR SECOND -- and on the page that means
-          this panel comes before anything else on the recto, including the
-          telephone number. The old order was contact details, then a
-          paragraph, then five prompts, then a line of type with an arrow; a
-          visitor who wanted to start something had to read to the bottom of a
-          434px page to find out they could.
-
-          It is the one action in this book set as a PANEL rather than as a
-          ruled line with an arrow after it. Everything else that acts --
-          "Enquire about this" on 04, "Start a project" on 05 -- is a
-          navigation device inside the book, and this is the thing the book is
-          FOR. The border is 2px against the hairlines everywhere else, the
-          label is a size up from any other action, and the arrow is set at
-          1.6em: three ways of saying the same thing, because a visitor who
-          misses this misses the chapter.
-
-          The accent fills on hover and focus rather than sitting filled. A
-          solid silver slab printed on a photograph of navy stock reads as a
-          sticker stuck to the page -- the same failure, inverted, as the
-          plates that came out darker than the paper and read as holes in it.
-          A strong rule with the accent held back to a wash is a block a
-          printer could actually have inked. */}
-      <button
-        type="button"
-        data-inquiry-open
-        data-ink
-        className="group flex w-full cursor-pointer flex-col items-start border-2 border-[#dce7f7]/55 bg-[#dce7f7]/[0.07] px-[1.1em] py-[1.05em] text-start transition-colors duration-300 outline-none hover:border-[#dce7f7] hover:bg-[#dce7f7] focus-visible:border-[#dce7f7] focus-visible:bg-[#dce7f7] motion-reduce:transition-none"
-      >
-        <span className="flex w-full items-center justify-between gap-[0.8em]">
-          <span className="font-[family-name:var(--font-display)] text-[clamp(1.15rem,1.9vw,1.75rem)] leading-none font-medium tracking-[0.12em] text-white uppercase transition-colors duration-300 group-hover:text-[#0b1728] group-focus-visible:text-[#0b1728] motion-reduce:transition-none">
-            {contact.primary.label}
-          </span>
-          <span
-            aria-hidden
-            className="shrink-0 text-[clamp(1.5rem,2.5vw,2.3rem)] leading-none text-[#dce7f7] transition-all duration-300 group-hover:translate-x-[0.15em] group-hover:text-[#0b1728] group-focus-visible:text-[#0b1728] motion-reduce:transition-none"
-          >
-            &rarr;
-          </span>
-        </span>
-        <span className="mt-[0.7em] max-w-[34ch] text-[clamp(0.66rem,1.012vw,0.912rem)] leading-relaxed text-slate-300/75 transition-colors duration-300 group-hover:text-[#0b1728]/75 group-focus-visible:text-[#0b1728]/75 motion-reduce:transition-none">
-          {contact.primary.body}
-        </span>
-      </button>
-
-      {/* What the chapter says WITHOUT being operated. The inquiry asks the
-          same question at step four, and this list is why that is not the
-          only place it is answered: a visitor who never opens the inquiry
-          still has to be able to see what this studio does. */}
-      {/* Not printed below 480px of viewport HEIGHT. At 844x390 the recto
-          ended after these five lines and the telephone and email rows below
-          were clipped off the foot -- the one thing this chapter must never
-          lose. The panel above is the same way in. */}
-      <div data-ink className="mt-[1.6em] border-t border-white/12 pt-[1.2em] [@media(max-height:480px)]:hidden">
-        <p className="mb-[0.5em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70">
-          {contact.enquiryTitle.toUpperCase()}
+      <div data-ink>
+        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70 uppercase">
+          {contact.directTitle}
         </p>
-        <p className="max-w-[32ch] text-[clamp(0.7rem,1.08vw,0.98rem)] leading-relaxed text-slate-300/80">
-          {contact.enquiryBody}
+        <p className="mt-[0.6em] max-w-[36ch] text-[clamp(0.72rem,1.1vw,1rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
+          {contact.directBody}
         </p>
-        {/* Where a reader recognises themselves. Set as a run of short lines
-            against a hanging rule rather than as bullets: a client picking one
-            of five is not reading a list of five, and the rule is what stops
-            them reading as five separate offers. */}
-        {contact.prompts?.length ? (
-          <ul className="mt-[0.8em] flex flex-col border-t border-white/10">
-            {contact.prompts.map((prompt) => (
-              <li key={prompt.label} className="border-b border-white/[0.06]">
-                <PromptButton prompt={prompt} />
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </div>
 
-      {/* The way through without the questionnaire. It is kept whole -- four
-          rows and a mail action -- because an inquiry flow that is the only
-          door is a worse page than the one this replaces: some visitors have
-          one question, and eight steps to ask it is an insult. */}
-      <div data-ink className="mt-[1.6em] border-t border-white/12 pt-[1.2em]">
-        <p className="mb-[0.4em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70">
-          {contact.directTitle.toUpperCase()}
-        </p>
-        <ul className="flex flex-col">
-          {contact.rows.map((row) => (
-            <li
-              key={row.value}
-              className="flex items-center gap-[0.6em] border-t border-white/10"
+      {/* The two actions, set as PANELS -- the one place on this page that is.
+          The 2px rule and the wash are the treatment the old "Start a
+          project" panel had, moved to the things a visitor actually came for.
+          The copy button sits OUTSIDE the link: a button inside an anchor is
+          invalid, and on a laptop that cannot dial, copying the number is the
+          action.
+
+          The emblem and the arrow are xl-only and gone on short screens. Below
+          1280 the recto is 240px (1024, after the thumb index) or less, and
+          with both in, the address broke mid-word at every size measured:
+          "nivlak.work@gmail.c / om" at 390x844, "@gmail / .com" at 844x390.
+          A bordered panel with a verb in capitals reads as a button without
+          them. */}
+      <ul data-ink className="mt-[1.3em] flex flex-col gap-[0.8em] xl:gap-[1em] [@media(max-height:480px)]:mt-[0.7em] [@media(max-height:480px)]:gap-[0.5em]">
+        {primary.map((row) => (
+          <li
+            key={row.value}
+            className="flex items-stretch border-2 border-[#dce7f7]/45 bg-[#dce7f7]/[0.06] transition-colors duration-300 hover:border-[#dce7f7]/80 motion-reduce:transition-none"
+          >
+            <a
+              href={row.href}
+              className="group flex min-w-0 flex-1 items-center gap-[1em] px-[1em] py-[0.9em] outline-none focus-visible:bg-[#dce7f7]/[0.12] xl:py-[1.25em] [@media(max-height:480px)]:py-[0.5em]"
             >
-              {row.href ? (
-                <a
-                  href={row.href}
-                  // The map and the website leave the page; the phone and the
-                  // mail hand off to an app and must not open a blank tab.
-                  {...(row.href.startsWith("http")
-                    ? { target: "_blank", rel: "noopener noreferrer" }
-                    : {})}
-                  className="group flex min-w-0 flex-1 items-center gap-[0.9em] py-[0.45em] outline-none lg:py-[0.62em] [@media(max-height:480px)]:py-[0.28em] focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[#dce7f7]/70"
-                >
-                  <ContactLine row={row} />
-                  {row.action ? (
-                    // aria-hidden: the label already names the row, and a
-                    // reader heard "Call, +91 97873 04869, Call". Hidden from
-                    // 1024 to 1280, where the recto is ~240px after the thumb
-                    // index and the email address was being cut to
-                    // "nivlak.work@gm..." to make room for the verb.
-                    <span aria-hidden className="ms-auto flex shrink-0 items-center gap-[0.4em] lg:max-xl:hidden [@media(max-height:480px)]:hidden text-[clamp(0.48rem,0.7vw,0.62rem)] tracking-[0.22em] text-slate-400/70 uppercase transition-colors duration-300 group-hover:text-white motion-reduce:transition-none">
-                      {row.action}
-                      <span
-                        aria-hidden
-                        className="transition-transform duration-300 group-hover:translate-x-[0.2em] motion-reduce:transition-none"
-                      >
-                        &rarr;
-                      </span>
-                    </span>
-                  ) : null}
-                </a>
-              ) : (
-                <span className="flex min-w-0 flex-1 items-center gap-[0.9em] py-[0.45em] lg:py-[0.62em] [@media(max-height:480px)]:py-[0.28em]">
-                  <ContactLine row={row} />
+              <Emblem
+                name={row.emblem}
+                className="hidden w-[clamp(20px,2.2vw,30px)] shrink-0 text-[#dce7f7] xl:block [@media(max-height:480px)]:hidden"
+              />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.6vw,1.45rem)] leading-tight tracking-[0.06em] text-white uppercase">
+                  {row.label}
                 </span>
-              )}
-              {row.copy ? <CopyButton value={row.value} label={row.label} /> : null}
+                <span className="mt-[0.2em] break-words text-[clamp(0.68rem,1.02vw,0.94rem)] text-slate-300/85">
+                  {row.value}
+                </span>
+              </span>
+              <span
+                aria-hidden
+                className="hidden shrink-0 text-[clamp(1.2rem,2vw,1.8rem)] leading-none text-[#dce7f7] xl:block [@media(max-height:480px)]:hidden transition-transform duration-300 group-hover:translate-x-[0.15em] motion-reduce:transition-none"
+              >
+                &rarr;
+              </span>
+            </a>
+            {row.copy ? (
+              <span className="flex items-center border-s border-[#dce7f7]/20 px-[0.7em]">
+                <CopyButton
+                  value={row.value}
+                  label={row.emblem === "phone" ? "Phone number" : "Email address"}
+                />
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+
+      <ul data-ink className="mt-[1.4em] flex flex-col xl:mt-[2em] [@media(max-height:480px)]:mt-[0.7em]">
+        {rest.map((row) => (
+          <li
+            key={row.value}
+            className="flex items-center gap-[0.6em] border-t border-white/10 last:border-b"
+          >
+            {row.href ? (
+              <a
+                href={row.href}
+                {...(row.href.startsWith("http")
+                  ? { target: "_blank", rel: "noopener noreferrer" }
+                  : {})}
+                className="group flex min-w-0 flex-1 items-center gap-[0.9em] py-[0.55em] outline-none focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[#dce7f7]/70 xl:py-[0.85em] [@media(max-height:480px)]:py-[0.28em]"
+              >
+                <ContactLine row={row} />
+                {row.action ? (
+                  // aria-hidden: the label already names the link.
+                  <span
+                    aria-hidden
+                    className="ms-auto flex shrink-0 items-center gap-[0.4em] text-[clamp(0.48rem,0.7vw,0.62rem)] tracking-[0.22em] text-slate-400/70 uppercase transition-colors duration-300 group-hover:text-white motion-reduce:transition-none"
+                  >
+                    {row.action}
+                    <span
+                      aria-hidden
+                      className="transition-transform duration-300 group-hover:translate-x-[0.2em] motion-reduce:transition-none"
+                    >
+                      &rarr;
+                    </span>
+                  </span>
+                ) : null}
+              </a>
+            ) : (
+              <span className="flex min-w-0 flex-1 items-center gap-[0.9em] py-[0.55em]">
+                <ContactLine row={row} />
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/**
+ * 07's verso under the chapter head: what the studio can help with, then what
+ * happens after a visitor gets in touch. Plain lines -- nothing here opens
+ * anything. lg-only: below that the whole chapter is one sheet and the ways to
+ * reach a person come first.
+ */
+function ContactVerso({
+  contact,
+}: {
+  contact: NonNullable<BookPage["contact"]>;
+}) {
+  return (
+    <div
+      data-ink
+      className="mt-[1.8em] hidden grid-cols-2 gap-x-[clamp(1.2em,2.6vw,2.4em)] lg:grid"
+    >
+      <div className="min-w-0">
+        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70 uppercase">
+          {contact.helpTitle}
+        </p>
+        <ul className="mt-[0.8em] flex flex-col border-t border-white/12">
+          {contact.help.map((line) => (
+            <li
+              key={line}
+              className="border-b border-white/10 py-[0.7em] text-[clamp(0.66rem,1.02vw,0.94rem)] xl:py-[0.95em] leading-snug text-slate-300/80"
+            >
+              {line}
             </li>
           ))}
         </ul>
       </div>
-    </>
+      {contact.next ? <NextSteps next={contact.next} /> : null}
+    </div>
   );
 }
 
@@ -3152,41 +3140,10 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 }
 
 /**
- * One of 07's "is this you?" lines, as a way in rather than a caption.
+ * WHAT HAPPENS NEXT, on 07's verso beside what the studio can help with.
  *
- * They were plain type for as long as this page existed, and they looked like
- * choices: a visitor picked one, clicked it, and nothing happened. Each now
- * opens the inquiry through the same delegated listener as the panel above,
- * with the answer it stands for already selected -- `data-inquiry-preset` --
- * so "You have an idea." arrives at question three with "Just an Idea" ticked.
- */
-function PromptButton({ prompt }: { prompt: PagePrompt }) {
-  return (
-    <button
-      type="button"
-      data-inquiry-open
-      data-inquiry-preset={prompt.preset ? JSON.stringify(prompt.preset) : undefined}
-      className="group flex w-full cursor-pointer items-center justify-between gap-[1em] py-[0.4em] text-start text-[clamp(0.64rem,0.989vw,0.889rem)] leading-snug text-slate-300/75 transition-colors duration-300 outline-none hover:text-white focus-visible:text-white motion-reduce:transition-none"
-    >
-      {prompt.label}
-      <span
-        aria-hidden
-        className="shrink-0 text-slate-400/70 transition-all duration-300 group-hover:translate-x-[0.2em] group-hover:text-white group-focus-visible:text-white motion-reduce:transition-none"
-      >
-        &rarr;
-      </span>
-    </button>
-  );
-}
-
-/**
- * WHAT HAPPENS NEXT, beside Fig. 2 on 07's verso.
- *
- * The engraving took the whole lower half of the page and said nothing, and
- * the one question a visitor has at this point -- what happens if I write? --
- * was answered only inside the inquiry, after sending. The plate is 268px of a
- * 562px page, so the answer goes in the width it leaves. lg-only: below that
- * the plate is hidden and the chapter is on one sheet with no room.
+ * The one question a visitor has at this point -- what happens if I write? --
+ * and the answer is only ever a reply. Nothing here promises a response time.
  */
 function NextSteps({
   next,
@@ -3194,7 +3151,7 @@ function NextSteps({
   next: NonNullable<NonNullable<BookPage["contact"]>["next"]>;
 }) {
   return (
-    <div data-ink className="hidden min-w-0 flex-1 lg:block">
+    <div className="min-w-0">
       <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70 uppercase">
         {next.title}
       </p>

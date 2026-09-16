@@ -1298,13 +1298,18 @@ repository.
 - **A pencil drawing is three layers and every earlier revision missed one.**
   LINE (a colour-dodge sketch), HATCH (diagonal motion-blurred noise, laid only
   where the photo is dark) and SHADE (the photo's own luma, lifted), multiplied
-  on white and then mapped `INK #1a2d47` → `PAPER #c3d1e0`. Line alone was
+  on white and then mapped through a three-stop ramp in the PAGE'S OWN HUE —
+  `INK #16283f` → `MID #34557f` → `PAPER #b4cbe6` (frame-091 samples at
+  `#1f3452`, hue 215). Line alone was
   unreadable at 122px; line screened over a recoloured tone read as embossed
   grey slabs; line multiplied over the untouched photo read as a photo with
   outlines. The hatching is what makes it read as DRAWN.
-- **Blue-grey paper, not white.** A white-paper version was rejected as a pale
-  slab on navy stock. `PAPER` stays under the silver type (0.81 vs 0.895).
-  The first cut used `#0f1c30`/`#aabdd2` and printed every dark plate dim.
+- **The colour follows the background, not real pencil.** A white-paper
+  version was rejected as a pale slab on navy stock; a grey-blue two-stop map
+  (`#1a2d47`/`#c3d1e0`) read as pencil on a separate grey sheet and was asked
+  to follow the background instead. Three stops, not two, because a two-stop
+  map from navy to near-white turns every mid-tone grey. The first cut
+  (`#0f1c30`/`#aabdd2`) printed every dark plate dim.
 - **`-clahe` before drawing.** 02's renders and 03's night desks are mostly
   dark; a global `-auto-level` leaves their detail in the bottom fifth and the
   hatching buries it. `HATCH_GATE=20` keeps hatching to the deepest shadows.

@@ -45,12 +45,13 @@ set -euo pipefail
 #
 # PRINTED IN THE BOOK'S INK, NOT ON WHITE PAPER
 #
-#   INK   #1a2d47   the darkest stroke, a shade under the page's own 0.20
-#   PAPER #c3d1e0   luma ~0.81, the lightest paper -- still under the silver
-#                   type at 0.895
+#   INK #16283f -> MID #34557f -> PAPER #b4cbe6, all in the page's hue
 #
-# The first cut used #0f1c30/#aabdd2 and every dark plate printed dim on the
-# page: 02's five as dull grey shapes, 03's night desks as murk.
+# Two grey-blue two-stop maps came first (#0f1c30/#aabdd2, then
+# #1a2d47/#c3d1e0). The first printed every dark plate dim; the second read
+# as real pencil on a separate grey sheet, and was asked to follow the
+# BACKGROUND colour instead. A three-stop ramp keeps the mids navy -- a
+# two-stop map from navy to near-white turns every mid-tone grey.
 #
 # A white-paper version was built and rejected earlier ("don't make background
 # white") -- a pale slab stuck on navy stock. This paper is the blue-grey the
@@ -103,8 +104,13 @@ HATCH_LEN=7       # motion-blur length of one hatch stroke, in pixels
 HATCH_GATE=20     # % -- luma above which no hatching is laid
 HATCH_FLOOR=45    # % -- the darkest a hatch stroke may go
 SHADE_LIFT=25     # % -- how much of the photograph's own shading survives
-INK='#1a2d47'
-PAPER='#c3d1e0'
+# Three stops in the PAGE'S OWN HUE (frame-091 samples at #1f3452, hue 215,
+# sat 0.45): a shade under the page, a mid navy, a light blue of the same
+# family. The grey-white paper this replaced read as a pencil on a separate
+# sheet; these read as a drawing on the book's page.
+INK='#16283f'
+MID='#34557f'
+PAPER='#b4cbe6'
 # Local contrast before drawing. 02's renders and 03's night desks are mostly
 # dark; a global -auto-level leaves their detail in the bottom fifth and the
 # hatching then buries it. CLAHE lifts each region on its own.
@@ -131,7 +137,8 @@ draw() {
   magick "$WORK/line.png" "$WORK/hatch.png" -compose multiply -composite \
     \( "$WORK/L.png" +level "${SHADE_LIFT}%,100%" \) -compose multiply -composite \
     -unsharp "$SHARPEN" -auto-level -evaluate pow 1.15 \
-    +level-colors "$INK","$PAPER" "$out"
+    \( xc:"$INK" xc:"$MID" xc:"$PAPER" +append -filter Cubic -resize 256x1! \) \
+    -clut "$out"
 }
 
 # The paper these have to stay above, sampled off the real page -- the same

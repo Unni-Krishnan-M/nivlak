@@ -634,6 +634,17 @@ attaches to 04 alone, which is the only window left in the book.
   `fill` prop: no `aspect-ratio`, `mask-size: cover`, and `self-stretch` in the
   row, so the artwork is cropped at the sides instead. The dial and plotted
   grid are its middle and survive the crop.
+- **The chapter's opening sentence is set above the row, at full measure,
+  and the rows are leaded at 1.9.** Inside the index it was squeezed to 395px
+  and ran four lines; across the page it is three, and those 27px plus the
+  14px that were spare under the last rule went into the summaries'
+  `lg:leading-[1.9]` and the sentence's own 1.75. Rows went from 64px to 68;
+  the last rule lands at 805 against the folio at 820. The column now starts
+  at "What we think about" rather than at the sentence. Measured in a real
+  browser WITH a scrollbar (1425px of layout at 1440): the screenshot harness
+  has none, and that 15px is what had been wrapping "Future insights" into the
+  folio — which is why the column's negative margin is now larger than the
+  width it adds.
 - **`mask-mode: luminance` still has to be declared** on the one plate that is
   left. The files are greyscale with no alpha, so under the default
   `match-source` the browser reads their alpha — opaque everywhere — and the

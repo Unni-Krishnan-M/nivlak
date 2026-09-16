@@ -796,15 +796,26 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
         // two-line rows, a chapter head and this margin came to 410px of a
         // page that shows 365 of them, and perspective 06's thesis was cut in
         // half by the foot of the window.
+        <>
+        {/* The chapter's opening sentence, at the page's FULL measure and
+            above the row rather than inside the index. Inside, it was squeezed
+            to the index's 395px and ran four lines; across the page it is
+            three, and those 27px are what the rows below are now leaded with.
+            Dropped below `lg` -- see the note in <PerspectiveIndex>'s history:
+            at 390x844 the whole spread is on one sheet and this is 90px of it,
+            and the headline above says it in six words. */}
+        {subtitle ? (
+          <p className="mt-[1em] hidden max-w-[52ch] text-[clamp(0.7rem,1.14vw,1.04rem)] leading-[1.75] text-slate-300/80 lg:block">
+            {subtitle}
+          </p>
+        ) : null}
         <div className="mt-[1em] flex min-h-0 items-start gap-[clamp(0.7em,1.6vw,1.5em)] [@media(max-height:480px)]:mt-[0.5em]">
-          <PerspectiveIndex
-            services={page.services ?? []}
-            intro={subtitle}
-          />
+          <PerspectiveIndex services={page.services ?? []} />
           {(page as BookPage).columnPlate ? (
             <PerspectiveColumn plate={(page as BookPage).columnPlate!} />
           ) : null}
         </div>
+        </>
       ) : null}
 
       {/* The index of projects, on the half-title facing the stage. Same reason
@@ -1509,36 +1520,12 @@ function StruckPlate({
  * three revisions. They are no longer the same kind of object: 04 is an index
  * driving a window, and this is a list.
  */
-function PerspectiveIndex({
-  services,
-  intro,
-}: {
-  services: PageService[];
-  intro?: string;
-}) {
+function PerspectiveIndex({ services }: { services: PageService[] }) {
   return (
     <div data-ink className="min-w-0 flex-1">
-      {/* Wider and a size down from the house subtitle, and that is a
-          measurement rather than a preference: at 30ch of 1.05rem this ran to
-          five lines, and the six rows below it then finished 30px past the
-          foot of the page. At 46ch it is three. */}
-      {intro ? (
-        // Dropped below `lg`, on both phone orientations, and it is the
-        // largest single thing this chapter gives up on a phone.
-        //
-        // At 844x390 the verso shows about 365px and perspective 06 fell off
-        // the foot with it in. At 390x844 the whole spread is on ONE sheet:
-        // the six domains, the argument, the diagram, three benefits and the
-        // way out came to 920px of the 781 the face will show, and this
-        // paragraph is 90 of them.
-        //
-        // It is the right one to lose because two other things on the same
-        // sheet do its job -- the headline directly above says it in six
-        // words, and "Why it matters" a few inches down says it in full.
-        <p className="mb-[1.2em] hidden max-w-[46ch] text-[clamp(0.7rem,1.14vw,1.04rem)] leading-relaxed text-slate-300/80 lg:block">
-          {intro}
-        </p>
-      ) : null}
+      {/* The chapter's opening sentence used to be printed here, squeezed to
+          the index's width; it is above the row now, at the page's measure.
+          See the verso. */}
       <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
         What we think about
       </p>
@@ -1561,7 +1548,7 @@ function PerspectiveIndex({
                   {service.title}
                 </span>
                 {service.perspective ? (
-                  <span className="mt-[0.3em] block text-[clamp(0.6rem,0.98vw,0.88rem)] leading-snug text-slate-300/65 lg:leading-relaxed">
+                  <span className="mt-[0.3em] block text-[clamp(0.6rem,0.98vw,0.88rem)] leading-snug text-slate-300/65 lg:leading-[1.9]">
                     {service.perspective.summary}
                   </span>
                 ) : null}
@@ -1605,12 +1592,15 @@ function PerspectiveColumn({ plate }: { plate: PageMask }) {
       // the type. At 166px the index had 374px of measure and two of the six
       // summaries wrapped to a second line at the larger sizes -- 38px of a
       // page that has none. At 138 the widest of them sets on one line.
-      // Widened by growing OUTWARD, into the verso's gutter-side margin, with a
-      // negative right margin of the same amount -- not by taking width from
-      // the index, whose longest summary already ends flush against the
-      // column at 1440 and would wrap to a second line on a page with 14px of
-      // slack under its last rule.
-      className="hidden w-[clamp(88px,11.7vw,170px)] shrink-0 self-stretch lg:block lg:-mr-[clamp(0px,2.2vw,32px)]"
+      // Widened by growing OUTWARD, into the verso's gutter-side margin, and
+      // then pushed further out still: the negative right margin (48px at
+      // 1440) is larger than the width it added (32px), which hands the index
+      // 16px. It needed them. "Future insights" is 367px set solid and its
+      // column was 360 in a browser with a scrollbar, so it wrapped and its
+      // rule printed through the drop folio at 820. It sets on one line now
+      // at 1280 and up; below that two rows wrap, as they always did, and the
+      // page has 36px to spare there.
+      className="hidden w-[clamp(88px,11.7vw,170px)] shrink-0 self-stretch lg:block lg:-mr-[clamp(0px,3.3vw,48px)]"
     />
   );
 }

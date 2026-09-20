@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import {
   BOOK_PAGES,
   BOOK_SPREADS,
+  MOBILE_PAGES,
   PAGE_SLOTS,
   type BookPage,
   type BookSpread,
@@ -56,6 +57,9 @@ import {
  */
 export const TURNS = BOOK_SPREADS.length - 1;
 
+/** The same count for portrait, where every page is its own sheet. */
+export const MOBILE_TURNS = MOBILE_PAGES.length - 1;
+
 /**
  * Put the sheets on the book, and point each face at the part of the
  * photograph it is covering.
@@ -64,6 +68,26 @@ export const TURNS = BOOK_SPREADS.length - 1;
  * GSAP writes explicit pixel dimensions onto the section, so a resize handler
  * reads the stale pinned size and the fresh one only lands on the next refresh.
  */
+/**
+ * Is the sheet the whole screen rather than the book's right-hand page?
+ *
+ * Exported because <Book> has to ask the same question React-side: in this
+ * mode the book prints ONE page per sheet (see MOBILE_PAGES), which is a
+ * different list of sheets and a different scroll length, not a stylesheet
+ * difference. Both callers must agree or the timeline would drive sheets that
+ * are not there.
+ *
+ * The comparison is against the PAGE's own width, not the viewport's: the
+ * right page is about half the screen by definition, so measuring it against
+ * the viewport made every desktop "not enough room" and threw the whole
+ * layout to full bleed.
+ */
+export function isFullBleed(width: number, height: number) {
+  const { right } = spreadAt(width, height);
+  const visible = width - right.x;
+  return visible < right.width * 0.6 || visible < 320;
+}
+
 export function layoutSheets(section: HTMLElement, tier: Tier | null) {
   const stage = section.querySelector<HTMLElement>("[data-stage]");
   if (!stage) return;
@@ -92,8 +116,7 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
   // the right page is about half the screen by definition, so measuring it
   // against the viewport made every desktop "not enough room" and threw the
   // whole layout to full bleed.
-  const visible = width - right.x;
-  const fullBleed = visible < right.width * 0.6 || visible < 320;
+  const fullBleed = isFullBleed(width, height);
 
   // The paper is the paper: the sheet keeps the page's true width even where
   // that runs off the right of the window. Clamping it to the visible part was
@@ -255,8 +278,92 @@ export function paintSheets(
   });
 }
 
-/** The turnable sheets, stacked on the book's right-hand page. */
-export function BookSheets() {
+/**
+ * The turnable sheets, stacked on the book's right-hand page.
+ *
+ * `single` is portrait's one-page-per-sheet mode -- see MOBILE_PAGES. It is
+ * passed rather than measured here because <Book> has to know it too: the
+ * timeline's length is the number of sheets, so the two must agree.
+ */
+export function BookSheets({ single = false }: { single?: boolean }) {
+  if (single) return <SinglePageSheets />;
+  return <SpreadSheets />;
+}
+
+/**
+ * PORTRAIT: one page to a sheet, and the turn reveals the next page.
+ *
+ * A full-bleed sheet is the whole screen, so the back of a turned sheet is
+ * never at rest on the screen -- it swings off to the left. That is why the
+ * spread's verso used to be printed INLINE above the recto on the same sheet:
+ * two pages of copy on one page of paper, which is what every `lg:`-scoped
+ * cut in this file was paying for. Here the verso is simply its own sheet,
+ * and a chapter that is a spread is two turns.
+ *
+ * The back face carries the running foot and nothing else. It is on screen
+ * for the length of one turn and a reader never stops on it.
+ */
+function SinglePageSheets() {
+  return (
+    <div
+      data-stage
+      className="absolute inset-0"
+      style={{ perspective: "2200px" }}
+    >
+      {MOBILE_PAGES.map((page, index) => {
+        const spread = BOOK_SPREADS[page.spread];
+        if (!spread) return null;
+        return (
+          <div
+            key={`${spread.number}-${page.kind}-${index}`}
+            data-sheet
+            className="absolute origin-left [transform-style:preserve-3d] [will-change:transform]"
+          >
+            <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]">
+              <PageFace side="front">
+                {page.kind === "facing" ? (
+                  <VersoPage page={spread} flush />
+                ) : (
+                  <PageBody page={spread} inlineFacing={false} />
+                )}
+              </PageFace>
+            </div>
+            {/* The back of the turning page. Play Books prints the page's own
+                content there, reversed and see-through -- "inversely textured
+                on the outside of the virtual cylinder ... with page content
+                displayed in reverse" (US9911221B2) -- which is what makes it
+                read as paper rather than as a blank card flipping over. So it
+                is the same page mirrored and held to 14%: legible as shapes,
+                unreadable as words, which is exactly what the back of a
+                printed leaf looks like. aria-hidden, and never at rest: this
+                face is on screen for the length of one turn. */}
+            <div
+              className="absolute inset-0 overflow-hidden [backface-visibility:hidden]"
+              style={{ transform: "rotateY(180deg)" }}
+            >
+              <PageFace side="back">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 opacity-[0.14] [transform:scaleX(-1)]"
+                >
+                  {page.kind === "facing" ? (
+                    <VersoPage page={spread} flush />
+                  ) : (
+                    <PageBody page={spread} inlineFacing={false} />
+                  )}
+                </div>
+                <PageFoot page={spread} />
+              </PageFace>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** The spread: a sheet is a recto and the back of it is the next verso. */
+function SpreadSheets() {
   // Index 0 by definition: only the first page can have a facing page, because
   // every later left-hand page is the back of an already-turned sheet.
   const opening = BOOK_SPREADS[0];
@@ -431,9 +538,23 @@ function PageFace({
       }}
     >
       {children}
+      {/* The turn's shading, and it is ONE gradient doing two jobs -- the
+          shadow in the crease and the fall-off across the lifted page. That is
+          how Google's own page-turn describes it (US9911221B2: "a
+          semi-transparent gradient textured from the page on the bottom of the
+          cylinder outward"), and it is what a flat black wash was missing: a
+          page that darkens evenly reads as a dimmer, not as paper lifting off
+          a book. Anchored at the CREASE, which is the hinge on the front and
+          the far edge on the back, because the back is the same sheet seen
+          from behind. paintSheets sets the opacity from the angle. */}
       <div
         data-shade
-        className="pointer-events-none absolute inset-0 bg-black opacity-0"
+        className="pointer-events-none absolute inset-0 opacity-0"
+        style={{
+          backgroundImage: `linear-gradient(${
+            side === "front" ? "90deg" : "270deg"
+          }, rgba(3,9,18,0.85) 0%, rgba(3,9,18,0.38) 38%, rgba(3,9,18,0.06) 72%, rgba(3,9,18,0) 100%)`,
+        }}
       />
     </div>
   );
@@ -2186,10 +2307,14 @@ function ProjectStage({
         ))}
         {/* The affordance. A drag nobody knows about is not a feature. It
             sits in the plate's own corner, fades while a drag is under way,
-            and is decoration to a screen reader, which has the index. */}
+            and is decoration to a screen reader, which has the index.
+            Not below `sm`: at 390 the plate is 300px and the chip was a third
+            of its width, over a picture whose whole argument is that it is
+            printed at full measure. Not under reduced motion either, where
+            the column is a plain list and nothing drags. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute right-[0.6em] bottom-[0.6em] flex items-center gap-[0.5em] bg-[#0b1728]/75 px-[0.7em] py-[0.35em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.24em] text-slate-200 uppercase transition-opacity duration-300 group-data-[dragging=true]/stage:opacity-0 motion-reduce:transition-none"
+          className="pointer-events-none absolute right-[0.9em] bottom-[0.9em] hidden items-center gap-[0.5em] bg-[#0b1728]/75 px-[0.7em] py-[0.35em] motion-reduce:hidden sm:flex text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.24em] text-slate-200 uppercase transition-opacity duration-300 group-data-[dragging=true]/stage:opacity-0 motion-reduce:transition-none"
         >
           <span>&larr;</span>
           Drag to browse
@@ -3201,13 +3326,34 @@ function HowItWorks({
  */
 const PAGE_SINKAGE = "pt-[8%]";
 
-function VersoPage({ page }: { page: BookPage | BookSpread }) {
+function VersoPage({
+  page,
+  flush = false,
+}: {
+  page: BookPage | BookSpread;
+  /**
+   * Portrait's own page: no spread inset.
+   *
+   * --verso-inset-start pulls a verso's type back inside the window, because
+   * a sheet's back comes to rest spanning [spine - width, spine] and starts
+   * off the left edge. A full-bleed sheet has its spine at x=0, so that
+   * number is the whole page width and the copy would be set one screen to
+   * the right of the screen. This page is a FRONT face there, so it wants
+   * nothing but its own margin.
+   */
+  flush?: boolean;
+}) {
+  const inset = flush ? "10%" : "calc(10% + var(--verso-inset-start, 0px))";
   return (
     <div
-      className={`relative flex h-full w-full flex-col justify-start pb-[8%] pe-[12%] ps-[calc(10%+var(--verso-inset-start,0px))] text-slate-200 ${PAGE_SINKAGE}`}
+      className={`relative flex h-full w-full flex-col justify-start pb-[8%] pe-[12%] text-slate-200 ${PAGE_SINKAGE}`}
+      style={{ paddingInlineStart: inset }}
     >
       <FacingCopy page={page} />
-      <p className="absolute bottom-[7%] start-[calc(10%+var(--verso-inset-start,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums">
+      <p
+        className="absolute bottom-[7%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums"
+        style={{ insetInlineStart: inset }}
+      >
         {page.number} &mdash; {page.title.toUpperCase()}
       </p>
     </div>
@@ -3312,7 +3458,14 @@ function PageFoot({ page }: { page: BookPage }) {
   );
 }
 
-function PageBody({ page }: { page: BookPage | BookSpread }) {
+function PageBody({
+  page,
+  inlineFacing = true,
+}: {
+  page: BookPage | BookSpread;
+  /** Portrait prints the verso as its own sheet, so it is off there. */
+  inlineFacing?: boolean;
+}) {
   return (
     // --page-index-inset reserves the thumb index. It is measured rather than
     // guessed, and it lives on the recto only, because <BookIndex> is pinned to
@@ -3331,7 +3484,7 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
           no facing page to print on and its copy is set above this page's own.
           layoutSheets decides which of the two is showing; they are never both
           on screen. */}
-      {page.facing ? (
+      {page.facing && inlineFacing ? (
         <div
           data-facing-inline
           className="mb-[1.6em]"

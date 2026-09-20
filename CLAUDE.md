@@ -1067,6 +1067,54 @@ at in `pnpm dev`.
   taller than the footage, `cover` already IS the height ratio and the `min` is
   a no-op, which is why the phone note above is still live and 1440x900,
   1920x1080, 1366x768 and 390x844 are byte-identical either side of it.
+- **PORTRAIT PRINTS ONE PAGE PER SHEET, and that is a different book, not a
+  stylesheet.** A full-bleed sheet is the whole screen, so the back of a
+  turned sheet swings off to the left and is never at rest — which is why the
+  spread's verso used to be printed INLINE above the recto on the same sheet
+  (`data-facing-inline`), two pages of copy on one page of paper. That is what
+  every `lg:`-scoped cut in `book-sheets.tsx` was paying for. Google's own
+  reader does the same thing the other way round (US9911221B2: portrait is one
+  page, landscape is two either side of a virtual binding), and so does this
+  book now.
+
+  - `MOBILE_PAGES` in `book-pages.content.ts` flattens `BOOK_SPREADS` into one
+    entry per PAGE — a spread becomes its verso then its recto — with
+    `CHAPTER_OF_MOBILE_PAGE` and `FIRST_MOBILE_PAGE_OF_CHAPTER` as the twins of
+    the spread maps. `<BookSheets single>` renders that list instead.
+  - **`isFullBleed(width, height)` is exported and shared.** `layoutSheets`
+    asks it to decide the sheet's rect and `<Book>` asks it to decide which
+    list to render; a media query in one of the two places would disagree with
+    the geometry in the other at some aspect ratio, and the timeline would
+    then be driving sheets that are not in the DOM.
+  - **The scroll length is a function of the sheet count**, `scrollLength(turns)`,
+    because the phone has about twice as many sheets. The cadence per turn is
+    unchanged: 8.8 viewports at 1440x900, 14.4 at 390x844.
+  - **`single` is a `useGSAP` dependency**, so a rotate rebuilds the timeline
+    over the other list. `revertOnUpdate: true` is what makes that safe.
+  - **A verso printed as a portrait page takes `flush`**: `--verso-inset-start`
+    is the spread's inset for a page that begins off the left edge, and on a
+    full-bleed sheet that number is the whole page width — the copy would set
+    one screen to the right.
+- **The turn is Play Books', as far as CSS 3D can be.** Researched from
+  Google's patent rather than guessed:
+  - **One gradient does the shading**, anchored at the CREASE and running out
+    across the page (the patent's "semi-transparent gradient textured from the
+    page on the bottom of the cylinder outward"). It replaces a flat black wash
+    that read as a dimmer rather than as paper lifting. `paintSheets` still
+    sets its opacity from the angle.
+  - **The back of a turning page is the page itself, mirrored at 14%** — the
+    patent prints the content reversed, which is what makes a turn read as
+    paper rather than as a blank card. `aria-hidden`; it is on screen for the
+    length of one turn.
+  - **A sideways swipe turns the page in portrait**, through the same seek the
+    thumb index uses, so a swipe and a scroll produce the same turn. The stage
+    takes `touch-action: pan-y` and a mostly-vertical drag is ignored, so the
+    book still scrolls from the middle of the page.
+  - **What was NOT copied**: the real curl. It needs a deformed mesh (WebGL or
+    a per-frame `clip-path` polygon); the sheets here are rigid planes and the
+    file's own rule is that nothing may put `filter` or `opacity` on a sheet.
+    No release duration or commit threshold is published anywhere for Play
+    Books, so the numbers here (55px to commit a swipe) are this book's.
 - **Geometry comes from the camera, never from CSS.** Sheets sit on the real
   gutter because `spreadAt()` runs the same arithmetic the painter runs. A
   hardcoded `50%` will drift apart from the photograph on resize.

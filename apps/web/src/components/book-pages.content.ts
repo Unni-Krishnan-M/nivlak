@@ -1506,3 +1506,48 @@ export const FIRST_SPREAD_OF_CHAPTER: number[] = BOOK_PAGES.map((_, chapter) =>
   BOOK_SPREADS.findIndex((s) => s.chapter === chapter),
 );
 
+
+// ---------------------------------------------------------------------------
+// PORTRAIT: ONE PAGE PER SHEET
+//
+// A phone shows a full-bleed sheet -- the camera crops the 16:9 frame to a tall
+// band and leaves 186 readable pixels of a 604px page, so the sheet stops
+// pretending to be half a spread and becomes the whole screen. That left the
+// spread's two halves stacked on ONE sheet (`data-facing-inline`), which is two
+// pages of copy on one page of paper: the reason this file is full of `lg:`
+// rules hiding a paragraph here and a sentence there.
+//
+// So in portrait the book prints one page per sheet, the way a reader does on a
+// phone: the verso is its own page and the recto is the next one. A chapter
+// with a facing page is two sheets, a continuation is one, and the turn is the
+// same gesture over twice as many pages.
+//
+// Only the geometry decides which mode is on -- see isFullBleed() in
+// book-sheets.tsx. The two lists are never both laid out at once.
+
+export type MobilePage = {
+  /** Which BOOK_SPREADS entry this page's copy comes from. */
+  spread: number;
+  chapter: number;
+  /** `facing` prints the spread's verso; `body` prints its recto. */
+  kind: "facing" | "body";
+};
+
+export const MOBILE_PAGES: MobilePage[] = BOOK_SPREADS.flatMap(
+  (spread, index) => {
+    const body = { spread: index, chapter: spread.chapter, kind: "body" as const };
+    return spread.facing
+      ? [{ spread: index, chapter: spread.chapter, kind: "facing" as const }, body]
+      : [body];
+  },
+);
+
+/** Which chapter each portrait page belongs to. CHAPTER_OF_SPREAD's twin. */
+export const CHAPTER_OF_MOBILE_PAGE: number[] = MOBILE_PAGES.map(
+  (page) => page.chapter,
+);
+
+/** Where each chapter opens in portrait: its verso, not its recto. */
+export const FIRST_MOBILE_PAGE_OF_CHAPTER: number[] = BOOK_PAGES.map(
+  (_, chapter) => MOBILE_PAGES.findIndex((page) => page.chapter === chapter),
+);

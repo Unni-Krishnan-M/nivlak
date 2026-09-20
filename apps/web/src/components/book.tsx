@@ -18,13 +18,17 @@ import { BookIndex, BookNav, BookRunningHead } from "@/components/book-nav";
 import {
   BOOK_PAGES,
   BOOK_SPREADS,
+  CHAPTER_OF_MOBILE_PAGE,
+  FIRST_MOBILE_PAGE_OF_CHAPTER,
   CHAPTER_OF_SPREAD,
   FIRST_SPREAD_OF_CHAPTER,
 } from "@/components/book-pages.content";
 import {
   BookPageColumn,
   BookSheets,
+  MOBILE_TURNS,
   TURNS,
+  isFullBleed,
   layoutSheets,
   paintSheets,
 } from "@/components/book-sheets";
@@ -77,10 +81,16 @@ const TURN = 1;
 const GAP = 0.2;
 const LEAD_IN = 0.4;
 const TRAIL = 0.5;
-const PAGES_UNITS = LEAD_IN + (TURNS - 1) * (TURN + GAP) + TURN + TRAIL;
+// Both are now functions of the SHEET COUNT, because portrait prints one page
+// per sheet and has about twice as many of them -- see MOBILE_PAGES. The
+// cadence per turn is unchanged, so the phone's book is longer to scroll in
+// exactly the way a book with more pages is.
+const pagesUnits = (turns: number) =>
+  LEAD_IN + (turns - 1) * (TURN + GAP) + TURN + TRAIL;
 
 const OPEN = OPEN_VH / VH_PER_UNIT;
-const SCROLL_LENGTH = `+=${Math.round(OPEN_VH + PAGES_UNITS * VH_PER_UNIT)}%`;
+const scrollLength = (turns: number) =>
+  `+=${Math.round(OPEN_VH + pagesUnits(turns) * VH_PER_UNIT)}%`;
 
 // Frames requested per batch after the first. Ninety-one at once is ninety-one
 // parallel requests fighting the document for the connection on a cold load; in
@@ -116,6 +126,29 @@ export function Book() {
     sync();
     query.addEventListener("change", sync);
     return () => query.removeEventListener("change", sync);
+  }, []);
+
+  // ONE PAGE PER SHEET, on the viewports where a sheet is the whole screen.
+  //
+  // Asked geometrically and not with a media query, because layoutSheets asks
+  // the same question the same way -- isFullBleed() is shared. A breakpoint
+  // would disagree with it at some aspect ratio and the timeline would then be
+  // driving sheets that are not in the DOM.
+  //
+  // It is state rather than a measurement inside the GSAP block because the
+  // SHEETS THEMSELVES differ: React has to render the other list first, and
+  // the hook's `dependencies` then rebuild the timeline over it.
+  const [single, setSingle] = useState(false);
+  useEffect(() => {
+    const sync = () =>
+      setSingle(isFullBleed(window.innerWidth, window.innerHeight));
+    sync();
+    window.addEventListener("resize", sync);
+    window.addEventListener("orientationchange", sync);
+    return () => {
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("orientationchange", sync);
+    };
   }, []);
 
   // Highest contiguous index present in imagesRef. Derived, never reset: the
@@ -184,6 +217,15 @@ export function Book() {
       // Deliberately not gated on the first frame having loaded: the pin
       // spacer has to exist before the visitor scrolls, and draw() copes with
       // an empty cache by painting the letterbox colour and returning.
+      // How many sheets this mode has, and which list the navigation reads.
+      // Everything below counts in SHEETS; only these three lines know that a
+      // sheet is a spread on a desktop and a single page on a phone.
+      const turns = single ? MOBILE_TURNS : TURNS;
+      const chapterOfSheet = single ? CHAPTER_OF_MOBILE_PAGE : CHAPTER_OF_SPREAD;
+      const firstSheetOfChapter = single
+        ? FIRST_MOBILE_PAGE_OF_CHAPTER
+        : FIRST_SPREAD_OF_CHAPTER;
+
       const section = sectionRef.current;
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d", { alpha: false });
@@ -584,7 +626,7 @@ export function Book() {
         scrollTrigger: {
           trigger: section,
           start: "top top",
-          end: SCROLL_LENGTH,
+          end: scrollLength(turns),
           scrub: SCRUB,
           pin: true,
           anticipatePin: 1,
@@ -678,7 +720,7 @@ export function Book() {
       // rotation evenly over the wheel, and the scrub's own catch-up supplies
       // the weight the ease was there for.
       tl.to(
-        sheets.slice(0, TURNS),
+        sheets.slice(0, turns),
         {
           rotationY: -180,
           duration: TURN,
@@ -752,27 +794,74 @@ export function Book() {
         });
       };
       const seek = (chapter: number) =>
-        seekSpread(chapter < 0 ? -1 : (FIRST_SPREAD_OF_CHAPTER[chapter] ?? 0));
+        seekSpread(chapter < 0 ? -1 : (firstSheetOfChapter[chapter] ?? 0));
       // contextSafe is optional in the hook's types, so fall back to the bare
       // function rather than asserting it is there.
       goTo = contextSafe ? contextSafe(seek) : seek;
 
+      // SWIPE TO TURN, in portrait only.
+      //
+      // The book is scrubbed by vertical scroll, which is right for a page
+      // being read on a desktop and is not how anyone turns a page on a phone:
+      // Play Books turns on a horizontal swipe, and a reader arrives expecting
+      // that. So a sideways drag seeks the next or previous PAGE through the
+      // same tween the thumb index uses -- it is navigation, not a second
+      // animation, so the turn a swipe produces is the turn a scroll produces.
+      //
+      // Vertical movement is left alone (the stage carries `touch-action:
+      // pan-y`), and a drag that is mostly vertical is ignored outright, so
+      // scrolling the book from the middle of the page still works.
+      if (single) {
+        const stageEl = section.querySelector<HTMLElement>("[data-stage]");
+        if (stageEl) {
+          const SWIPE = 55;
+          let from: { x: number; y: number; id: number } | null = null;
+          const onDown = (event: PointerEvent) => {
+            if (event.pointerType === "mouse" && event.button !== 0) return;
+            from = { x: event.clientX, y: event.clientY, id: event.pointerId };
+          };
+          const onUp = (event: PointerEvent) => {
+            if (!from || event.pointerId !== from.id) return;
+            const dx = event.clientX - from.x;
+            const dy = event.clientY - from.y;
+            from = null;
+            if (Math.abs(dx) < SWIPE || Math.abs(dx) < Math.abs(dy)) return;
+            // Left is forward, the way a swipe turns a page.
+            const next = currentSheet + (dx < 0 ? 1 : -1);
+            seekSpread(Math.min(Math.max(next, 0), turns));
+          };
+          stageEl.style.touchAction = "pan-y";
+          stageEl.addEventListener("pointerdown", onDown);
+          stageEl.addEventListener("pointerup", onUp);
+          stageEl.addEventListener("pointercancel", onUp);
+          windowTeardowns.push(() => {
+            stageEl.removeEventListener("pointerdown", onDown);
+            stageEl.removeEventListener("pointerup", onUp);
+            stageEl.removeEventListener("pointercancel", onUp);
+          });
+        }
+      }
+
       // Which page is face up. This runs on every scrubbed frame, so it only
       // writes to the DOM when the answer actually changes.
       let lastCurrent = Number.NaN;
+      let currentSheet = 0;
       const syncNav = () => {
         const t = tl.time();
         let current = t >= OPEN + LEAD_IN * 0.5 ? 0 : -1;
-        for (let i = 0; i < TURNS; i++) {
+        for (let i = 0; i < turns; i++) {
           const midTurn = OPEN + LEAD_IN + i * (TURN + GAP) + TURN * 0.5;
           if (t >= midTurn) current = i + 1;
         }
+        // What a swipe turns from. Kept even when the chapter has not
+        // changed, because two pages of one chapter are two sheets.
+        currentSheet = Math.max(0, current);
         if (current === lastCurrent) return;
         lastCurrent = current;
         // Report the chapter, not the spread. A chapter running to two spreads
         // keeps ONE tab lit across both, instead of the index going dark on the
         // continuation because no tab has that spread's number.
-        const chapter = current < 0 ? -1 : (CHAPTER_OF_SPREAD[current] ?? -1);
+        const chapter = current < 0 ? -1 : (chapterOfSheet[current] ?? -1);
         for (const el of navItems) {
           const index = Number(el.dataset.index);
           if (index >= 0) el.dataset.current = String(index === chapter);
@@ -800,7 +889,7 @@ export function Book() {
       };
     },
     {
-      dependencies: [reduced],
+      dependencies: [reduced, single],
       scope: sectionRef,
       // Without this, useGSAP runs the cleanup above on a dependency change
       // but does NOT revert the context -- so the old timeline's pinned
@@ -876,7 +965,7 @@ export function Book() {
           </p>
         </div>
 
-        {reduced ? null : <BookSheets />}
+        {reduced ? null : <BookSheets single={single} />}
 
         <BookNav />
         <BookRunningHead />

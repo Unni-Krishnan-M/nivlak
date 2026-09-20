@@ -2157,8 +2157,15 @@ function ProjectStage({
 
       {/* The window. aspect-ratio reserves the box before a byte of image has
           landed, so nothing below it moves on load or on a swap. */}
+      {/* Also a DRAG SURFACE: `data-project-stage` is what <Book>'s window
+          binds a pointer drag to, so a mouse dragged across the plate walks
+          through all four studies. `touch-action: pan-y` hands vertical
+          movement back to the browser -- the book is scrubbed by vertical
+          scroll and must keep scrolling from here -- while a sideways swipe
+          reaches the handler. */}
       <div
-        className="relative mt-[0.75em] grid w-full shrink-0 overflow-hidden border border-white/12 lg:mt-[0.9em]"
+        data-project-stage
+        className="group/stage relative mt-[0.75em] grid w-full shrink-0 cursor-grab touch-pan-y overflow-hidden border border-white/12 select-none data-[dragging=true]:cursor-grabbing lg:mt-[0.9em]"
         style={{ aspectRatio: "16 / 9" }}
       >
         {entries.map((service, i) => (
@@ -2177,6 +2184,17 @@ function ProjectStage({
             className="[grid-area:1/1] h-full w-full object-cover object-center transition-opacity duration-300 ease-out select-none data-[current=false]:opacity-0 motion-reduce:transition-none"
           />
         ))}
+        {/* The affordance. A drag nobody knows about is not a feature. It
+            sits in the plate's own corner, fades while a drag is under way,
+            and is decoration to a screen reader, which has the index. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-[0.6em] bottom-[0.6em] flex items-center gap-[0.5em] bg-[#0b1728]/75 px-[0.7em] py-[0.35em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.24em] text-slate-200 uppercase transition-opacity duration-300 group-data-[dragging=true]/stage:opacity-0 motion-reduce:transition-none"
+        >
+          <span>&larr;</span>
+          Drag to browse
+          <span>&rarr;</span>
+        </span>
       </div>
 
       {/* The letterpress. grid-rows-1 makes the single row fill the flexed

@@ -373,7 +373,12 @@ export function Book() {
         const plateKey = `${group}Plate`;
         const count = new Set(buttons.map((el) => el.dataset[group])).size;
 
+        let current = 0;
         const show = (index: number) => {
+          // Hover fires on every entry into a row; the server render already
+          // marks entry 0 current, so the same index is always a no-op.
+          if (index === current) return;
+          current = index;
           for (const el of buttons) {
             const on = Number(el.dataset[group]) === index;
             el.dataset.current = String(on);
@@ -437,15 +442,86 @@ export function Book() {
           scope.querySelector<HTMLElement>(`[data-${group}="${next}"]`)?.focus();
         };
 
+        // HOVER: a mouse moved over an entry shows it, so sweeping down the
+        // index previews all four studies without a click. Mouse only --
+        // on touch a pointerenter arrives with the tap and the click already
+        // does the job, and a pen hovering is not a reader choosing.
+        const onEnter = (event: Event) => {
+          if ((event as PointerEvent).pointerType !== "mouse") return;
+          const el = (event.currentTarget ?? event.target) as HTMLElement;
+          show(Number(el.dataset[group]));
+        };
+
+        // DRAG: across the plate, one study per STEP pixels, as many steps as
+        // the drag is long -- so a single sweep walks through all four and
+        // back. Dragging LEFT moves forward, the way a swipe turns a page.
+        // Pointer capture keeps the drag alive when the cursor leaves the
+        // plate; the stage's `touch-action: pan-y` keeps vertical movement
+        // for the book's scroll.
+        const STEP = 48;
+        const stages = [
+          ...document.querySelectorAll<HTMLElement>(`[data-${group}-stage]`),
+        ];
+        let drag: { id: number; x: number } | null = null;
+        const onDown = (event: Event) => {
+          const e = event as PointerEvent;
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          const stage = e.currentTarget as HTMLElement;
+          drag = { id: e.pointerId, x: e.clientX };
+          // Capture keeps the drag alive once the cursor leaves the plate.
+          // Guarded: it throws when the pointer is no longer active, which a
+          // synthetic event and some browsers both manage, and a drag that
+          // only works inside the box is better than a handler that dies.
+          try {
+            stage.setPointerCapture(e.pointerId);
+          } catch {}
+          stage.dataset.dragging = "true";
+        };
+        const onMove = (event: Event) => {
+          const e = event as PointerEvent;
+          if (!drag || e.pointerId !== drag.id) return;
+          const dx = e.clientX - drag.x;
+          if (Math.abs(dx) < STEP) return;
+          const steps = Math.trunc(dx / STEP);
+          show((((current - steps) % count) + count) % count);
+          drag.x += steps * STEP;
+        };
+        const onUp = (event: Event) => {
+          const e = event as PointerEvent;
+          if (!drag || e.pointerId !== drag.id) return;
+          const stage = e.currentTarget as HTMLElement;
+          try {
+            if (stage.hasPointerCapture(e.pointerId)) {
+              stage.releasePointerCapture(e.pointerId);
+            }
+          } catch {}
+          stage.dataset.dragging = "false";
+          drag = null;
+        };
+
         for (const el of buttons) {
           el.addEventListener("click", onClick);
           el.addEventListener("keydown", onKey);
+          el.addEventListener("pointerenter", onEnter);
+        }
+        for (const stage of stages) {
+          stage.addEventListener("pointerdown", onDown);
+          stage.addEventListener("pointermove", onMove);
+          stage.addEventListener("pointerup", onUp);
+          stage.addEventListener("pointercancel", onUp);
         }
 
         windowTeardowns.push(() => {
           for (const el of buttons) {
             el.removeEventListener("click", onClick);
             el.removeEventListener("keydown", onKey);
+            el.removeEventListener("pointerenter", onEnter);
+          }
+          for (const stage of stages) {
+            stage.removeEventListener("pointerdown", onDown);
+            stage.removeEventListener("pointermove", onMove);
+            stage.removeEventListener("pointerup", onUp);
+            stage.removeEventListener("pointercancel", onUp);
           }
         });
       };

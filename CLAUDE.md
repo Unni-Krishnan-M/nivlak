@@ -535,6 +535,27 @@ Consequences worth knowing before touching it:
   an index inside each would be sixteen buttons for four destinations, twelve
   of them in an `aria-hidden` subtree. It is `hidden lg:flex`, because below
   `lg` the verso's own index is a few inches up the same collapsed sheet.
+- **Three ways to change the plate: click, HOVER and DRAG.** A click was the
+  only one for three revisions, and a reader sweeping the index found four
+  titles that did nothing until pressed.
+  - **Hover is mouse-only** (`pointerenter`, `pointerType === "mouse"`): on
+    touch the enter arrives with the tap and the click already does the job,
+    and a pen hovering is not a reader choosing.
+  - **Drag runs on the plate**, which carries `data-project-stage`: one study
+    per 48px of horizontal movement, as many steps as the drag is long, so a
+    single sweep walks through all four and wraps. Dragging LEFT moves
+    forward, the way a swipe turns a page. Pointer capture keeps it alive off
+    the box and is wrapped in try/catch — it throws once the pointer is no
+    longer active.
+  - **`touch-action: pan-y` on the stage is load-bearing.** The book is
+    scrubbed by vertical scroll; without it a finger on the plate would own
+    the gesture and the page would stop scrolling from there.
+  - **`show()` returns early on the index it is already on**, because hover
+    fires on every entry into a row.
+  - **The hint chip ("← Drag to browse →") is in the plate's own corner**,
+    `aria-hidden`, and fades while a drag is under way
+    (`data-dragging` on the stage). A gesture nobody knows about is not a
+    feature; a screen reader has the index instead.
 - **The status is the label line, on the left, where 03 sets its subject** —
   because on this page it is the subject: what these four are is the first fact
   about them. That is now the FOURTH place the chapter says it (see below).

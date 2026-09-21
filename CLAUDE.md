@@ -965,6 +965,51 @@ engraving on the verso. `git log` has the dialog, the route and the plate.
 - **05's second action now reads "Get in touch"**, not "Start a project" —
   it still turns to 07, and there is no project form there any more.
 
+### The cover carries the mockup's hero
+
+`front.jpeg` at the repo root is the hero the site was designed with, and the
+cover now sets its words: the kicker, a two-line headline ("The Story" / "of
+What We Build.", the second line in the mockup's blue), "Technology built
+around your business.", two actions and a "Scroll to begin" cue. Before this
+the first screen said `NIVLAK TECHNOLOGIES` and nothing else.
+
+- **It is ONE block, inside `kickerRef`.** `<Book>` fades exactly one element
+  out before the reveal starts; a second would need a second ref and a second
+  tween kept in step with it. The wrapper is `pointer-events-none` and only
+  the two buttons switch it back on, so the copy never eats a click and the
+  buttons stop taking them the moment GSAP hides the block.
+- **Both buttons are the book's own navigation** — `data-nav-item` with a
+  chapter index, wired by the handler the head bar and thumb index already
+  use. "Open the book" is chapter 01, "Begin a project" is the last chapter.
+- **The measure is in `rem`, not `ch`.** `ch` resolves against the wrapper's
+  own font size (16px), so `54ch` was 432px and broke the headline across
+  three lines at 1440. `min(92vw,41rem)` is 656px, which clears the
+  photograph — the book's spine starts around x=700 — and holds two lines.
+- **Sentence case, not the mockup's caps.** The book sets every headline in
+  the display serif in sentence case (see 05's note); the cover doing
+  otherwise would be the only one. The words are the mockup's exactly.
+- **Portrait gets a scrim and landscape does not.** Landscape puts the copy in
+  the empty left half of the frame. Portrait letterboxes the frame into a band
+  in the MIDDLE of the screen and the copy is at the foot, so it lands on the
+  lower half of the book: at 390x844 the headline printed across the cover's
+  own wordmark. The stops are measured against where the headline lands, 41-53%
+  up from the foot at both 390x844 and 320x568 — solid to 35%, 85% at 55%,
+  gone by 74%. The first cut stopped at 62% and left the second line on the
+  wordmark.
+- **The cue goes below 620px of viewport height**, where it would otherwise
+  sit on the buttons; 844x390 and 320x568 are the two that hit it.
+
+**The head bar is set BRIGHT.** At `text-slate-400/50` the seven numerals were
+the dimmest thing on the first screen and read as disabled, which is the wrong
+signal on the one row of the page that is a control. Wordmark `white/90`, items
+`slate-200/80` rising to white, head rule `white/25` — the rule is what makes
+the bar read as one object rather than as type floating on a photograph.
+
+**Checked at eighteen resolutions** from 3440x1440 down to 320x568 — the sweep
+is in the session log. Nothing clips, the headline holds two lines from 360px
+up, and the book stands whole at every aspect because of the height clamp in
+`planAt` (above).
+
 ### Navigating the book, and why a narrow window needed three things
 
 Walked in a real browser at 443x872 — which is a perfectly ordinary window —

@@ -101,7 +101,7 @@ const BATCH = 8;
 export function Book() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const kickerRef = useRef<HTMLParagraphElement>(null);
+  const kickerRef = useRef<HTMLDivElement>(null);
 
   const imagesRef = useRef<(HTMLImageElement | null)[]>([]);
   // Highest frame index that is decoded and safe to draw. The playhead is
@@ -933,36 +933,110 @@ export function Book() {
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent via-45% to-black/35" />
 
-        {/* The book stands in the right half of the frame with the whole left
-            side empty, so on landscape the copy goes in that gap rather than
-            across the cover. A portrait viewport letterboxes the 3:2 frame into
-            a band, so there the copy sits under the band instead. */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-6 portrait:items-center portrait:justify-end portrait:pb-[16vh] portrait:text-center landscape:items-start landscape:ps-[7vw] landscape:text-left">
-          <p
-            ref={kickerRef}
-            className="mb-3 -me-[0.3em] text-xs tracking-[0.3em] text-slate-300/80 uppercase"
-          >
-            Nivlak Technologies
-            {/* The one thing the cover did not say. This page is 8.8 viewports
-                of scroll behind a closed book, and a visitor who does not
-                scroll sees a photograph of a book and leaves -- there is no
-                other affordance on the first screen, because the top nav is
-                seven numerals and the book itself is an image.
+        {/* PORTRAIT ONLY: the hero's ground.
+            On landscape the copy sits in the empty left half of the frame and
+            needs nothing behind it. Portrait letterboxes the 16:9 frame into a
+            band in the MIDDLE of the screen, so the copy -- which is at the
+            foot -- lands on the lower half of the book itself: measured at
+            390x844 the headline printed straight across the cover's own
+            wordmark. This is the scrim that gives it a page to sit on.
 
-                It lives INSIDE the kicker rather than beside it so it inherits
-                the one tween that already fades this block out before the
-                reveal starts; a second element would need a second ref and a
-                second tween kept in step with it. `pointer-events-none` is
-                inherited from the wrapper, which is correct -- this is a cue
-                and not a control, and a control here would compete with the
-                thumb index for the same job. */}
-            <span className="mt-[1.8vh] flex items-center justify-center gap-[0.8em] text-[0.58rem] tracking-[0.34em] text-slate-400/70 portrait:justify-center landscape:justify-start">
-              Scroll to open
-              <span aria-hidden className="text-[0.9rem] leading-none">
-                &darr;
+            The stops are measured against where the HEADLINE lands, which is
+            41-53% up from the foot at both 390x844 and 320x568: solid to 35%,
+            85% at 55%, gone by 74%. A shorter scrim (the first cut stopped at
+            62%) left the second line sitting on the cover's own wordmark. */}
+        <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-t from-[#050b14] from-35% via-[#050b14]/85 via-55% to-transparent to-74% portrait:block" />
+
+        {/* THE HERO, in the mockup's own words (front.jpeg).
+            The book stands in the right half of the frame with the whole left
+            side empty, so on landscape the copy goes in that gap rather than
+            across the cover. A portrait viewport letterboxes the frame into a
+            band, so there the copy sits under the band instead -- left-aligned
+            either way, which is how the mockup sets it.
+
+            Everything lives inside ONE block because <Book> fades exactly one
+            element out before the reveal starts (`kickerRef`); a second would
+            need a second ref and a second tween kept in step with it. The
+            wrapper is `pointer-events-none` and the two buttons switch it back
+            on, so the cover's copy never eats a click meant for the page and
+            the buttons stop taking them the moment GSAP hides the block.  */}
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-end portrait:pb-[14vh] landscape:ps-[7vw] landscape:pe-[4vw]">
+          <div
+            ref={kickerRef}
+            // In rem and not ch: `ch` resolves against THIS element's font
+            // size (the base 16px), not the headline's, so 54ch was 432px and
+            // broke "of What We Build." across three lines at 1440. 41rem is
+            // 656px, which clears the book -- the photograph's spine starts
+            // around x=700 there -- and holds the headline on two.
+            className="max-w-[min(92vw,41rem)]"
+          >
+            <p className="text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.42em] text-slate-300/85 uppercase">
+              Nivlak Technologies
+            </p>
+            {/* Two lines, and the second one is the mockup's blue. The break is
+                hard rather than left to the measure: "THE STORY / OF WHAT WE
+                BUILD." is the line it is written on, and a reflow that puts
+                "OF" on the first line loses the sentence. */}
+            <h1 className="mt-[2.2vh] font-[family-name:var(--font-display)] text-[clamp(2.1rem,5.2vw,4.6rem)] leading-[1.02] font-light text-white">
+              The Story
+              <span className="block bg-gradient-to-r from-[#9dc0ee] via-[#bcd4f2] to-[#dce7f7] bg-clip-text text-transparent">
+                of What We Build.
               </span>
-            </span>
-          </p>
+            </h1>
+            <p className="mt-[2.4vh] text-[clamp(0.78rem,1.15vw,1.05rem)] tracking-[0.12em] text-slate-300/85">
+              Technology built around your business.
+            </p>
+
+            {/* The two ways in, and both are the BOOK's own navigation --
+                `data-nav-item` with a chapter index, wired by the same handler
+                the head bar and the thumb index use. A third kind of link that
+                merely looks like them would drift out of step the first time
+                the seek changes. */}
+            <div className="mt-[3.4vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)]">
+              <button
+                type="button"
+                data-nav-item
+                data-index="0"
+                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/35 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] text-white uppercase transition-colors duration-300 outline-none hover:border-white hover:bg-white/10 focus-visible:border-white focus-visible:bg-white/10 motion-reduce:transition-none"
+              >
+                Open the book
+                <span
+                  aria-hidden
+                  className="transition-transform duration-300 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
+                >
+                  &rarr;
+                </span>
+              </button>
+              <button
+                type="button"
+                data-nav-item
+                data-index={BOOK_PAGES.length - 1}
+                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/20 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] text-slate-200 uppercase transition-colors duration-300 outline-none hover:border-white/60 hover:text-white focus-visible:border-white/60 focus-visible:text-white motion-reduce:transition-none"
+              >
+                Begin a project
+                <span
+                  aria-hidden
+                  className="transition-transform duration-300 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
+                >
+                  &rarr;
+                </span>
+              </button>
+            </div>
+
+            {/* The cue. This page is 8.8 viewports of scroll behind a closed
+                book, and a visitor who does not scroll sees a photograph and
+                leaves. The rule above it is the mockup's. Hidden where the
+                viewport is too short for it to sit clear of the buttons. */}
+            <div className="mt-[5vh] flex flex-col gap-[1.2vh] [@media(max-height:620px)]:hidden">
+              <span aria-hidden className="block h-[5vh] w-px bg-white/25" />
+              <span className="flex items-center gap-[0.8em] text-[clamp(0.5rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-300/75 uppercase">
+                Scroll to begin
+                <span aria-hidden className="text-[0.9rem] leading-none">
+                  &darr;
+                </span>
+              </span>
+            </div>
+          </div>
         </div>
 
         {reduced ? null : <BookSheets single={single} />}

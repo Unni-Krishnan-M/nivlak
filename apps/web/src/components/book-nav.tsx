@@ -11,6 +11,13 @@ import { BOOK_PAGES } from "@/components/book-pages.content";
 // also why it can sit on a hero that otherwise has no chrome at all without
 // looking bolted on.
 //
+// Set BRIGHT rather than in the page's quiet greys: at slate-400/50 the seven
+// numerals were the dimmest thing on the first screen and read as disabled,
+// which is the wrong signal on the one row of the page that is a control. The
+// wordmark is white/90, the items slate-200/80 rising to white, and the head
+// rule white/25 -- the rule is what makes the bar read as one object rather
+// than as type floating on a photograph.
+//
 // It belongs to the CLOSED book only. Once the spread is open this bar is
 // wrong, and wrong structurally rather than by taste: its rule runs the width
 // of the window, straight across the gutter, and no book has ever printed a
@@ -35,7 +42,7 @@ export function BookNav() {
           data-nav-item
           data-index="-1"
           aria-label="Back to the cover"
-          className="flex cursor-pointer items-center gap-[0.7em] text-slate-300/70 transition-colors duration-300 hover:text-slate-100"
+          className="flex cursor-pointer items-center gap-[0.7em] text-white/90 transition-colors duration-300 hover:text-white"
         >
           <img
             src="/logo-mark.webp"
@@ -44,7 +51,7 @@ export function BookNav() {
             width={192}
             height={192}
             draggable={false}
-            className="h-auto w-[clamp(17px,1.5vw,22px)] opacity-85 select-none"
+            className="h-auto w-[clamp(17px,1.5vw,22px)] select-none"
           />
           <span className="-me-[0.3em] text-[clamp(0.58rem,0.75vw,0.7rem)] tracking-[0.4em]">
             NIVLAK
@@ -59,7 +66,7 @@ export function BookNav() {
                 data-nav-item
                 data-index={index}
                 data-current="false"
-                className="group flex cursor-pointer items-baseline gap-[0.5em] text-[clamp(0.52rem,0.68vw,0.64rem)] tracking-[0.26em] text-slate-400/50 transition-colors duration-300 hover:text-slate-200 data-[current=true]:text-white"
+                className="group flex cursor-pointer items-baseline gap-[0.5em] text-[clamp(0.52rem,0.68vw,0.64rem)] tracking-[0.26em] text-slate-200/80 transition-colors duration-300 hover:text-white data-[current=true]:text-white"
               >
                 <span className="tabular-nums">{page.number}</span>
                 {/* The titles are the first thing to go when the head runs out
@@ -74,7 +81,7 @@ export function BookNav() {
       </div>
 
       {/* The head rule. */}
-      <span aria-hidden className="mt-[1.7vh] block h-px w-full bg-white/10" />
+      <span aria-hidden className="mt-[1.7vh] block h-px w-full bg-white/25" />
     </nav>
   );
 }

@@ -613,7 +613,14 @@ function Figure({
   const columns = figure.steps.length;
   const span = 320 / columns;
   return (
-    <figure data-ink className="mt-[2.2em] max-w-[42ch]">
+    // `lg:mt-auto` SPLITS the page's slack instead of collecting it in one
+    // place. 01's footnote is hung off the foot with its own `mt-auto`, so
+    // with only one auto margin every spare pixel piled up between this
+    // figure and that footnote: 110px at 1440x900 and 220 at 1920x1080, a
+    // hole in the middle of the page. Two auto margins divide it, which puts
+    // half above the figure and half above the footnote -- air where a page
+    // has air, rather than a gap where a page has a gap.
+    <figure data-ink className="mt-[2.2em] max-w-[42ch] lg:mt-auto">
       <svg
         viewBox="0 0 320 30"
         aria-hidden="true"
@@ -2037,7 +2044,7 @@ function ProjectIndex({ services }: { services: PageService[] }) {
               // needed 335px of a 284px column and MOBILE ran 51px past the
               // page. A border costs nothing and says the same thing. flex-wrap
               // on the list is the backstop for a narrower phone still.
-              className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[0.7em] lg:pb-[0.7em] motion-reduce:transition-none"
+              className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[1.05em] lg:pb-[1.05em] motion-reduce:transition-none"
             >
               <span className="shrink-0 text-[clamp(0.44rem,0.69vw,0.627rem)] tracking-[0.24em] tabular-nums opacity-70">
                 {service.project!.number}
@@ -2051,10 +2058,10 @@ function ProjectIndex({ services }: { services: PageService[] }) {
 
               {/* The named row, on the full spread only. */}
               <span className="hidden min-w-0 flex-1 lg:block">
-                <span className="block text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.26em] uppercase">
+                <span className="block text-[clamp(0.54rem,0.86vw,0.75rem)] tracking-[0.26em] uppercase">
                   {service.project!.category}
                 </span>
-                <span className="mt-[0.35em] block font-[family-name:var(--font-display)] text-[clamp(0.78rem,1.219vw,1.117rem)] leading-[1.15] font-light text-balance text-slate-200/90 group-data-[current=true]:text-white">
+                <span className="mt-[0.4em] block font-[family-name:var(--font-display)] text-[clamp(0.92rem,1.45vw,1.34rem)] leading-[1.2] font-light text-balance text-slate-200/90 group-data-[current=true]:text-white">
                   {service.title}
                 </span>
               </span>
@@ -2263,7 +2270,7 @@ function ProjectStage({
             aria-hidden={i === 0 ? undefined : "true"}
             className={`flex items-baseline justify-between gap-[1em] ${stacked}`}
           >
-            <p className="text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.34em] text-slate-400/75 uppercase">
+            <p className="text-[clamp(0.54rem,0.84vw,0.74rem)] tracking-[0.34em] text-slate-300/80 uppercase">
               {service.project!.status}
             </p>
             {/* Roman, like every other illustration in this book, and
@@ -2358,14 +2365,17 @@ function ProjectStage({
                   column would be the most prominent thing on a page whose
                   picture is the point. */}
               <ul className="mt-[0.95em] flex shrink-0 flex-wrap items-baseline gap-x-[0.75em] gap-y-[0.25em] text-[clamp(0.64rem,1.012vw,0.912rem)] leading-relaxed text-slate-300/65">
+                {/* The dot TRAILS its word rather than leading the next: at
+                    1024 the run wrapped as "Strategy · UX/UI · Engineering"
+                    then "· Deployment", starting a line with a separator. */}
                 {project.services.map((item, k) => (
                   <li key={item} className="flex items-baseline gap-[0.7em]">
-                    {k > 0 ? (
+                    {item}
+                    {k < project.services.length - 1 ? (
                       <span aria-hidden className="text-slate-400/35">
                         &middot;
                       </span>
                     ) : null}
-                    {item}
                   </li>
                 ))}
               </ul>
@@ -2428,7 +2438,14 @@ function ProjectStage({
             aria-hidden
             className="mb-[0.9em] block h-px w-[26%] bg-white/15"
           />
-          <p className="text-[clamp(0.55rem,0.862vw,0.775rem)] leading-relaxed text-slate-400/60">
+          {/* The measure stops short of the drop folio. This note runs the
+              full width of the page and its last line is set at the foot,
+              which is exactly where the folio is: at 1280x800 the closing
+              "says so." ended level with "04" and the two read as one string,
+              "says so.04". It clears by 55px at 1440 and 460 at 1920 -- 1280
+              is simply the width where the wrap lands there -- so the fix is
+              a reserved column rather than a number tuned for one viewport. */}
+          <p className="pe-[3.2em] text-[clamp(0.55rem,0.862vw,0.775rem)] leading-relaxed text-slate-400/60">
             {colophon}
           </p>
         </div>
@@ -2481,14 +2498,14 @@ function ServiceEntry({
     >
       {service.image ? <ServicePlate image={service.image} /> : null}
       <div className="min-w-0 flex-1">
-        <p className="mb-[0.5em] text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.34em] text-slate-400/60">
+        <p className="mb-[0.5em] text-[clamp(0.54rem,0.86vw,0.76rem)] tracking-[0.34em] text-slate-300/75">
           {roman(index + 1)}
         </p>
-        <p className="font-[family-name:var(--font-display)] text-[clamp(0.9rem,1.518vw,1.391rem)] leading-tight font-light text-balance text-white">
+        <p className="font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.85vw,1.72rem)] leading-tight font-normal text-balance text-white">
           {service.title}
         </p>
         {service.body ? (
-          <p className="mt-[0.5em] text-[clamp(0.64rem,1.012vw,0.912rem)] leading-relaxed text-slate-300/75">
+          <p className="mt-[0.55em] text-[clamp(0.72rem,1.14vw,1.04rem)] leading-relaxed text-slate-300/85">
             {service.body}
           </p>
         ) : null}
@@ -3079,7 +3096,11 @@ function ContactPage({ page }: { page: BookPage }) {
   const byEmblem = (emblem: string) =>
     contact.rows.find((row) => row.emblem === emblem);
   return (
-    <div data-ink className="flex flex-col">
+    // `my-auto` centres the whole block on the page. PageBody starts its
+    // column at the top because this chapter has a facing verso, which is
+    // right for a page that fills it and wrong for this one: the details
+    // table ends around two thirds down and left the last third empty.
+    <div data-ink className="my-auto flex flex-col">
       <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70 uppercase">
         {contact.eyebrow}
       </p>
@@ -3364,7 +3385,14 @@ function VersoPage({
 function Terms({ page }: { page: BookPage }) {
   if (!page.terms) return null;
   return (
-    <>
+    // CENTRED, and the gaps taken out rather than the leading.
+    //
+    // The page used to run from the top with the mark hung off the foot by
+    // `mt-auto`, which printed the three terms in the upper 55% and left a
+    // 190px hole above the plate at 1440x900. Centring the column and letting
+    // the mark sit under the ornament closes it without touching a line of
+    // type: every `py` and `mt` below came down, and the leading did not.
+    <div className="flex min-h-0 flex-1 flex-col justify-center">
       {page.termsTitle ? (
         <p
           data-ink
@@ -3378,7 +3406,7 @@ function Terms({ page }: { page: BookPage }) {
           <div
             key={term.letter}
             data-ink
-            className="grid grid-cols-[1.4em_1fr] gap-x-[0.8em] border-t border-white/10 py-[0.9em]"
+            className="grid grid-cols-[1.4em_1fr] gap-x-[0.8em] border-t border-white/10 py-[0.7em]"
           >
             {/* The letter is the artwork on this page -- same silver as the
                 lit page edge in the frame, so it reads as pressed into the
@@ -3400,13 +3428,13 @@ function Terms({ page }: { page: BookPage }) {
       {page.termsFoot ? (
         <p
           data-ink
-          className="mt-[1.4em] border-t border-white/10 pt-[1.1em] text-[clamp(0.7rem,1.092vw,1.003rem)] tracking-[0.02em] text-slate-400/75"
+          className="mt-[1em] border-t border-white/10 pt-[0.9em] text-[clamp(0.7rem,1.092vw,1.003rem)] tracking-[0.02em] text-slate-400/75"
         >
           {page.termsFoot}
         </p>
       ) : null}
       {page.terms ? (
-        <div data-ink className="mt-[1.8em]">
+        <div data-ink className="mt-[1.2em]">
           {/* Tailpiece: the ornament that closes a chapter's text. */}
           <Ornament className="w-[30%] text-slate-300" />
         </div>
@@ -3423,7 +3451,7 @@ function Terms({ page }: { page: BookPage }) {
       {page.terms ? (
         <figure
           data-ink
-          className="mt-auto mb-[9%] flex items-center gap-[1.1em] pt-[2em]"
+          className="mt-[1.4em] flex items-center gap-[1.1em]"
         >
           <img
             src="/logo-mark.webp"
@@ -3441,7 +3469,7 @@ function Terms({ page }: { page: BookPage }) {
           </figcaption>
         </figure>
       ) : null}
-    </>
+    </div>
   );
 }
 

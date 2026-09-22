@@ -965,6 +965,46 @@ engraving on the verso. `git log` has the dialog, the route and the plate.
 - **05's second action now reads "Get in touch"**, not "Start a project" —
   it still turns to 07, and there is no project form there any more.
 
+### A pass over 01, 02, 04 and 07
+
+Asked for as four separate things and verified by two subagents across
+1024/1280/1440/1920 before it shipped.
+
+- **01's recto is CENTRED and its gaps came out, not its leading.** The three
+  terms ran from the top with the mark hung off the foot by `mt-auto`, which
+  printed them in the upper 55% and left ~190px of hole above the plate.
+  `<Terms>` is wrapped in a centred flex column now and every `py`/`mt` in it
+  came down; no line spacing changed.
+- **01's lead is "Nivlak is a product studio."** It said "freelance studio",
+  and that stopped being true when 06 became a team of four — a visitor reads
+  "freelance" as one person and the chapter two spreads later shows otherwise.
+  The footnote moved with it: it explained the word "freelance" and now
+  explains the studio ("A studio, not a pipeline…").
+- **01's verso splits its slack between TWO auto margins.** The footnote is
+  hung off the foot; with one auto margin every spare pixel collected between
+  the Fig. 1 caption and that footnote — 110px at 1440x900, 220 at 1920x1080.
+  `<Figure>` takes `lg:mt-auto` as well, so the page divides its air instead
+  of holing in the middle.
+- **02's type went up across the entry** — label, title and body — and the
+  title is `font-normal` rather than `font-light`, which is what makes it read
+  as a heading rather than as another line. Tightest measured clearance after
+  the increase: 17px from the recto's last line to the drop folio at 1024x768,
+  where entry V's title wraps to three lines. Nothing overflows.
+- **04's index rows are leaded at `lg:py-[1.05em]`** (from 0.7) and its index
+  and status type came up with them.
+- **04's colophon reserves the drop folio** with `pe-[3.2em]`. It runs the
+  page's full measure and its last line sits at the foot, which is where the
+  folio is: at 1280x800 "…plate says so." ended level with "04" and the two
+  read as one string. It clears by 55px at 1440 and 460 at 1920 — 1280 is
+  simply where the wrap landed there, so the fix is a reserved column and not
+  a number tuned to one viewport.
+- **04's services run puts the separator AFTER its word.** At 1024 it wrapped
+  to "· Deployment", starting a line with a middot. Same fix as 07's contact
+  rows.
+- **07's recto is centred** with `my-auto`: `PageBody` starts its column at the
+  top because the chapter has a facing verso, which is right for a page that
+  fills it and wrong for one whose table ends two thirds down.
+
 ### The cover carries the mockup's hero
 
 `front.jpeg` at the repo root is the hero the site was designed with, and the

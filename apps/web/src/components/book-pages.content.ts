@@ -537,10 +537,15 @@ export const BOOK_PAGES: BookPage[] = [
       headline: "We Architect the Future.",
       subtitle: "Building the Future with Intelligence.",
       epigraph: "The person who plans it is the person who builds it.",
-      note: "Freelance means you hire people, not a pipeline. The same hands scope the work, write the code, and hand it over.",
+      // "Freelance studio" was the old lead, and it stopped being the true
+      // one when 06 became a team of four: a visitor reads "freelance" as one
+      // person, and the chapter two spreads later shows otherwise. "Product
+      // studio" is what the rest of the book already describes -- 02's five
+      // offers, 03's six stages, 04's four studies.
+      note: "A studio, not a pipeline: the same small team scopes the work, writes the code, and hands it over.",
       intro: {
-        lead: "Nivlak is a freelance studio.",
-        body: "You work straight with the people who write your code. There are no account managers in the middle, no handover to a team you have not met, and no guessing what happens next.",
+        lead: "Nivlak is a product studio.",
+        body: "You work straight with the people who design and build it — no account managers in the middle, no handover to a team you have not met, and no guessing what happens next.",
       },
       figure: {
         caption: "Fig. 1 — How the work runs",

@@ -139,9 +139,19 @@ export function Book() {
   // SHEETS THEMSELVES differ: React has to render the other list first, and
   // the hook's `dependencies` then rebuild the timeline over it.
   const [single, setSingle] = useState(false);
+  // Whether a phone page has the HEIGHT to carry the larger type. 03 is the
+  // page that decides it: its phone page prints a chapter head and three
+  // stages, which fit at 393x851 and do not at 360x640 -- measured, the third
+  // stage was cut off and the drop folio printed over stage 02's outcome. 760
+  // is between the two, so a tall phone reads larger and a short one is
+  // exactly what it was.
+  const [bigType, setBigType] = useState(false);
   useEffect(() => {
-    const sync = () =>
-      setSingle(isFullBleed(window.innerWidth, window.innerHeight));
+    const sync = () => {
+      const full = isFullBleed(window.innerWidth, window.innerHeight);
+      setBigType(full && window.innerHeight >= 760);
+      return setSingle(full);
+    };
     sync();
     window.addEventListener("resize", sync);
     window.addEventListener("orientationchange", sync);
@@ -164,12 +174,12 @@ export function Book() {
   // that just changed.
   useEffect(() => {
     const root = document.documentElement;
-    root.style.fontSize = single ? "18px" : "";
+    root.style.fontSize = bigType ? "18px" : "";
     ScrollTrigger.refresh();
     return () => {
       root.style.fontSize = "";
     };
-  }, [single]);
+  }, [bigType]);
 
   // Highest contiguous index present in imagesRef. Derived, never reset: the
   // ref survives a remount (and StrictMode's double invoke), so resetting would

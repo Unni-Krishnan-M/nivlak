@@ -1238,6 +1238,12 @@ at in `pnpm dev`.
   sheet. It carries half of one now, so one line in `<Book>` lifts every floor
   12.5% at once, and `ScrollTrigger.refresh()` goes with it because the pin's
   spacing was measured from the old layout.
+
+  **It is gated on HEIGHT (≥760px), and 03 is what sets the number.** Its
+  phone page prints a chapter head and three stages: at 393x851 all three fit
+  clear of the drop folio, and at 360x640 the third was cut off at the foot
+  and the folio printed over stage 02's outcome. A short phone therefore gets
+  exactly the sizes it had before; only a tall one reads larger.
 - **THE PAGE TURNS UNDER THE FINGER in portrait, and the drag does not animate
   anything.** It scrolls: one turn is a known distance on the playhead
   (`(TURN + GAP) / tl.duration()` of the trigger's length), so a finger that

@@ -121,6 +121,49 @@ export type Layer = {
   height: number;
 };
 
+// ONE PAGE, NOT THE SPINE -- the portrait framing.
+//
+// A phone shows one page per sheet once the book is open (see MOBILE_PAGES in
+// book-pages.content.ts), and `layoutSheets` maps the photograph's RIGHT page
+// onto that sheet. The reveal, though, framed the whole book: at 393x851 the
+// canvas ends showing source x 712..1211, which is the GUTTER band -- the
+// spine down the middle of the screen with half a page either side of it. So
+// the book opened at the centre and then cut to a single page the moment the
+// sheets came on, which is the seam this framing closes.
+//
+// The target is exactly what the sheet does: the right page, centred, at
+// whatever scale covers the screen. Both are computed from the same three
+// measured columns below, so the last frame of the reveal and the first page
+// of the book are the same picture.
+// The three columns, measured off frame-091 in the 1920x1080 source space: the
+// darkest column across the middle of the spread is the gutter, and the paper
+// runs from just inside the left edge to just inside the right one, full bleed
+// top to bottom. They are up here rather than beside spreadAt() because BOTH
+// framings are built on them, and two copies of a measurement is how the
+// reveal and the sheets drift apart.
+const GUTTER_X = 975;
+const PAPER_LEFT_X = 20;
+const PAPER_RIGHT_X = 1902;
+
+const PAGE_CX_SRC = (GUTTER_X + PAPER_RIGHT_X) / 2;
+const PAGE_W_SRC = PAPER_RIGHT_X - GUTTER_X;
+
+// When the push into one page happens, as a fraction of the playhead.
+//
+// Not from the start: the opening of the clip is a closed book standing on a
+// plinth, and there is no "one page" of it to frame -- the cover is one object
+// and cropping to half of it reads as a mis-framed photograph. 0.45 is where
+// the covers come apart, so the pan begins on a book that is visibly opening
+// and lands on the page exactly at the end, which is the frame the sheets are
+// sized to.
+//
+// 0.55 was built and compared frame by frame at 393x851. It is the more timid
+// of the two: the spine is still on screen two thirds of the way through the
+// reveal, so the whole move has to happen in the last few frames and reads as
+// a slide at the end rather than as the camera choosing a page.
+const PAGE_FROM = 0.45;
+const PAGE_TO = 1;
+
 export type Plan = {
   playhead: number;
   base: number;
@@ -139,6 +182,14 @@ export function planAt(
   width: number,
   height: number,
   ceiling = FRAME_COUNT - 1,
+  /**
+   * Frame the RIGHT PAGE rather than the whole book, for the viewports that
+   * print one page per sheet. Off by default, and `spreadAt` below leaves it
+   * off deliberately: `isFullBleed` asks spreadAt whether a phone has room for
+   * half a spread, so a spreadAt that had already moved to the phone framing
+   * would answer its own question and flip the layout back.
+   */
+  onePage = false,
 ): Plan {
   const playhead = Math.min(playheadFor(u), Math.max(ceiling, 0));
   const base = Math.max(0, Math.min(Math.floor(playhead), FRAME_COUNT - 2));
@@ -214,7 +265,23 @@ export function planAt(
   // Verified: 1440x900, 1920x1080, 1366x768 and 390x844 all clip 0 before and
   // after.
   const fitted = Math.min(cover, height / FRAME_H);
-  const scale = lerp(held, fitted, credit);
+  const spreadScale = lerp(held, fitted, credit);
+
+  // The push into the right-hand page. On a portrait phone the scale is the
+  // same number either way -- the page is taller than the screen is wide, so
+  // the height drives both -- and all of this is horizontal. It is written as
+  // a scale anyway because that is what makes it AGREE with the sheet on any
+  // portrait window rather than only on the ones measured.
+  const pageOpen = onePage
+    ? smoothstep(
+        (playhead / (FRAME_COUNT - 1) - PAGE_FROM) / (PAGE_TO - PAGE_FROM),
+      )
+    : 0;
+  const scale = lerp(
+    spreadScale,
+    Math.max(width / PAGE_W_SRC, height / FRAME_H),
+    pageOpen,
+  );
 
   const drawWidth = FRAME_W * scale;
   const drawHeight = FRAME_H * scale;
@@ -233,10 +300,26 @@ export function planAt(
 
   const layer = (index: number, alpha: number): Layer => {
     const frame = FRAMES[index];
+    // Where the camera looks. Straight at the book normally; on the way to the
+    // right-hand page when the sheets are going to be single pages.
+    //
+    // Two steps rather than one, and the middle one is what keeps it attached
+    // to the footage: `follow` is the centre of the right half of THIS frame's
+    // measured book, so while the covers are still swinging the pan tracks the
+    // real page rather than sliding toward a coordinate taken off the last
+    // frame. It only becomes that coordinate at the very end, where 1431
+    // (tracked) and 1438 (printed) are 5px apart on screen -- small, and the
+    // 5px is exactly the seam this is here to remove.
+    const follow = frame.ax + frame.sw / 4;
+    const anchor = lerp(
+      frame.ax,
+      lerp(follow, PAGE_CX_SRC, pageOpen),
+      pageOpen,
+    );
     return {
       index,
       alpha,
-      x: place(frame.ax, width, drawWidth),
+      x: place(anchor, width, drawWidth),
       y: place(frame.ay, height, drawHeight),
       width: drawWidth,
       height: drawHeight,
@@ -262,13 +345,7 @@ export function planAt(
 // footage and their edges on the paper's edges. So the geometry comes from the
 // same camera the painter uses, not from a guess in CSS.
 //
-// The three constants are measured off frame-091 (the last frame of the clip),
-// in the 1920x1080 source space: the darkest column across the middle of the
-// spread is the gutter, and the paper runs from just inside the left edge to
-// just inside the right one, full bleed top to bottom.
-const GUTTER_X = 975;
-const PAPER_LEFT_X = 20;
-const PAPER_RIGHT_X = 1902;
+// The three measured columns it reads are defined above planAt.
 
 export type Rect = { x: number; y: number; width: number; height: number };
 

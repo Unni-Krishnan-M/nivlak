@@ -319,7 +319,18 @@ export function Book() {
         // every desktop, it is indistinguishable from bilinear and costs ~3ms.
         ctx.imageSmoothingQuality = pixelWidth < FRAME_W * 0.8 ? "high" : "low";
 
-        const plan = planAt(scroll.u, width, height, loadedToRef.current);
+        // `isFullBleed` and not the `single` state: this painter runs on every
+        // frame from inside a ticker whose closure is not rebuilt when the
+        // state changes, so the state would be stale for a whole rotation --
+        // and the question is geometric anyway, which is why that function is
+        // shared with layoutSheets in the first place.
+        const plan = planAt(
+          scroll.u,
+          width,
+          height,
+          loadedToRef.current,
+          isFullBleed(width, height),
+        );
 
         // Paint the ground only where the frame will not. An opaque context that
         // is never filled reads as black rather than as the section colour, so

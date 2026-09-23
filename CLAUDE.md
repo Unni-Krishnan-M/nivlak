@@ -1281,6 +1281,36 @@ at in `pnpm dev`.
     is the spread's inset for a page that begins off the left edge, and on a
     full-bleed sheet that number is the whole page width — the copy would set
     one screen to the right.
+- **THE REVEAL PUSHES INTO ONE PAGE IN PORTRAIT, so the book does not open at
+  the centre.** `planAt` takes a fifth argument, `onePage`, and the painter
+  passes `isFullBleed(width, height)` for it. With it on, the camera drifts off
+  the spine over the second half of the clip and lands framed on the
+  photograph's RIGHT PAGE — the same page, at the same scale and centring, that
+  `layoutSheets` then maps onto the sheet.
+
+  Measured at 393x851, the reveal used to end showing source x 712..1211 —
+  the gutter band, spine down the middle of the screen — and the sheets came on
+  showing one page. The book opened at its centre and then cut. The scale is
+  the same number either way on a phone (the page is taller than the screen is
+  wide, so height drives both); all of the change is horizontal.
+
+  - **The pan tracks the footage before it settles on a coordinate.** The
+    anchor blends from the frame's own book centre, through the centre of the
+    right half of THAT frame's measured bbox, to the printed page's centre at
+    the end. Sliding straight toward 1438 from the start would leave the
+    photograph while the covers are still swinging. The two land 5px apart on
+    screen, which is the seam this closes.
+  - **It starts at 0.45 of the playhead**, where the covers come apart. 0.55
+    was built and compared: the spine is still on screen two thirds of the way
+    through and the move then reads as a slide at the end rather than as the
+    camera choosing a page.
+  - **`spreadAt` deliberately does NOT pass it.** `isFullBleed` asks spreadAt
+    whether a phone has room for half a spread; a spreadAt that had already
+    moved to the phone framing would answer its own question — the right page
+    would then fill the screen, the test would read "plenty of room" and the
+    layout would flip back to spreads.
+  - **Desktop is untouched by construction**: with `onePage` false the ramp is
+    0 and both lerps return their first argument.
 - **A phone page shows ONE PAGE OF PAPER, not a crop of the spread.** The
   sheet is the whole screen in this mode, and the frame region under it was
   whatever the window covered — the middle of the photograph — so the book's

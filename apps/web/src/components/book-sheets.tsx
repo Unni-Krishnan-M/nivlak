@@ -93,7 +93,7 @@ export const MOBILE_TURNS = MOBILE_PAGES.length - 1;
  * index by 3% of the page -- about 22px at 1440x900, straight under the tabs.
  * Change one and change the other.
  */
-const RECTO_END_MARGIN = 0.07;
+const RECTO_END_MARGIN = 0.09;
 
 export function isFullBleed(width: number, height: number) {
   const { right } = spreadAt(width, height);
@@ -409,8 +409,11 @@ function SpreadSheets() {
             // stack that sheet 0 buries when it turns, so it carries its own
             // padding. Give it a different drop and chapter 01 opens at a
             // different height from the six that follow it.
-            // The left margin is 13% and the fore-edge 9%, where both used to
-            // be 10/12. The BLOCK moves; its measure does not -- the two
+            // The OPENING spread's left page keeps 13% where every turned
+            // page came back to 11%: asked for less margin "except the first
+            // section", and this layer is what that section's left page is --
+            // it is the only page in the book that is not a sheet's back, so
+            // the exception is structural rather than a chapter number. The BLOCK moves; its measure does not -- the two
             // numbers move by the same 3% and 1%, so no line in the book
             // rewraps. Narrowing the measure instead was the alternative and
             // it is not available: 03 fills its page to the last pixel by
@@ -3401,7 +3404,7 @@ function VersoPage({
    */
   flush?: boolean;
 }) {
-  const inset = flush ? "13%" : "calc(13% + var(--verso-inset-start, 0px))";
+  const inset = flush ? "11%" : "calc(11% + var(--verso-inset-start, 0px))";
   // A verso RESERVES THE THUMB INDEX only when it is a portrait page.
   //
   // On a spread this page is the left half and the index is pinned to the
@@ -3412,8 +3415,8 @@ function VersoPage({
   // that start at 330. `--page-index-inset` is published for whichever page
   // fills the sheet, which in this mode is this one.
   const endInset = flush
-    ? "calc(9% + var(--page-index-inset, 0px))"
-    : "9%";
+    ? "calc(11% + var(--page-index-inset, 0px))"
+    : "11%";
   return (
     <div
       className={`relative flex h-full w-full flex-col justify-start pb-[8%] text-slate-200 ${PAGE_SINKAGE}`}
@@ -3549,12 +3552,14 @@ function PageBody({
     // the WINDOW's right edge -- the fore-edge -- and the recto is the page
     // under it. See the note where layoutSheets computes it.
     <div
-      // 13% at the gutter and 7% at the fore-edge, from 10 and 10. The block
-      // shifts by three percent and the measure is unchanged, so nothing on
-      // any page rewraps -- see the note on the facing layer. The 7% is also
+      // 11% at the gutter and 9% at the fore-edge. It was 10/10, went to 13/7
+      // when the left margin was widened, and came back to 11/9 when that read
+      // as too much everywhere except the opening spread -- which keeps its
+      // 13% (see the facing layer). The pair always sums to 20, so the measure
+      // is the same at every setting and no line rewraps. The 9% is also
       // RECTO_END_MARGIN in layoutSheets, which reserves the thumb index
       // against it; the two numbers are one number.
-      className={`flex h-full w-full flex-col ps-[13%] pe-[calc(7%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-slate-200 ${
+      className={`flex h-full w-full flex-col ps-[11%] pe-[calc(9%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-slate-200 ${
         // Both halves of a spread take the same drop, so their first lines sit
         // on one line across the gutter. See PAGE_SINKAGE.
         page.facing

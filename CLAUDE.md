@@ -432,10 +432,10 @@ the last pixel cannot absorb that, so:
   had taken off the recto's measure.
 - **The row's own padding came down**, `lg:pt-[1.1em]` → `0.9em` and
   `lg:gap-y-[0.75em]` → `0.55em`.
-- **More activity runs wrap to a second line now** — four of six rather than
-  two. The run is `flex-wrap` by design and the rows still fit: the last
-  outcome lands at 802 against a folio at 828 (1440x900) and 679 against 707
-  (1024x768).
+- **One activity run wraps to a second line** ("Monitoring"), against none
+  before the type went up. The run is `flex-wrap` by design and the rows fit:
+  the last outcome lands at 802 against a folio at 828 (1440x900) and 679
+  against 707 (1024x768).
 
 **The recto's note is two lines and set as an epigraph.** It was five lines of
 30ch, sized to FILL a slot it cannot shrink — the slot's height is the verso's
@@ -447,9 +447,9 @@ the same stage. We can carry an idea from discovery through to launch, or step
 in at the one where your product is stuck." → "Start at any stage: discovery
 to launch, or where your product is stuck."
 
-**The left margin is uniform and was MEASURED, not assumed.** Asked to match
-01's across the book: at 1440x900 every chapter's verso ink starts at x=101–104
-and every recto at 832–834. The 3px is 01's alone and is the camera — its left
+**The left margin was MEASURED, not assumed, at each setting.** At 13% every
+chapter's verso ink started at x=101–104 and every recto at 832–834; at 11%
+they are 86–88, with 01 alone at 104 because its page keeps 13%. The 3px is 01's alone and is the camera — its left
 page is the `[data-left-page]` layer on `spreadAt()`'s LEFT rect, genuinely
 23px wider than a turned sheet's back (see "One drop, one head"). On a phone
 every page starts at x=52, which is the 13%. Nothing to change; the scan is
@@ -1240,21 +1240,22 @@ at in `pnpm dev`.
     file's own rule is that nothing may put `filter` or `opacity` on a sheet.
     No release duration or commit threshold is published anywhere for Play
     Books, so the numbers here (55px to commit a swipe) are this book's.
-- **The left margin is 13% of the page, and the block MOVED rather than
-  narrowed.** Asked for across every chapter. The start padding went 10% → 13%
-  on all three places that set it (`VersoPage`, `PageBody`, the
-  `[data-left-page]` layer) and the opposite side came down by the same
-  amount — verso fore-edge 12% → 9%, recto 10% → 7% — so the verso's measure
-  is unchanged and no line in the book rewraps. Narrowing instead was not
+- **The left margin is 11%, and the OPENING spread's left page keeps 13%.**
+  It went 10% → 13% everywhere when a wider margin was asked for, then back to
+  11% when 13% read as too much "except the first section". The exception is
+  structural, not a chapter number: `[data-left-page]` is the only page in the
+  book that is not a sheet's back, and it is 01's verso. Verso and recto are
+  `11/11` and `11/9`; the pair always sums to what it summed to before (22 and
+  20), so **the measure is identical at every setting and no line rewraps** —
+  only the block moves. Narrowing instead was not
   available: 03 fills its page to the last pixel by construction and 05 has
   9px under its call to action.
 
-  **The RECTO cannot have it for free, and that is the one cost.** Its right
-  edge is pinned by `--page-index-inset`, which lands the type at the thumb
-  index whatever the padding is, so 3% more at the gutter is 3% less measure —
-  about 22px at 1440x900. 03 paid it: two of its six activity runs now wrap to
-  a second line ("Monitoring", "Long-term support"). The rows still fit, and
-  the last outcome lands at 810 against a folio at 828.
+  **The RECTO is the one that is not free.** Its right edge is pinned by
+  `--page-index-inset`, which lands the type at the thumb index whatever the
+  padding is, so every percent at the gutter is a percent off the measure —
+  22px at 1440x900 at 13%, 7px at 11%. 03 is the page that shows it: at 13%
+  four of its six activity runs wrapped to a second line, at 11% one does.
 
   **`RECTO_END_MARGIN` exists because the two numbers are one number.** The
   index reservation subtracts the recto's own fore-edge margin, which was

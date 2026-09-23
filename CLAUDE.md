@@ -1126,17 +1126,55 @@ the first screen said `NIVLAK TECHNOLOGIES` and nothing else.
 - **Sentence case, not the mockup's caps.** The book sets every headline in
   the display serif in sentence case (see 05's note); the cover doing
   otherwise would be the only one. The words are the mockup's exactly.
-- **THE PORTRAIT SCRIM IS GONE, and the type carries itself.** There was one
-  — a gradient from the foot of the screen up to 74% — because portrait
-  letterboxes the frame into a band in the MIDDLE of the screen with the copy
-  at its foot, so the headline landed on the cover's own wordmark at 390x844.
-  What that missed is that the scrim is on screen for the whole REVEAL as well
-  as for the cover: the first three frames of the book opening printed behind
-  a curtain, which is the one thing the first screen is for. It is a
-  `textShadow` on the hero block instead (`0 1px 18px` plus a tight `0 1px 3px`
-  of the same near-black), which is legibility that costs the photograph
-  nothing. The block is a single element inside `kickerRef`, so the shadow is
-  declared once.
+- **THE WORDS NEVER SIT ON THE BOOK, and the camera is what guarantees it.**
+  Asked for directly, and it was true on a wide desktop and false everywhere
+  else. Two separate failures, one per orientation:
+
+  **Portrait printed the headline across the photographed cover.** At 393x851
+  the book and its plinth run from y=238 to y=613 across nearly the full width,
+  and the copy — set at the foot, where the mockup puts it — landed on the
+  wordmark. There is no empty half of the frame to move into on a phone.
+
+  So the first screen is set as a TITLE PAGE: the plate at the top, the title
+  block under it, nothing over the plate. `planAt` raises the book until its
+  measured box starts at 8.5% of the height and caps it at 46% of the height,
+  which leaves 365px of clear ground at 393x851 against 238 before. The cap is
+  what keeps it working on a small phone — at 320x568 the book measures 54% of
+  the height and the title block had 156px for the 210 it needs, with the
+  kicker printed on the plinth.
+
+  **Landscape crowded it below about 1300px.** The copy goes in the empty left
+  of the frame, and the narrower the window the larger a share of it the book
+  takes. Measured at the cover as the gap from the headline's last glyph to the
+  book's own left edge: 334px at 1920, 237 at 1440, 102 at 1366 — then 28 at
+  1280, **-86 at 1024 and -97 at 1152**, where "of What We Build." printed its
+  last word and its full stop on the spine. The plate is capped by WIDTH there:
+  the book's left edge may not come in past 48% of the window. The headline's
+  ink lands at about 0.445 of the width at every size up to its clamp maximum,
+  so that leaves a margin everywhere and binds only below ~1450 — 2% off the
+  plate at 1440, which is 12px of bar top and bottom.
+
+  - **`BOOK_LEFT_SRC` is the book, not the bbox.** The generated per-frame box
+    is the lit book AND its plinth, and the plinth reaches 110 source px
+    further left. Capping against it would have shrunk the plate on viewports
+    where nothing was wrong.
+  - **The cap is one-way** (`Math.min`), so it can open ground on a small
+    screen and can never enlarge the photograph on a big one.
+  - **It is the COVER only.** The lift is held to 0.12 of the reveal and gone
+    by 0.4 — <Book> fades the copy between 0.05 and 0.15, so the book starts
+    moving as the last of the type goes and is back on the clip's own framing
+    long before the covers open. Moving it earlier drops the photograph
+    THROUGH the words it was lifted off.
+  - **The scrim that used to do this job is still gone.** A gradient from the
+    foot to 74% was the first answer and it was on screen for the whole
+    REVEAL, so the book opened behind a curtain. The type keeps its own
+    `textShadow` — legibility that costs the photograph nothing — but it is no
+    longer load-bearing, because the type is not on the photograph any more.
+  - **The title block is set tighter in portrait**, since it has the screen
+    under the plate and nothing else: a size down on the headline, one row of
+    buttons (0.2em of tracking is what buys it — the pair measures 322px of
+    the 338 available at 393x851), no 5vh rule over the scroll cue, and 5vh of
+    foot padding instead of 14.
 - **The cue goes below 620px of viewport height**, where it would otherwise
   sit on the buttons; 844x390 and 320x568 are the two that hit it.
 

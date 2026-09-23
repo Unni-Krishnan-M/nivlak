@@ -1116,7 +1116,7 @@ export function Book() {
             wrapper is `pointer-events-none` and the two buttons switch it back
             on, so the cover's copy never eats a click meant for the page and
             the buttons stop taking them the moment GSAP hides the block.  */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-end portrait:pb-[14vh] landscape:ps-[7vw] landscape:pe-[4vw]">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-end portrait:pb-[5vh] landscape:ps-[7vw] landscape:pe-[4vw]">
           <div
             ref={kickerRef}
             // The hero sits DIRECTLY on the photograph in portrait, with no
@@ -1141,13 +1141,18 @@ export function Book() {
                 hard rather than left to the measure: "THE STORY / OF WHAT WE
                 BUILD." is the line it is written on, and a reflow that puts
                 "OF" on the first line loses the sentence. */}
-            <h1 className="mt-[2.2vh] font-[family-name:var(--font-display)] text-[clamp(2.1rem,5.2vw,4.6rem)] leading-[1.02] font-light text-white">
+            {/* A size down in portrait, and it is the plate above that pays
+                for it: the title block has the screen BELOW the photograph and
+                nothing more, measured at 365px at 393x851, where the block ran
+                414 at the landscape sizes. The alternative was cropping the
+                plate, which is the one thing the first screen is for. */}
+            <h1 className="mt-[2.2vh] font-[family-name:var(--font-display)] text-[clamp(2.1rem,5.2vw,4.6rem)] leading-[1.02] font-light text-white portrait:mt-[1.4vh] portrait:text-[clamp(1.7rem,8vw,2.4rem)]">
               The Story
               <span className="block bg-gradient-to-r from-[#9dc0ee] via-[#bcd4f2] to-[#dce7f7] bg-clip-text text-transparent">
                 of What We Build.
               </span>
             </h1>
-            <p className="mt-[2.4vh] text-[clamp(0.78rem,1.15vw,1.05rem)] tracking-[0.12em] text-slate-300/85">
+            <p className="mt-[2.4vh] text-[clamp(0.78rem,1.15vw,1.05rem)] tracking-[0.12em] text-slate-300/85 portrait:mt-[1.6vh]">
               Technology built around your business.
             </p>
 
@@ -1156,12 +1161,19 @@ export function Book() {
                 the head bar and the thumb index use. A third kind of link that
                 merely looks like them would drift out of step the first time
                 the seek changes. */}
-            <div className="mt-[3.4vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)]">
+            {/* ONE ROW in portrait, and the tracking is what buys it. Two
+                stacked buttons cost 42px of a title block that has the screen
+                under the plate and nothing else; at 0.2em and 0.8rem of
+                padding the pair measures 322px of the 338 available at
+                393x851 and 273 of 275 at 320x568, which is the narrowest
+                phone this book is checked at. `flex-wrap` is still the
+                backstop under that. */}
+            <div className="mt-[3.4vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)] portrait:mt-[2.2vh] portrait:gap-[0.5rem]">
               <button
                 type="button"
                 data-nav-item
                 data-index="0"
-                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/35 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] text-white uppercase transition-colors duration-300 outline-none hover:border-white hover:bg-white/10 focus-visible:border-white focus-visible:bg-white/10 motion-reduce:transition-none"
+                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/35 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] portrait:px-[0.8rem] portrait:py-[0.55rem] portrait:text-[0.5rem] portrait:tracking-[0.2em] text-white uppercase transition-colors duration-300 outline-none hover:border-white hover:bg-white/10 focus-visible:border-white focus-visible:bg-white/10 motion-reduce:transition-none"
               >
                 Open the book
                 <span
@@ -1175,7 +1187,7 @@ export function Book() {
                 type="button"
                 data-nav-item
                 data-index={BOOK_PAGES.length - 1}
-                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/20 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] text-slate-200 uppercase transition-colors duration-300 outline-none hover:border-white/60 hover:text-white focus-visible:border-white/60 focus-visible:text-white motion-reduce:transition-none"
+                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/20 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] portrait:px-[0.8rem] portrait:py-[0.55rem] portrait:text-[0.5rem] portrait:tracking-[0.2em] text-slate-200 uppercase transition-colors duration-300 outline-none hover:border-white/60 hover:text-white focus-visible:border-white/60 focus-visible:text-white motion-reduce:transition-none"
               >
                 Begin a project
                 <span
@@ -1191,8 +1203,13 @@ export function Book() {
                 book, and a visitor who does not scroll sees a photograph and
                 leaves. The rule above it is the mockup's. Hidden where the
                 viewport is too short for it to sit clear of the buttons. */}
-            <div className="mt-[5vh] flex flex-col gap-[1.2vh] [@media(max-height:620px)]:hidden">
-              <span aria-hidden className="block h-[5vh] w-px bg-white/25" />
+            <div className="mt-[5vh] flex flex-col gap-[1.2vh] portrait:mt-[2.6vh] [@media(max-height:620px)]:hidden">
+              {/* The rule is 5vh of the height the title block has not got in
+                  portrait; the words alone still say scroll. */}
+              <span
+                aria-hidden
+                className="block h-[5vh] w-px bg-white/25 portrait:hidden"
+              />
               <span className="flex items-center gap-[0.8em] text-[clamp(0.5rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-300/75 uppercase">
                 Scroll to begin
                 <span aria-hidden className="text-[0.9rem] leading-none">

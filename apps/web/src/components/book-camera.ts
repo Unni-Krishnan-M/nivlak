@@ -164,6 +164,66 @@ const PAGE_W_SRC = PAPER_RIGHT_X - GUTTER_X;
 const PAGE_FROM = 0.45;
 const PAGE_TO = 1;
 
+// THE COVER IS A TITLE PAGE IN PORTRAIT, and these three numbers are it.
+//
+// The clip's own framing puts the standing book in the MIDDLE of the screen.
+// On a landscape viewport that is right -- the book is in the right half and
+// the whole left side is empty, which is where the hero copy goes. A portrait
+// viewport has no left half: measured at 393x851 the book and its plinth run
+// from y=238 to y=613 across nearly the full width, and the hero was printed
+// straight over the cover, across the photographed wordmark.
+//
+// So in portrait the first screen is set the way a book sets a title page: the
+// device at the top, the title UNDER it, and nothing over the device. The
+// camera lifts the book until its measured box starts just below the head
+// rule, which leaves the bottom of the screen as clear ground for the type --
+// 400px of it at 393x851, against 238 before.
+//
+// The bar that opens up under the frame is the letterbox colour the section is
+// already painted in, so this is one ground with a photograph sitting in the
+// top of it, not a picture with a box under it.
+const COVER_BOOK_TOP = 0.085;
+// ...and no more than this much of the height, which is what keeps the design
+// alive on a small phone. At 393x851 the book already measures 44% and this
+// changes nothing; at 320x568 it measures 54%, and the title block underneath
+// then has 156px for the 210 it needs -- the kicker and the first line of the
+// headline printed on the plinth. Capping the plate at 46% hands that page 259
+// and costs the tall phone nothing.
+const COVER_BOOK_H = 0.46;
+
+// LANDSCAPE HAS THE SAME PROBLEM ON THE OTHER AXIS, and it is invisible at the
+// width this page is usually looked at.
+//
+// The copy goes in the empty left of the frame, which works down to about
+// 1300px and then stops: the narrower the window, the larger a share of it the
+// book takes. Measured at the cover, as the gap between the last glyph of the
+// headline and the book's own left edge -- 334px at 1920, 237 at 1440, 102 at
+// 1366, and then 28 at 1280, -86 at 1024 and -97 at 1152, where "of What We
+// Build." prints its last word and its full stop on the spine.
+//
+// So the plate is capped in landscape too, by WIDTH: the book's left edge may
+// not come further in than this fraction of the window. The headline's ink
+// lands at about 0.445 of the width all the way up to its clamp maximum
+// (measured: 0.445 at 1024, 1152, 1280 and 1366, 0.439 at 1440), so 0.48
+// leaves it a margin at every width and binds only below ~1450 -- at 1440 it
+// takes 2% off the plate, which is 12px of bar top and bottom.
+//
+// BOOK_LEFT_SRC is the leftmost ink of the standing book in the cover frames,
+// read off frame-001: the spine leans, so the leftmost point is its top
+// corner. It is NOT the measured bbox, which starts 110px further left --
+// that box is the lit book AND its plinth, and the plinth is ground rather
+// than object. Using it would have shrunk the plate on viewports where
+// nothing was wrong.
+const BOOK_LEFT_SRC = 1000;
+const COVER_BOOK_LEFT = 0.48;
+// The lift is held while the hero fades and is gone shortly after. <Book>
+// fades the copy between 0.05 and 0.15 of the reveal; by 0.12 it is nearly
+// invisible, so the book starts down as the last of the type goes and is back
+// on the clip's own framing by 0.4 -- long before the covers open. Moving it
+// any earlier drops the photograph THROUGH the words it was lifted off.
+const COVER_HOLD = 0.12;
+const COVER_TO = 0.4;
+
 export type Plan = {
   playhead: number;
   base: number;
@@ -277,11 +337,31 @@ export function planAt(
         (playhead / (FRAME_COUNT - 1) - PAGE_FROM) / (PAGE_TO - PAGE_FROM),
       )
     : 0;
-  const scale = lerp(
+  const opened = lerp(
     spreadScale,
     Math.max(width / PAGE_W_SRC, height / FRAME_H),
     pageOpen,
   );
+
+  // How much of the title-page lift is still in force: 1 at rest on the cover,
+  // 0 once the book is opening. The plate is capped as well as raised, and
+  // only ever DOWNWARD -- `Math.min` -- so this can open ground under the book
+  // on a small screen without ever enlarging the photograph on a big one.
+  const lift =
+    1 -
+    smoothstep(
+      (playhead / (FRAME_COUNT - 1) - COVER_HOLD) / (COVER_TO - COVER_HOLD),
+    );
+  // The cover cap: by height in portrait, where the plate sits above the
+  // title block, and by width in landscape, where the copy is beside it. The
+  // landscape arithmetic is the clamped case of place() solved for the scale
+  // -- the frame is always wider than the window here, so its left edge is
+  // pinned at `width - FRAME_W * scale` and the book's own left edge lands at
+  // `width - (FRAME_W - BOOK_LEFT_SRC) * scale`.
+  const capped = onePage
+    ? (COVER_BOOK_H * height) / lerp(a.sh, b.sh, mix)
+    : ((1 - COVER_BOOK_LEFT) * width) / (FRAME_W - BOOK_LEFT_SRC);
+  const scale = lerp(opened, Math.min(opened, capped), lift);
 
   const drawWidth = FRAME_W * scale;
   const drawHeight = FRAME_H * scale;
@@ -316,11 +396,24 @@ export function planAt(
       lerp(follow, PAGE_CX_SRC, pageOpen),
       pageOpen,
     );
+    // The lifted y is NOT run through place(): its clamps exist to keep bare
+    // ground off the screen, and the bar under the frame is the whole point
+    // here. It is measured from the book rather than from the frame, because
+    // what has to land under the head rule is the OBJECT -- the frame carries
+    // a different amount of empty sky above the book in every shot of the
+    // move.
+    const bookTop = frame.ay - frame.sh / 2;
     return {
       index,
       alpha,
       x: place(anchor, width, drawWidth),
-      y: place(frame.ay, height, drawHeight),
+      y: onePage
+        ? lerp(
+            place(frame.ay, height, drawHeight),
+            COVER_BOOK_TOP * height - bookTop * scale,
+            lift,
+          )
+        : place(frame.ay, height, drawHeight),
       width: drawWidth,
       height: drawHeight,
     };

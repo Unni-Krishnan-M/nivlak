@@ -1207,6 +1207,32 @@ at in `pnpm dev`.
     file's own rule is that nothing may put `filter` or `opacity` on a sheet.
     No release duration or commit threshold is published anywhere for Play
     Books, so the numbers here (55px to commit a swipe) are this book's.
+- **The left margin is 13% of the page, and the block MOVED rather than
+  narrowed.** Asked for across every chapter. The start padding went 10% → 13%
+  on all three places that set it (`VersoPage`, `PageBody`, the
+  `[data-left-page]` layer) and the opposite side came down by the same
+  amount — verso fore-edge 12% → 9%, recto 10% → 7% — so the verso's measure
+  is unchanged and no line in the book rewraps. Narrowing instead was not
+  available: 03 fills its page to the last pixel by construction and 05 has
+  9px under its call to action.
+
+  **The RECTO cannot have it for free, and that is the one cost.** Its right
+  edge is pinned by `--page-index-inset`, which lands the type at the thumb
+  index whatever the padding is, so 3% more at the gutter is 3% less measure —
+  about 22px at 1440x900. 03 paid it: two of its six activity runs now wrap to
+  a second line ("Monitoring", "Long-term support"). The rows still fit, and
+  the last outcome lands at 810 against a folio at 828.
+
+  **`RECTO_END_MARGIN` exists because the two numbers are one number.** The
+  index reservation subtracts the recto's own fore-edge margin, which was
+  written as a bare `0.1` while `<PageBody>` used `pe-[10%]`. Moving that
+  padding to 7% without it would have under-reserved the index by 22px and run
+  the type under the tabs. Change one, change the other.
+
+  **A portrait verso reserves the index too.** In one-page mode the sheet is
+  the whole screen and the index floats over whichever page is showing; only
+  the recto reserved it, so at 390x844 02's copy ran to x=352 under numerals
+  starting at 330. `<VersoPage flush>` now adds the same inset.
 - **Geometry comes from the camera, never from CSS.** Sheets sit on the real
   gutter because `spreadAt()` runs the same arithmetic the painter runs. A
   hardcoded `50%` will drift apart from the photograph on resize.

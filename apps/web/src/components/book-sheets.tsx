@@ -2540,7 +2540,16 @@ function ServicePlate({ image }: { image: PageFigure }) {
       // so entries that share a 700px half on desktop share a 390px page here.
       // At 42% the text column falls to ~180px and every body wraps to four
       // lines; at 32% it gets ~215px and most wrap to three.
-      className="w-[32%] shrink-0 select-none lg:w-[42%]"
+      //
+      // `wide` is the one exception, and it is the entry's own: see PageFigure.
+      // The extra width comes out of that entry's copy, so it stays inside the
+      // same row and no other plate in the run moves -- and it only applies
+      // from `xl`. At 1024 the recto is ~240px after the thumb index's inset,
+      // where 52% left the AI entry's body on seven lines of about four words;
+      // there the plate keeps the run's own 42%.
+      className={`shrink-0 select-none ${
+        image.wide ? "w-[32%] lg:w-[42%] xl:w-[52%]" : "w-[32%] lg:w-[42%]"
+      }`}
       style={{ aspectRatio: image.ratio, objectFit: "contain" }}
     />
   );

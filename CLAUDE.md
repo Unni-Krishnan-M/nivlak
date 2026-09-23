@@ -985,6 +985,13 @@ Asked for as four separate things and verified by two subagents across
   the Fig. 1 caption and that footnote — 110px at 1440x900, 220 at 1920x1080.
   `<Figure>` takes `lg:mt-auto` as well, so the page divides its air instead
   of holing in the middle.
+- **One plate in 02 may be `wide`, and one is.** `PageFigure.wide` prints an
+  entry's plate at 52% of its row instead of the run's 42%, and the AI entry
+  takes it: its render is a node graph rather than a device, and at 42% the
+  nodes — which are its content — are a texture. The width comes out of that
+  entry's own copy, so no other plate in the run moves. It applies from `xl`
+  only: at 1024 the recto is ~240px after the thumb index's inset and 52% left
+  that body on seven lines of about four words.
 - **02's type went up across the entry** — label, title and body — and the
   title is `font-normal` rather than `font-light`, which is what makes it read
   as a heading rather than as another line. Tightest measured clearance after
@@ -1457,6 +1464,14 @@ repository.
   colour under transparent pixels; 02's five once came out as flat silhouettes.
   Colour and key are resized separately; a changed channel count is refused.
 - **The hatch noise is seeded** (`-seed 7`), so rebuilds are comparable.
+- **Contrast is PER FAMILY** (`SIGMOID_services=4.5`, process and work `0`),
+  applied to the finished drawing just before the ink ramp. 02's five are keyed
+  renders of screens — flat-lit and the narrowest tonal range of the three
+  families — and they read as washed beside 03's photographs: std 0.115–0.128
+  against 03's 0.092–0.167. At 4.5 they measure 0.140–0.157 and the other ten
+  plates come out byte-identical, which is the point of the knob being per
+  family: 03's and 04's tone is measured against the page in their own build
+  scripts and a second contrast pass here would undo it.
 - **The audit**: median above the page luma sampled off `frame-091` (0.2036)
   — `INK` is darker than the page, so a mostly-ink plate is a hole — and a std
   of at least 0.05, because a blank plate passes the median test.

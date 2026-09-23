@@ -115,15 +115,25 @@ PAPER='#b4cbe6'
 # dark; a global -auto-level leaves their detail in the bottom fifth and the
 # hatching then buries it. CLAHE lifts each region on its own.
 CLAHE='12x12%+128+2.5'
+# Per-family contrast, applied to the finished drawing just before the ink
+# ramp. 02's five are keyed renders of screens -- flat-lit, mid-grey, and the
+# family with the least tonal range of the three -- and they read as washed
+# beside 03's photographs. 0 is "leave it alone", which is what 03 and 04 get:
+# their tone is measured against the page in their own build scripts and a
+# second contrast pass here would undo it.
+SIGMOID_services=4.5
+SIGMOID_process=0
+SIGMOID_work=0
 SHARPEN='0x0.6+0.8+0.02'
 QUALITY=86
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-# draw IN OUT -- IN is an opaque colour image already at its target size.
+# draw IN OUT SIGMOID -- IN is an opaque colour image already at its target
+# size; SIGMOID is the family's contrast, 0 for none.
 draw() {
-  local in=$1 out=$2 w h
+  local in=$1 out=$2 sigmoid=${3:-0} w h
   read -r w h < <(magick identify -format '%w %h\n' "$in")
   magick "$in" -colorspace gray -clahe "$CLAHE" -auto-level "$WORK/L.png"
   magick "$WORK/L.png" \
@@ -137,6 +147,7 @@ draw() {
   magick "$WORK/line.png" "$WORK/hatch.png" -compose multiply -composite \
     \( "$WORK/L.png" +level "${SHADE_LIFT}%,100%" \) -compose multiply -composite \
     -unsharp "$SHARPEN" -auto-level -evaluate pow 1.15 \
+    $([ "$sigmoid" = "0" ] || printf -- '-sigmoidal-contrast %s,50%%' "$sigmoid") \
     \( xc:"$INK" xc:"$MID" xc:"$PAPER" +append -filter Cubic -resize 256x1! \) \
     -clut "$out"
 }
@@ -158,8 +169,9 @@ for dir in services process work; do
 
     keyed=$(magick identify -format '%[channels]' "$src" | grep -c 'a' || true)
 
+    sigmoid_var="SIGMOID_$dir"
     magick "$src" -alpha off -resize "${target}x" "$WORK/colour.png"
-    draw "$WORK/colour.png" "$WORK/drawn.png"
+    draw "$WORK/colour.png" "$WORK/drawn.png" "${!sigmoid_var}"
     if [ "$keyed" != "0" ]; then
       magick "$src" -alpha extract -resize "${target}x" "$WORK/key.png"
       magick "$WORK/drawn.png" "$WORK/key.png" -alpha off \

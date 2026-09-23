@@ -96,6 +96,17 @@ export type PageFigure = {
   /** width/height of the trimmed file, so the row reserves the right space. */
   ratio: string;
   alt: string;
+  /**
+   * Print this plate larger than the rest of the run.
+   *
+   * The catalogue gives every entry the same 42% of its row so five pictures
+   * read as one series, and this is the exception to that: a plate whose
+   * subject is a DIAGRAM rather than a device loses its structure at 42% --
+   * the AI entry's render is a node graph, and the nodes are its content.
+   * It costs the entry's copy width, so it is only worth spending where the
+   * body is short enough to stay at three lines.
+   */
+  wide?: boolean;
 };
 
 /**
@@ -631,6 +642,7 @@ export const BOOK_PAGES: BookPage[] = [
           src: "/services/ai-automation-solutions.webp",
           ratio: "900 / 498",
           alt: "Emails, forms and documents feeding an AI decision engine, which files each one and reports the time saved.",
+          wide: true,
         },
         title: "AI Automation Solutions",
         body: "We hand the repetitive work to software, so your team spends the day on the parts that need a person.",

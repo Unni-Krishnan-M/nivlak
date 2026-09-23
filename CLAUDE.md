@@ -1220,6 +1220,52 @@ at in `pnpm dev`.
     is the spread's inset for a page that begins off the left edge, and on a
     full-bleed sheet that number is the whole page width — the copy would set
     one screen to the right.
+- **A phone page shows ONE PAGE OF PAPER, not a crop of the spread.** The
+  sheet is the whole screen in this mode, and the frame region under it was
+  whatever the window covered — the middle of the photograph — so the book's
+  GUTTER printed as a dark band about 60% across every page and the type
+  crossed it. On a Pixel 5 (393x851) it is the first thing you see. The
+  full-bleed branch of `layoutSheets` now scales the photograph's RIGHT-HAND
+  PAGE to cover the sheet and centres it: no gutter, no spine, no second
+  page's edge. `cover`, not `contain` — a letterboxed frame would put the
+  plinth on the screen — and both faces take the same crop, since the back is
+  the same leaf seen from behind.
+- **Phone type is raised by the ROOT FONT SIZE, 16px → 18px, and nothing
+  else.** Every size in the book is `clamp(rem, vw, rem)`; on a phone the vw
+  term is under the floor, so the rem MINIMUM is the only number that renders.
+  That is why this file says the minimums are what a phone gets and must not
+  be raised — a note written when a phone carried a whole chapter on one
+  sheet. It carries half of one now, so one line in `<Book>` lifts every floor
+  12.5% at once, and `ScrollTrigger.refresh()` goes with it because the pin's
+  spacing was measured from the old layout.
+- **THE PAGE TURNS UNDER THE FINGER in portrait, and the drag does not animate
+  anything.** It scrolls: one turn is a known distance on the playhead
+  (`(TURN + GAP) / tl.duration()` of the trigger's length), so a finger that
+  has crossed 80% of the screen has crossed one page and the timeline the
+  scroll already drives does the rest — the turn under a finger and the turn
+  under a wheel are the same turn. On release it lands: past 25% of the screen
+  completes, under it settles back on the page you were on. The scrub drops
+  from 1.0 to 0.3 in portrait, because the catch-up that reads as weight under
+  a wheel reads as lag under a hand.
+
+  **Two things were wrong on the way and both were found with a real touch
+  drag** (`Input.dispatchTouchEvent` over CDP, the harness's own bootstrap):
+
+  - **It was bound to `[data-stage]`, and the thumb index is not inside it.**
+    A drag starting in the right eighth of a phone — where a right thumb lands
+    — began on the index's `<ul>` and never reached a listener:
+    `elementFromPoint(334, 468)` proves it. It binds to the SECTION now and
+    ignores drags that start on `[data-nav-item]`, `[data-book-index]`,
+    `[data-project-stage]`, a link or a button, so every control keeps its own
+    gesture.
+  - **The page distance was cached at setup, where it is NaN.** ScrollTrigger
+    has not measured itself when the `useGSAP` body runs, so `trigger.end` is
+    undefined and `end - start` is NaN; the first drag scrolled to 0 and landed
+    a chapter backwards. It is asked for at the start of each drag instead.
+
+  Verified at 393x851: a full drag turns 02 → 03 and moves 514px under the
+  finger before release; a 12% drag settles back on 02; a drag starting on the
+  index moves nothing.
 - **The turn is Play Books', as far as CSS 3D can be.** Researched from
   Google's patent rather than guessed:
   - **One gradient does the shading**, anchored at the CREASE and running out

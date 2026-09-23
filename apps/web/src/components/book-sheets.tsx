@@ -197,18 +197,50 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
     "--page-image",
     tier ? `url("${FRAME_SRC(FRAME_COUNT, tier)}")` : "none",
   );
-  stage.style.setProperty(
-    "--page-image-size",
-    `${frame.width}px ${frame.height}px`,
-  );
-  stage.style.setProperty(
-    "--page-front-pos",
-    `${frame.x - sheetRect.x}px ${frame.y - sheetRect.y}px`,
-  );
-  stage.style.setProperty(
-    "--page-back-pos",
-    `${frame.x - (spine - sheetRect.width)}px ${frame.y - sheetRect.y}px`,
-  );
+  if (fullBleed) {
+    // ONE PAGE OF PAPER, NOT A CROP OF THE SPREAD.
+    //
+    // A full-bleed sheet is the whole screen, and the frame region under it
+    // was whatever the window happened to cover -- which is the middle of the
+    // photograph, so the book's GUTTER printed as a dark band about 60% across
+    // every page and the type crossed it. Measured on a Pixel 5 (393x851) it
+    // is unmistakable, and it is the one thing that stops a phone page reading
+    // as a single leaf.
+    //
+    // So the RIGHT-HAND PAGE of the photograph is scaled to cover the sheet
+    // and centred on it: the sheet shows paper from inside one page, with no
+    // gutter, no spine and no second page's edge in it. `cover` rather than
+    // `contain` because a letterboxed photograph would put the plinth on the
+    // screen; the crop loses the page's own edges, which is right -- the sheet
+    // IS the page now, so its edges are the screen's.
+    const scale = Math.max(width / right.width, height / right.height);
+    const dx = (width - right.width * scale) / 2;
+    const dy = (height - right.height * scale) / 2;
+    const pos = `${(frame.x - right.x) * scale + dx}px ${
+      (frame.y - right.y) * scale + dy
+    }px`;
+    stage.style.setProperty(
+      "--page-image-size",
+      `${frame.width * scale}px ${frame.height * scale}px`,
+    );
+    stage.style.setProperty("--page-front-pos", pos);
+    // The back is the same leaf seen from behind: the same crop, and the face
+    // is already mirrored by its own rotateY(180deg).
+    stage.style.setProperty("--page-back-pos", pos);
+  } else {
+    stage.style.setProperty(
+      "--page-image-size",
+      `${frame.width}px ${frame.height}px`,
+    );
+    stage.style.setProperty(
+      "--page-front-pos",
+      `${frame.x - sheetRect.x}px ${frame.y - sheetRect.y}px`,
+    );
+    stage.style.setProperty(
+      "--page-back-pos",
+      `${frame.x - (spine - sheetRect.width)}px ${frame.y - sheetRect.y}px`,
+    );
+  }
   // How far each page runs past its side of the window, so the type can be
   // pulled back inside without moving the paper. The right page overhangs to
   // the right; the left page starts off the left edge.

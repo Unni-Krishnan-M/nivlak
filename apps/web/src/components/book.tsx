@@ -151,6 +151,26 @@ export function Book() {
     };
   }, []);
 
+  // PHONE TYPE IS BIGGER, and the root font size is the one lever that does
+  // it. Every size in the book is a `clamp(rem, vw, rem)`; on a phone the vw
+  // term is below the floor, so the REM minimum is the only number that
+  // renders -- which is why this file's standing note says the minimums are
+  // what a phone gets and must not be raised. That note was written when a
+  // phone carried a whole chapter on one sheet. It carries HALF of one now
+  // (MOBILE_PAGES), so the room exists, and 16px -> 18px lifts every floor by
+  // 12.5% at once without touching a single clamp.
+  //
+  // ScrollTrigger has to be told: the pin's spacing is measured from a layout
+  // that just changed.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.fontSize = single ? "18px" : "";
+    ScrollTrigger.refresh();
+    return () => {
+      root.style.fontSize = "";
+    };
+  }, [single]);
+
   // Highest contiguous index present in imagesRef. Derived, never reset: the
   // ref survives a remount (and StrictMode's double invoke), so resetting would
   // regress the canvas to frame 1 with everything already cached.
@@ -627,7 +647,10 @@ export function Book() {
           trigger: section,
           start: "top top",
           end: scrollLength(turns),
-          scrub: SCRUB,
+          // Shorter in portrait: the catch-up that reads as weight under a
+          // wheel reads as lag under a finger, and a dragged page that
+          // arrives a second late is not the page you are dragging.
+          scrub: single ? 0.3 : SCRUB,
           pin: true,
           anticipatePin: 1,
         },
@@ -799,43 +822,110 @@ export function Book() {
       // function rather than asserting it is there.
       goTo = contextSafe ? contextSafe(seek) : seek;
 
-      // SWIPE TO TURN, in portrait only.
+      // DRAG THE PAGE UNDER THE FINGER, in portrait only.
       //
       // The book is scrubbed by vertical scroll, which is right for a page
-      // being read on a desktop and is not how anyone turns a page on a phone:
-      // Play Books turns on a horizontal swipe, and a reader arrives expecting
-      // that. So a sideways drag seeks the next or previous PAGE through the
-      // same tween the thumb index uses -- it is navigation, not a second
-      // animation, so the turn a swipe produces is the turn a scroll produces.
+      // being read on a desktop and is not how anyone turns a page on a
+      // phone. Play Books recomputes its curl from the touch point for as
+      // long as the finger is down (US9911221B2), so the page is never doing
+      // anything the hand is not; a flick that fires a fixed animation on
+      // release is a different feel entirely, and it is what this replaced.
       //
-      // Vertical movement is left alone (the stage carries `touch-action:
-      // pan-y`), and a drag that is mostly vertical is ignored outright, so
-      // scrolling the book from the middle of the page still works.
+      // The drag does not animate anything itself. It SCROLLS: one page of
+      // turn is a known distance on the playhead, so a finger that has
+      // travelled 80% of the screen has travelled one page, and the timeline
+      // the scroll already drives does the rest. That is why the turn under a
+      // finger and the turn under a wheel are the same turn -- there is only
+      // one of them.
+      //
+      // On release it lands: nearest page if the drag did not get past a
+      // quarter of the screen, next page if it did.
       if (single) {
-        const stageEl = section.querySelector<HTMLElement>("[data-stage]");
-        if (stageEl) {
-          const SWIPE = 55;
-          let from: { x: number; y: number; id: number } | null = null;
+        // Bound to the SECTION and not to the stage. The stage is the sheets
+        // and nothing else, and the thumb index is pinned over the fore-edge
+        // OUTSIDE it: a drag that starts in the right eighth of a phone --
+        // which is where a right thumb naturally lands -- began on the index
+        // and never reached a listener. Measured with a real touch drag at
+        // 393x851: `elementFromPoint(334, 468)` is the index's `<ul>`.
+        const stageEl = section;
+        const trigger = tl.scrollTrigger;
+        if (stageEl && trigger) {
+          // How much scroll one turn costs, in pixels -- asked at the START
+          // OF EACH DRAG and never cached. ScrollTrigger has not measured
+          // itself when this block runs, so `trigger.end` is undefined here
+          // and the cached version was NaN: the first drag scrolled the page
+          // to 0 and landed a chapter backwards.
+          const pageScroll = () =>
+            ((TURN + GAP) / tl.duration()) * (trigger.end - trigger.start);
+          // A drag of this fraction of the screen is a whole page.
+          const REACH = 0.8;
+          // Past this fraction, releasing completes the turn.
+          const COMMIT = 0.25;
+          let drag: {
+            id: number;
+            x: number;
+            y: number;
+            from: number;
+            px: number;
+          } | null = null;
           const onDown = (event: PointerEvent) => {
             if (event.pointerType === "mouse" && event.button !== 0) return;
-            from = { x: event.clientX, y: event.clientY, id: event.pointerId };
+            // The controls keep their own gestures: a tab is a tap, and 04's
+            // plate has a drag of its own that changes the study.
+            const target = event.target as HTMLElement | null;
+            if (
+              target?.closest?.(
+                "[data-nav-item],[data-book-index],[data-project-stage],a,button",
+              )
+            ) {
+              return;
+            }
+            drag = {
+              id: event.pointerId,
+              x: event.clientX,
+              y: event.clientY,
+              from: window.scrollY,
+              px: pageScroll(),
+            };
+          };
+          const onMove = (event: PointerEvent) => {
+            if (!drag || event.pointerId !== drag.id) return;
+            const dx = event.clientX - drag.x;
+            const dy = event.clientY - drag.y;
+            // A mostly-vertical drag is a scroll, and the stage's
+            // `touch-action: pan-y` has already given it to the browser.
+            if (Math.abs(dy) > Math.abs(dx)) return;
+            const width = window.innerWidth || 1;
+            // Left is forward, the way a swipe turns a page.
+            const top = Math.max(0, drag.from - (dx / (width * REACH)) * drag.px);
+            if (Number.isFinite(top)) window.scrollTo({ top, behavior: "auto" });
           };
           const onUp = (event: PointerEvent) => {
-            if (!from || event.pointerId !== from.id) return;
-            const dx = event.clientX - from.x;
-            const dy = event.clientY - from.y;
-            from = null;
-            if (Math.abs(dx) < SWIPE || Math.abs(dx) < Math.abs(dy)) return;
-            // Left is forward, the way a swipe turns a page.
-            const next = currentSheet + (dx < 0 ? 1 : -1);
+            if (!drag || event.pointerId !== drag.id) return;
+            const dx = event.clientX - drag.x;
+            const dy = event.clientY - drag.y;
+            const width = window.innerWidth || 1;
+            drag = null;
+            if (Math.abs(dy) > Math.abs(dx)) return;
+            const moved = Math.abs(dx) / width;
+            if (moved < 0.02) return;
+            const next =
+              moved >= COMMIT
+                ? currentSheet + (dx < 0 ? 1 : -1)
+                : currentSheet;
             seekSpread(Math.min(Math.max(next, 0), turns));
           };
           stageEl.style.touchAction = "pan-y";
+          const stageInner =
+            section.querySelector<HTMLElement>("[data-stage]");
+          if (stageInner) stageInner.style.touchAction = "pan-y";
           stageEl.addEventListener("pointerdown", onDown);
+          stageEl.addEventListener("pointermove", onMove);
           stageEl.addEventListener("pointerup", onUp);
           stageEl.addEventListener("pointercancel", onUp);
           windowTeardowns.push(() => {
             stageEl.removeEventListener("pointerdown", onDown);
+            stageEl.removeEventListener("pointermove", onMove);
             stageEl.removeEventListener("pointerup", onUp);
             stageEl.removeEventListener("pointercancel", onUp);
           });

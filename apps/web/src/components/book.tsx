@@ -167,14 +167,33 @@ export function Book() {
   // renders -- which is why this file's standing note says the minimums are
   // what a phone gets and must not be raised. That note was written when a
   // phone carried a whole chapter on one sheet. It carries HALF of one now
-  // (MOBILE_PAGES), so the room exists, and 16px -> 18px lifts every floor by
-  // 12.5% at once without touching a single clamp.
+  // (MOBILE_PAGES), so the room exists, and the root size lifts every floor
+  // at once without touching a single clamp.
+  //
+  // 19px, and the pages are what stop it there. Measured at 393x851, page by
+  // page, as the clearance between the last line of the body and the top of
+  // the drop folio:
+  //
+  //   page                 16px*   18px   19px   20px
+  //   02, entries I-II       ~100      9     -7    -26   <- the binding one
+  //   02, entries III-V      ~100      9      4     -1
+  //   03 verso, 3 stages     ~200    114     43    -73
+  //   every other page        big   132+    81+    57+
+  //
+  // (* before the phone bump.) So two pages in the book decide it, and at 19
+  // they clear -- with the portrait drop halved, which is the 15px that took
+  // 02 from -7 to +8. See PAGE_SINKAGE in book-sheets.tsx.
+  //
+  // The rest of the book had room to spare and the reason is worth keeping:
+  // every phone page at 18px carried a VOID of 130 to 530px in the middle of
+  // it while its type sat at 8 to 11px. A page can be starved and half empty
+  // at the same time, and this one was; the fix was never more pages.
   //
   // ScrollTrigger has to be told: the pin's spacing is measured from a layout
   // that just changed.
   useEffect(() => {
     const root = document.documentElement;
-    root.style.fontSize = bigType ? "18px" : "";
+    root.style.fontSize = bigType ? "19px" : "";
     ScrollTrigger.refresh();
     return () => {
       root.style.fontSize = "";
@@ -946,6 +965,11 @@ export function Book() {
       // writes to the DOM when the answer actually changes.
       let lastCurrent = Number.NaN;
       let currentSheet = 0;
+      // The ink fade for the page that has just come up, in portrait; a scrub
+      // can start a second one before the first has finished, and `overwrite`
+      // only covers the same targets, so the page being left behind is
+      // completed by hand rather than left printed at half opacity.
+      let inkTween: gsap.core.Tween | null = null;
       const syncNav = () => {
         const t = tl.time();
         let current = t >= OPEN + LEAD_IN * 0.5 ? 0 : -1;
@@ -953,9 +977,44 @@ export function Book() {
           const midTurn = OPEN + LEAD_IN + i * (TURN + GAP) + TURN * 0.5;
           if (t >= midTurn) current = i + 1;
         }
-        // What a swipe turns from. Kept even when the chapter has not
+        // What a drag turns from. Kept even when the chapter has not
         // changed, because two pages of one chapter are two sheets.
+        const arrived = current !== currentSheet;
         currentSheet = Math.max(0, current);
+
+        // THE INK ARRIVES WITH THE PAGE, in portrait only.
+        //
+        // A turned page used to land with its type already printed, which on
+        // a phone -- where the page IS the screen -- reads as a cut rather
+        // than as a page arriving. So the face that just came up fades its
+        // own ink in and lifts it a few pixels, one block after another.
+        //
+        // On the INK and never on the sheet: opacity on a sheet is a grouping
+        // value and would flatten its 3D mid-turn (see the note in
+        // book-sheets.tsx). Skipped under reduced motion, and skipped on a
+        // spread, where both pages are already on screen and a fade would be
+        // a second animation over a turn that is doing the work.
+        if (single && arrived && !reduced && currentSheet >= 0) {
+          const face = sheets[currentSheet]?.querySelector<HTMLElement>(
+            "[data-face='front']",
+          );
+          const ink = face?.querySelectorAll<HTMLElement>("[data-ink]");
+          if (ink?.length) {
+            inkTween?.progress(1).kill();
+            inkTween = gsap.fromTo(
+              ink,
+              { autoAlpha: 0, y: 10 },
+              {
+                autoAlpha: 1,
+                y: 0,
+                duration: 0.4,
+                ease: "power2.out",
+                stagger: 0.04,
+                overwrite: true,
+              },
+            );
+          }
+        }
         if (current === lastCurrent) return;
         lastCurrent = current;
         // Report the chapter, not the spread. A chapter running to two spreads
@@ -1033,20 +1092,6 @@ export function Book() {
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent via-45% to-black/35" />
 
-        {/* PORTRAIT ONLY: the hero's ground.
-            On landscape the copy sits in the empty left half of the frame and
-            needs nothing behind it. Portrait letterboxes the 16:9 frame into a
-            band in the MIDDLE of the screen, so the copy -- which is at the
-            foot -- lands on the lower half of the book itself: measured at
-            390x844 the headline printed straight across the cover's own
-            wordmark. This is the scrim that gives it a page to sit on.
-
-            The stops are measured against where the HEADLINE lands, which is
-            41-53% up from the foot at both 390x844 and 320x568: solid to 35%,
-            85% at 55%, gone by 74%. A shorter scrim (the first cut stopped at
-            62%) left the second line sitting on the cover's own wordmark. */}
-        <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-t from-[#050b14] from-35% via-[#050b14]/85 via-55% to-transparent to-74% portrait:block" />
-
         {/* THE HERO, in the mockup's own words (front.jpeg).
             The book stands in the right half of the frame with the whole left
             side empty, so on landscape the copy goes in that gap rather than
@@ -1063,6 +1108,14 @@ export function Book() {
         <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-end portrait:pb-[14vh] landscape:ps-[7vw] landscape:pe-[4vw]">
           <div
             ref={kickerRef}
+            // The hero sits DIRECTLY on the photograph in portrait, with no
+            // scrim under it. There was one -- a gradient from the foot to
+            // 74% -- and it was on screen for the whole reveal, so the book
+            // opened behind a curtain: measured on a Pixel 5, the first three
+            // frames of the opening were half black. Legibility is paid for
+            // by the type itself now (the shadow below), which costs the
+            // photograph nothing.
+            style={{ textShadow: "0 1px 18px rgba(3,9,18,0.85), 0 1px 3px rgba(3,9,18,0.9)" }}
             // In rem and not ch: `ch` resolves against THIS element's font
             // size (the base 16px), not the headline's, so 54ch was 432px and
             // broke "of What We Build." across three lines at 1440. 41rem is

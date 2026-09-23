@@ -482,7 +482,7 @@ function SpreadSheets() {
               the same value twice. */}
           <p
             data-ink
-            className="absolute bottom-[7%] start-[calc(13%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.92vw,0.798rem)] tracking-[0.35em] text-slate-400/40"
+            className="absolute bottom-[7%] portrait:bottom-[3.5%] start-[calc(13%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.92vw,0.798rem)] tracking-[0.35em] text-slate-400/40"
           >
             NIVLAK
           </p>
@@ -579,6 +579,12 @@ function PageFace({
 }) {
   return (
     <div
+      // Named so <Book> can find the face that just came up and fade its ink
+      // in. A sheet carries two of these and the back one is the front page
+      // mirrored, so the front has to be addressable on its own or the tween
+      // would also target a copy of every element inside an aria-hidden
+      // subtree -- and setting visibility on those fights the 14% wash.
+      data-face={side}
       className="relative h-full w-full bg-no-repeat"
       style={{
         // Under the image, not instead of it: the book's own edge colour shows
@@ -3456,7 +3462,7 @@ function VersoPage({
     >
       <FacingCopy page={page} />
       <p
-        className="absolute bottom-[7%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums"
+        className="absolute bottom-[7%] portrait:bottom-[3.5%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums"
         style={{ insetInlineStart: inset }}
       >
         {page.number} &mdash; {page.title.toUpperCase()}
@@ -3557,6 +3563,22 @@ function Terms({ page }: { page: BookPage }) {
   );
 }
 
+/*
+ * THE DROP FOLIO SITS LOWER ON A PORTRAIT PAGE, and that is what bought the
+ * bigger type its last 26px.
+ *
+ * 7% is of the page's HEIGHT, which on a spread puts the folio 62px up from a
+ * foot the body never reaches -- every page there stops short of its own
+ * padding. A portrait page does not: it is the whole screen, the body's own
+ * padding is 8% of its WIDTH (31px, not 45), and the two overlap. Measured at
+ * 393x851 with the phone type at 19px, 02's first page ended 4px INTO the
+ * folio. At 3.5% the folio is 30px lower, the body clears it by 26, and no
+ * word moved.
+ *
+ * It cannot be paid for at the top instead: 02's entries are a grid of equal
+ * rows filling the face, so taking 15px off the drop only makes the rows
+ * taller and the last line lands where it did -- measured, 2px of the 15.
+ */
 function PageFoot({ page }: { page: BookPage }) {
   return (
     <div
@@ -3658,7 +3680,7 @@ function PageBody({
       {page.facing ? (
         <p
           data-ink
-          className="absolute bottom-[7%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
+          className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
         >
           {page.number}
         </p>

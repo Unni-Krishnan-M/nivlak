@@ -878,6 +878,64 @@ line is that animation must never delay comprehension.
   the document, and moved focus to the verso list a page away. Every index copy
   is a `<nav>` and none nests inside another, so `el.closest("nav")` is the
   scope that keeps working as copies are added.
+### The phone reads at 19px, and the holes paid for it
+
+The standing note below — that the clamp MINIMUMS are what a phone gets and
+must not be raised — was written when a phone carried a whole chapter on one
+face. It carries HALF of one now (`MOBILE_PAGES`), and the pages had gone the
+other way: measured at 393x851, **every page printed its type at 8 to 11px
+with a void of 130 to 530px in the middle of it**. A page can be starved and
+half empty at the same time. More pages were never the fix.
+
+The lever is the ROOT font size, set by `<Book>` in portrait, because every
+size in the book is `clamp(rem, vw, rem)` and on a phone the rem minimum is
+the only term that renders — one number lifts all 101 floors at once.
+
+**19px, and two pages decide it.** The clearance between the last line of the
+body and the top of the drop folio, at 393x851:
+
+| page | 16px | 18px | 19px | 20px |
+| --- | --- | --- | --- | --- |
+| 02, entries I–II | ~100 | 9 | **23** | −23 |
+| 02, entries III–V | ~100 | 9 | **34** | 2 |
+| 03 verso, three stages | ~200 | 114 | **108** | −27 |
+| every other page | big | 132+ | 153+ | 107+ |
+
+02 is the binding page — two entries and a chapter head in a grid of equal
+rows — and 03's verso overflows its own face at 20. The `>= 760` height gate
+stays: a 360x640 phone is unchanged at 16px, where 03's third stage was cut
+off when 18 was tried there.
+
+**The last 26px came off the FOOT, not the head.** The drop folio is placed at
+7% of the page HEIGHT, which on a spread is 62px up from a foot the body never
+reaches; a portrait page is the whole screen and its own bottom padding is 8%
+of its WIDTH, so the two overlap and 02 ended 4px inside the folio. It is
+`portrait:bottom-[3.5%]` now. Taking it off the top instead was measured and
+does not work: 02's entries fill the face as a grid of equal rows, so 15px off
+`PAGE_SINKAGE` only makes the rows taller and returns 2 of the 15.
+
+### The ink arrives with the page
+
+In portrait, `syncNav` fades the front face's `[data-ink]` blocks in from
+`autoAlpha: 0` and 10px down when a new page comes up — 0.4s, `power2.out`,
+0.04 stagger. A turned page used to land with its type already printed, which
+on a phone (where the page IS the screen) reads as a cut rather than as a page
+arriving.
+
+- **On the INK and never on the sheet.** Opacity on a sheet is a grouping
+  value and would flatten its 3D mid-turn, which is the rule this file states
+  twice already.
+- **`[data-face="front"]` is why that attribute exists.** A sheet carries two
+  faces and the back one is the front page MIRRORED at 14%; without the
+  attribute the tween would also drive a copy of every block inside an
+  `aria-hidden` subtree and fight that wash.
+- **An interrupted fade is finished by hand.** A scrub turns two pages faster
+  than 0.4s and `overwrite` only covers the same targets, so the tween handle
+  is kept and the page being left behind is run to `progress(1)` — otherwise a
+  reader scrolling back finds it printed at half opacity.
+- **Not on a spread and not under reduced motion.** On a spread both pages are
+  already on screen and the turn is doing the work.
+
 ### The type grew, and the MINIMUMS did not
 
 05's type was raised to the book's own body size (above), and the same
@@ -1068,14 +1126,17 @@ the first screen said `NIVLAK TECHNOLOGIES` and nothing else.
 - **Sentence case, not the mockup's caps.** The book sets every headline in
   the display serif in sentence case (see 05's note); the cover doing
   otherwise would be the only one. The words are the mockup's exactly.
-- **Portrait gets a scrim and landscape does not.** Landscape puts the copy in
-  the empty left half of the frame. Portrait letterboxes the frame into a band
-  in the MIDDLE of the screen and the copy is at the foot, so it lands on the
-  lower half of the book: at 390x844 the headline printed across the cover's
-  own wordmark. The stops are measured against where the headline lands, 41-53%
-  up from the foot at both 390x844 and 320x568 — solid to 35%, 85% at 55%,
-  gone by 74%. The first cut stopped at 62% and left the second line on the
-  wordmark.
+- **THE PORTRAIT SCRIM IS GONE, and the type carries itself.** There was one
+  — a gradient from the foot of the screen up to 74% — because portrait
+  letterboxes the frame into a band in the MIDDLE of the screen with the copy
+  at its foot, so the headline landed on the cover's own wordmark at 390x844.
+  What that missed is that the scrim is on screen for the whole REVEAL as well
+  as for the cover: the first three frames of the book opening printed behind
+  a curtain, which is the one thing the first screen is for. It is a
+  `textShadow` on the hero block instead (`0 1px 18px` plus a tight `0 1px 3px`
+  of the same near-black), which is legibility that costs the photograph
+  nothing. The block is a single element inside `kickerRef`, so the shadow is
+  declared once.
 - **The cue goes below 620px of viewport height**, where it would otherwise
   sit on the buttons; 844x390 and 320x568 are the two that hit it.
 

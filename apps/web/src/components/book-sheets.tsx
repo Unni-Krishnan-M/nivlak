@@ -1301,7 +1301,7 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
     // row-start/row-span are utilities that certainly generate.
     <article
       data-ink
-      className="grid grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,1.3vw,1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em] lg:gap-y-[0.75em] lg:pt-[1.1em]"
+      className="grid grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,1.3vw,1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em] lg:gap-y-[0.55em] lg:pt-[0.9em]"
     >
       {/* The stage's own line: numeral and name at the leading edge, the plate
           number opposite. The plate number is set right because it belongs to
@@ -1311,15 +1311,15 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
         <h3 className="flex min-w-0 items-baseline gap-[0.6em]">
           <span
             aria-hidden
-            className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.02vw,0.95rem)] leading-none font-light text-[#dce7f7]/80 tabular-nums"
+            className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.12vw,1.05rem)] leading-none font-light text-[#dce7f7]/80 tabular-nums"
           >
             {number}
           </span>
-          <span className="truncate text-[clamp(0.52rem,0.72vw,0.64rem)] tracking-[0.28em] text-white uppercase">
+          <span className="truncate text-[clamp(0.52rem,0.79vw,0.7rem)] tracking-[0.28em] text-white uppercase">
             {service.title}
           </span>
         </h3>
-        <p className="shrink-0 text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.26em] text-slate-400/45">
+        <p className="shrink-0 text-[clamp(0.44rem,0.64vw,0.57rem)] tracking-[0.26em] text-slate-400/45">
           PLATE {stage.figure}
         </p>
       </div>
@@ -1358,11 +1358,11 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
         // third and fourth line, and the six plates come out four different
         // heights, which is the one thing they may not be.
         style={{ aspectRatio: service.image!.ratio }}
-        className="col-start-1 row-span-2 row-start-2 h-full w-[70px] self-stretch object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-1 lg:h-auto lg:w-[clamp(80px,8.5vw,130px)] lg:self-start motion-reduce:transition-none"
+        className="col-start-1 row-span-2 row-start-2 h-full w-[70px] self-stretch object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-1 lg:h-auto lg:w-[clamp(80px,7vw,108px)] lg:self-start motion-reduce:transition-none"
       />
 
       <div className="col-start-2 row-start-2 flex min-w-0 flex-col">
-        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.16vw,1.05rem)] leading-tight font-light text-balance text-[#dce7f7]">
+        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.28vw,1.16rem)] leading-tight font-light text-balance text-[#dce7f7]">
           {stage.headline}
         </h4>
         {/* What happens here -- the brief's KEY ACTIVITIES. A `ul` because it
@@ -1378,7 +1378,7 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
             Dropped below `lg`, and it is the last thing that goes: what a
             stage PRODUCES survives it, because the deliverable and the outcome
             are the two lines a client is deciding on. */}
-        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] text-[clamp(0.53rem,0.72vw,0.66rem)] leading-relaxed text-slate-300/60 lg:flex">
+        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] text-[clamp(0.53rem,0.79vw,0.73rem)] leading-relaxed text-slate-300/60 lg:flex">
           {stage.work.map((item, k) => (
             <li key={item} className="flex items-baseline gap-[0.55em]">
               {k > 0 ? (
@@ -1399,16 +1399,16 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
           on the same baselines from stage to stage, because the grid puts them
           there and not the ruling. */}
       <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] gap-y-[0.15em] border-t border-white/18 pt-[0.4em] lg:col-span-2 lg:col-start-1 lg:gap-y-[0.45em] lg:pt-[0.75em]">
-        <dt className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.24em] text-slate-400/70">
+        <dt className="text-[clamp(0.44rem,0.64vw,0.57rem)] tracking-[0.24em] text-slate-400/70">
           DELIVERABLE
         </dt>
-        <dd className="text-[clamp(0.62rem,0.86vw,0.8rem)] leading-tight text-white">
+        <dd className="text-[clamp(0.62rem,0.95vw,0.88rem)] leading-tight text-white">
           {stage.deliverable}
         </dd>
-        <dt className="text-[clamp(0.44rem,0.58vw,0.52rem)] tracking-[0.24em] text-slate-400/70">
+        <dt className="text-[clamp(0.44rem,0.64vw,0.57rem)] tracking-[0.24em] text-slate-400/70">
           OUTCOME
         </dt>
-        <dd className="text-[clamp(0.58rem,0.78vw,0.72rem)] leading-snug text-slate-300/75">
+        <dd className="text-[clamp(0.58rem,0.86vw,0.79rem)] leading-snug text-slate-300/75">
           {stage.outcome}
         </dd>
       </dl>
@@ -1540,8 +1540,15 @@ function ProcessArc({ labels, note }: { labels: string[]; note?: string }) {
           stops at its clamp maximum around 1466px of width while the slot
           keeps growing with page HEIGHT -- the verso carries 26px of the same
           slack there, so the two pages stay matched. */}
+      {/* Set as an EPIGRAPH and centred, which is what a two-line note can do
+          with this slot and a five-line one could not. The slot is 208px at
+          1440x900 and its height is the VERSO's chapter head, so it cannot
+          shrink; the old note filled it by being long. Asked for at two
+          lines, the only honest alternatives were a hole above it (mt-auto)
+          or a hole below it (mt-0). `my-auto` splits the remainder, and the
+          display italic carries the line at that size. */}
       {note ? (
-        <p className="mt-auto hidden max-w-[30ch] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-slate-400/70 italic lg:block">
+        <p className="my-auto hidden max-w-[34ch] font-[family-name:var(--font-display)] text-[clamp(0.9rem,1.5vw,1.4rem)] leading-snug text-slate-300/70 italic lg:block">
           {note}
         </p>
       ) : null}

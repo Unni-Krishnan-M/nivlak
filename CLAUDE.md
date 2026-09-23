@@ -422,6 +422,39 @@ added back to a row, something else comes out — the page has no slack.**
   `layoutSheets` owns `[data-stage]`, and near-misses on that selector have
   cost a day.
 
+**03's type was raised on its own, and the page paid for it in three
+places.** Every clamp in `<StageRow>` had its `vw` term and maximum multiplied
+by about 1.10 (minimums untouched, as everywhere). A page that fills itself to
+the last pixel cannot absorb that, so:
+
+- **The plate narrowed**, `lg:w-[clamp(80px,8.5vw,130px)]` → `7vw/108px`. That
+  is 22px back to the text column, which is exactly what the 13% left margin
+  had taken off the recto's measure.
+- **The row's own padding came down**, `lg:pt-[1.1em]` → `0.9em` and
+  `lg:gap-y-[0.75em]` → `0.55em`.
+- **More activity runs wrap to a second line now** — four of six rather than
+  two. The run is `flex-wrap` by design and the rows still fit: the last
+  outcome lands at 802 against a folio at 828 (1440x900) and 679 against 707
+  (1024x768).
+
+**The recto's note is two lines and set as an epigraph.** It was five lines of
+30ch, sized to FILL a slot it cannot shrink — the slot's height is the verso's
+chapter head. Asked for at two lines, the choice was a hole above it
+(`mt-auto`), a hole below it (`mt-0`) or a split; `my-auto` splits it, and the
+line is set in the display italic at up to 1.4rem so two lines carry the slot.
+The sentence was rewritten rather than truncated: "Not every project starts at
+the same stage. We can carry an idea from discovery through to launch, or step
+in at the one where your product is stuck." → "Start at any stage: discovery
+to launch, or where your product is stuck."
+
+**The left margin is uniform and was MEASURED, not assumed.** Asked to match
+01's across the book: at 1440x900 every chapter's verso ink starts at x=101–104
+and every recto at 832–834. The 3px is 01's alone and is the camera — its left
+page is the `[data-left-page]` layer on `spreadAt()`'s LEFT rect, genuinely
+23px wider than a turned sheet's back (see "One drop, one head"). On a phone
+every page starts at x=52, which is the 13%. Nothing to change; the scan is
+`magick <shot> -crop … -threshold 62% -format %@ info:` over each chapter.
+
 **The arc leads the recto and the brief asked for it at the foot.**
 That is the one place this chapter knowingly departs from the brief, and the
 reason is the grid: the verso spends its head slot on the chapter opening, so

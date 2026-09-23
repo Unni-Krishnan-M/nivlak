@@ -887,7 +887,12 @@ export const BOOK_PAGES: BookPage[] = [
       },
     ],
     tailpiece: {
-      note: "Not every project starts at the same stage. We can carry an idea from discovery through to launch, or step in at the one where your product is stuck.",
+      // Two lines, asked for. It was five: "Not every project starts at the
+      // same stage. We can carry an idea from discovery through to launch, or
+      // step in at the one where your product is stuck." -- 150 characters in
+      // a 30ch measure. The claim is the same one; it is the sentence that is
+      // shorter, and the measure went to 38ch with it.
+      note: "Start at any stage: discovery to launch, or where your product is stuck.",
       arc: ["Ideas", "Strategy", "Product", "Growth"],
     },
   },

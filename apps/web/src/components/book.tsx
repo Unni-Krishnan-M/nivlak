@@ -1116,7 +1116,7 @@ export function Book() {
             wrapper is `pointer-events-none` and the two buttons switch it back
             on, so the cover's copy never eats a click meant for the page and
             the buttons stop taking them the moment GSAP hides the block.  */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-end portrait:pb-[5vh] landscape:ps-[7vw] landscape:pe-[4vw]">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-stretch portrait:pt-[9vh] portrait:pb-[4vh] landscape:ps-[7vw] landscape:pe-[4vw]">
           <div
             ref={kickerRef}
             // The hero sits DIRECTLY on the photograph in portrait, with no
@@ -1132,11 +1132,28 @@ export function Book() {
             // broke "of What We Build." across three lines at 1440. 41rem is
             // 656px, which clears the book -- the photograph's spine starts
             // around x=700 there -- and holds the headline on two.
-            className="max-w-[min(92vw,41rem)]"
+            // PORTRAIT SETS THE COVER AS A POSTER, and the split is the whole
+            // idea: the title goes ABOVE the book and the way in goes BELOW
+            // it, both centred on the book's own axis, so the photograph sits
+            // inside the words rather than beside them. The copy left in a
+            // block with the picture somewhere else is what this replaced --
+            // two objects on one screen, which is what it looked like.
+            //
+            // Measured at 393x851, where the book's box runs y=238..613: the
+            // title lands 166 and the way in starts 675, so each band clears
+            // the picture by about 60px and nothing is printed on it.
+            //
+            // It is still ONE element -- `kickerRef` -- because <Book> fades
+            // exactly one thing out before the reveal. The two groups inside
+            // it are what `justify-between` pushes apart; in landscape they
+            // are simply two divs in the same left-aligned column, which is
+            // the setting the mockup has.
+            className="max-w-[min(92vw,41rem)] portrait:flex portrait:h-full portrait:max-w-none portrait:flex-col portrait:items-center portrait:justify-between portrait:text-center"
           >
-            <p className="text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.42em] text-slate-300/85 uppercase">
-              Nivlak Technologies
-            </p>
+            <div className="portrait:w-full">
+              <p className="text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.42em] text-slate-300/85 uppercase">
+                Nivlak Technologies
+              </p>
             {/* Two lines, and the second one is the mockup's blue. The break is
                 hard rather than left to the measure: "THE STORY / OF WHAT WE
                 BUILD." is the line it is written on, and a reflow that puts
@@ -1152,6 +1169,10 @@ export function Book() {
                 of What We Build.
               </span>
             </h1>
+            </div>
+
+            {/* ...and everything a reader can ACT on goes under the book. */}
+            <div className="portrait:w-full">
             <p className="mt-[2.4vh] text-[clamp(0.78rem,1.15vw,1.05rem)] tracking-[0.12em] text-slate-300/85 portrait:mt-[1.6vh]">
               Technology built around your business.
             </p>
@@ -1168,12 +1189,12 @@ export function Book() {
                 393x851 and 273 of 275 at 320x568, which is the narrowest
                 phone this book is checked at. `flex-wrap` is still the
                 backstop under that. */}
-            <div className="mt-[3.4vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)] portrait:mt-[2.2vh] portrait:gap-[0.5rem]">
+            <div className="mt-[3.4vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)] portrait:mt-[2.2vh] portrait:justify-center portrait:gap-[0.5rem]">
               <button
                 type="button"
                 data-nav-item
                 data-index="0"
-                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/35 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] portrait:px-[0.8rem] portrait:py-[0.55rem] portrait:text-[0.5rem] portrait:tracking-[0.2em] text-white uppercase transition-colors duration-300 outline-none hover:border-white hover:bg-white/10 focus-visible:border-white focus-visible:bg-white/10 motion-reduce:transition-none"
+                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/35 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] portrait:px-[0.7rem] portrait:py-[0.55rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] text-white uppercase transition-colors duration-300 outline-none hover:border-white hover:bg-white/10 focus-visible:border-white focus-visible:bg-white/10 motion-reduce:transition-none"
               >
                 Open the book
                 <span
@@ -1187,7 +1208,7 @@ export function Book() {
                 type="button"
                 data-nav-item
                 data-index={BOOK_PAGES.length - 1}
-                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/20 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] portrait:px-[0.8rem] portrait:py-[0.55rem] portrait:text-[0.5rem] portrait:tracking-[0.2em] text-slate-200 uppercase transition-colors duration-300 outline-none hover:border-white/60 hover:text-white focus-visible:border-white/60 focus-visible:text-white motion-reduce:transition-none"
+                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/20 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] portrait:px-[0.7rem] portrait:py-[0.55rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] text-slate-200 uppercase transition-colors duration-300 outline-none hover:border-white/60 hover:text-white focus-visible:border-white/60 focus-visible:text-white motion-reduce:transition-none"
               >
                 Begin a project
                 <span
@@ -1203,7 +1224,7 @@ export function Book() {
                 book, and a visitor who does not scroll sees a photograph and
                 leaves. The rule above it is the mockup's. Hidden where the
                 viewport is too short for it to sit clear of the buttons. */}
-            <div className="mt-[5vh] flex flex-col gap-[1.2vh] portrait:mt-[2.6vh] [@media(max-height:620px)]:hidden">
+            <div className="mt-[5vh] flex flex-col gap-[1.2vh] portrait:mt-[2.6vh] portrait:items-center [@media(max-height:620px)]:hidden">
               {/* The rule is 5vh of the height the title block has not got in
                   portrait; the words alone still say scroll. */}
               <span
@@ -1216,6 +1237,7 @@ export function Book() {
                   &darr;
                 </span>
               </span>
+            </div>
             </div>
           </div>
         </div>

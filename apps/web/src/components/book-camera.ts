@@ -164,31 +164,23 @@ const PAGE_W_SRC = PAPER_RIGHT_X - GUTTER_X;
 const PAGE_FROM = 0.45;
 const PAGE_TO = 1;
 
-// THE COVER IS A TITLE PAGE IN PORTRAIT, and these three numbers are it.
+// THE PORTRAIT COVER IS A POSTER: the book where the clip puts it, in the
+// middle of the screen, with the words above and below it on its own axis.
 //
-// The clip's own framing puts the standing book in the MIDDLE of the screen.
-// On a landscape viewport that is right -- the book is in the right half and
-// the whole left side is empty, which is where the hero copy goes. A portrait
-// viewport has no left half: measured at 393x851 the book and its plinth run
-// from y=238 to y=613 across nearly the full width, and the hero was printed
-// straight over the cover, across the photographed wordmark.
+// The camera does ONE thing here and it is not a move. It was a move for one
+// revision -- the book raised until its box started under the head rule, with
+// the copy set in the ground below it -- and that was wrong twice over: it
+// hid the photograph's own composition, and a plate at the top with a text
+// block under it reads as two objects on one screen rather than as one
+// picture. Both were asked about directly. The book stays centred.
 //
-// So in portrait the first screen is set the way a book sets a title page: the
-// device at the top, the title UNDER it, and nothing over the device. The
-// camera lifts the book until its measured box starts just below the head
-// rule, which leaves the bottom of the screen as clear ground for the type --
-// 400px of it at 393x851, against 238 before.
-//
-// The bar that opens up under the frame is the letterbox colour the section is
-// already painted in, so this is one ground with a photograph sitting in the
-// top of it, not a picture with a box under it.
-const COVER_BOOK_TOP = 0.085;
-// ...and no more than this much of the height, which is what keeps the design
-// alive on a small phone. At 393x851 the book already measures 44% and this
-// changes nothing; at 320x568 it measures 54%, and the title block underneath
-// then has 156px for the 210 it needs -- the kicker and the first line of the
-// headline printed on the plinth. Capping the plate at 46% hands that page 259
-// and costs the tall phone nothing.
+// What is left is a CAP, and only where the book would otherwise leave no
+// room for the type at all. At 393x851 the book measures 44% of the height
+// and this changes nothing -- the picture is the clip's, untouched. At
+// 320x568 it measures 54%, which leaves 70px above it for a headline that
+// needs 90, so the book comes down to 46% and the two bands open equally
+// because the camera centres it. Capping is not moving: the composition is
+// the same picture, printed smaller.
 const COVER_BOOK_H = 0.46;
 
 // LANDSCAPE HAS THE SAME PROBLEM ON THE OTHER AXIS, and it is invisible at the
@@ -396,24 +388,11 @@ export function planAt(
       lerp(follow, PAGE_CX_SRC, pageOpen),
       pageOpen,
     );
-    // The lifted y is NOT run through place(): its clamps exist to keep bare
-    // ground off the screen, and the bar under the frame is the whole point
-    // here. It is measured from the book rather than from the frame, because
-    // what has to land under the head rule is the OBJECT -- the frame carries
-    // a different amount of empty sky above the book in every shot of the
-    // move.
-    const bookTop = frame.ay - frame.sh / 2;
     return {
       index,
       alpha,
       x: place(anchor, width, drawWidth),
-      y: onePage
-        ? lerp(
-            place(frame.ay, height, drawHeight),
-            COVER_BOOK_TOP * height - bookTop * scale,
-            lift,
-          )
-        : place(frame.ay, height, drawHeight),
+      y: place(frame.ay, height, drawHeight),
       width: drawWidth,
       height: drawHeight,
     };

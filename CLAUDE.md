@@ -878,6 +878,59 @@ line is that animation must never delay comprehension.
   the document, and moved focus to the verso list a page away. Every index copy
   is a `<nav>` and none nests inside another, so `el.closest("nav")` is the
   scope that keeps working as copies are added.
+### The phone page prints what the spread hides
+
+The pages were half empty, and the holes were not spacing: **blocks that are
+`hidden lg:*` never print on a portrait phone.** Measured at 393x851 as the
+blank at the foot or the biggest hole in the middle — 07's verso was a chapter
+head and one sentence with **594px under it, 70% of the page**; 04's verso
+490; 06's recto a 422px hole; 05's recto 301.
+
+Those blocks were hidden for a reason that has expired. Below `lg` the whole
+spread used to collapse onto ONE sheet, so a verso's furniture would print
+through the recto's. Portrait prints one page per sheet now (`MOBILE_PAGES`),
+so each phone page carries HALF of what that rule was written against. They
+print in `portrait:` and stay hidden on a small LANDSCAPE phone, which is the
+viewport the collapse was really about.
+
+What came back: 07's help tags and its three stations, 06's leadership
+principles and founding belief, 05's opening sentence and the three benefit
+descriptions, 04's named index rows (category over title, where the phone had
+four bare labels), and **01's footnote, which had never been on a phone at
+all** — it is set in the `[data-left-page]` layer, the one page in the book
+that is not a sheet's back, so `VersoPage` prints it when `flush`.
+
+**Then the runs fill the page**, which is the book's own device rather than a
+new one: `<ServiceEntries>`'s note says the gap version "packed the entries
+against the top and left a third of every page blank at the foot". 04's four
+studies, 06's members, 05's six domains and its three benefits are equal rows
+in portrait — and 05's recto needed the page's height before anything in it
+could fill, because `flex-1` was `lg`-only there and its call to action's
+`mt-auto` collected the whole difference as one hole.
+
+| page | foot gap / hole before | after |
+| --- | --- | --- |
+| 04 verso | 490 | **32** |
+| 07 verso | 594 | **171** |
+| 06 recto | 422 hole | **6** |
+| 05 recto | 301 hole | **14** |
+| 05 verso | 285 | **57** |
+| 01 verso | 277 | **47** |
+| 06 verso | 246 | **49** |
+
+- **Every rule is `portrait:`-scoped**, so the spread, the landscape phone and
+  the reduced-motion column are untouched by construction. The one exception
+  that was NOT — a flex column on `<PerspectiveIndex>` for all viewports — was
+  scoped back the moment it showed up: a flex context on a page nobody asked
+  about is a change to the spread.
+- **07's verso block is gated at 620px of HEIGHT.** At 320x568 the tags and
+  the three stations put that page 4px past its own face with eight elements
+  out of bounds; 360x640 clears by 34. Same threshold the cover's scroll cue
+  uses.
+- **Two pages are still tight at 320x568 and neither is from this pass**: 02's
+  first page ends 11px into its drop folio and 04's colophon 7px into it. So
+  does 844x390 on 04 and 05, which is the collapsed landscape layout.
+
 ### The phone reads at 19px, and the holes paid for it
 
 The standing note below — that the clamp MINIMUMS are what a phone gets and

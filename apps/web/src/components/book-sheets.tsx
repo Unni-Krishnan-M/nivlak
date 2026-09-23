@@ -682,7 +682,11 @@ function Figure({
     // hole in the middle of the page. Two auto margins divide it, which puts
     // half above the figure and half above the footnote -- air where a page
     // has air, rather than a gap where a page has a gap.
-    <figure data-ink className="mt-[2.2em] max-w-[42ch] lg:mt-auto">
+    // `portrait:mt-auto` for the same reason as `lg:mt-auto`: with the
+    // footnote alone hung off the foot, every spare pixel on the phone page
+    // collected in ONE gap above it -- 154px at 393x851. Two auto margins
+    // divide it, which is air rather than a hole.
+    <figure data-ink className="mt-[2.2em] max-w-[42ch] portrait:mt-auto lg:mt-auto">
       <svg
         viewBox="0 0 320 30"
         aria-hidden="true"
@@ -1025,11 +1029,11 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             at 390x844 the whole spread is on one sheet and this is 90px of it,
             and the headline above says it in six words. */}
         {subtitle ? (
-          <p className="mt-[1em] hidden max-w-[52ch] text-[clamp(0.7rem,1.14vw,1.04rem)] leading-[1.75] text-slate-300/80 lg:block">
+          <p className="mt-[1em] hidden max-w-[52ch] text-[clamp(0.7rem,1.14vw,1.04rem)] leading-[1.75] text-slate-300/80 portrait:block lg:block">
             {subtitle}
           </p>
         ) : null}
-        <div className="mt-[1em] flex min-h-0 items-start gap-[clamp(0.7em,1.6vw,1.5em)] [@media(max-height:480px)]:mt-[0.5em]">
+        <div className="mt-[1em] flex min-h-0 items-start gap-[clamp(0.7em,1.6vw,1.5em)] portrait:flex-1 portrait:items-stretch portrait:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:mt-[0.5em]">
           <PerspectiveIndex services={page.services ?? []} />
           {(page as BookPage).columnPlate ? (
             <PerspectiveColumn plate={(page as BookPage).columnPlate!} />
@@ -1746,20 +1750,27 @@ function StruckPlate({
  */
 function PerspectiveIndex({ services }: { services: PageService[] }) {
   return (
-    <div data-ink className="min-w-0 flex-1">
+    // The column is PORTRAIT-only: it is here so the six rows below can take
+    // the page's height on a phone page, and a flex context on every viewport
+    // is a change to the spread that nothing asked for.
+    <div data-ink className="min-w-0 flex-1 portrait:flex portrait:flex-col">
       {/* The chapter's opening sentence used to be printed here, squeezed to
           the index's width; it is above the row now, at the page's measure.
           See the verso. */}
       <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
         What we think about
       </p>
-      <ol className="mt-[0.7em] border-t border-white/18">
+      {/* Equal rows on a phone page, where this run IS the page: six domains
+          at their content height left 179px of it blank at the foot. */}
+      <ol className="mt-[0.7em] border-t border-white/18 portrait:grid portrait:min-h-0 portrait:flex-1 portrait:[grid-template-rows:repeat(var(--domain-rows),minmax(0,1fr))]"
+        style={{ "--domain-rows": services.length } as React.CSSProperties}
+      >
         {services.map((service, i) => {
           const number = String(i + 1).padStart(2, "0");
           return (
             <li
               key={service.title}
-              className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.95em)] border-b border-white/10 py-[0.34em] lg:py-[0.55em] [@media(max-height:480px)]:py-[0.18em]"
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.95em)] border-b border-white/10 py-[0.34em] portrait:min-h-0 portrait:content-center lg:py-[0.55em] [@media(max-height:480px)]:py-[0.18em]"
             >
               <span
                 aria-hidden
@@ -1896,15 +1907,20 @@ function Benefits({
   items: { number: string; title: string; body: string }[];
 }) {
   return (
-    <section data-ink className="shrink-0">
+    <section data-ink className="shrink-0 portrait:flex portrait:min-h-0 portrait:shrink portrait:flex-1 portrait:flex-col">
       <h4 className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
         {title}
       </h4>
-      <ul className="mt-[0.7em] border-t border-white/18 lg:mt-[0.45em]">
+      {/* Equal rows in portrait: the call to action under this is hung off the
+          foot, so anything this run does not use collects as one hole above
+          it -- 208px at 393x851. */}
+      <ul className="mt-[0.7em] border-t border-white/18 portrait:grid portrait:min-h-0 portrait:flex-1 portrait:[grid-template-rows:repeat(var(--benefit-rows),minmax(0,1fr))] lg:mt-[0.45em]"
+        style={{ "--benefit-rows": items.length } as React.CSSProperties}
+      >
         {items.map((item) => (
           <li
             key={item.number}
-            className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.9em)] border-b border-white/10 py-[0.55em] lg:py-[0.35em] [@media(max-height:480px)]:py-[0.25em]"
+            className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.9em)] border-b border-white/10 py-[0.55em] portrait:min-h-0 portrait:content-center lg:py-[0.35em] [@media(max-height:480px)]:py-[0.25em]"
           >
             <span
               aria-hidden
@@ -1920,7 +1936,7 @@ function Benefits({
                   stay at every size: three of them are still the answer to
                   "what do I get", where the sentence under each elaborates a
                   heading that is already printed. */}
-              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 lg:block lg:leading-[2.6]">
+              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 portrait:block lg:block lg:leading-[2.6]">
                 {item.body}
               </span>
             </span>
@@ -2015,7 +2031,7 @@ function RationalePage({
       // one lands exactly where the folio is: measured at 1440x900 the buttons
       // reached 835 against a folio whose top edge is 820. In vh because the
       // folio is placed in vh.
-      className="flex min-h-0 flex-col gap-[0.75em] lg:flex-1 lg:gap-[clamp(0.8em,2.9vh,2.3em)] lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:pt-[6%]">
+      className="flex min-h-0 flex-col gap-[0.75em] portrait:flex-1 portrait:pb-[clamp(20px,3vh,34px)] lg:flex-1 lg:gap-[clamp(0.8em,2.9vh,2.3em)] lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:pt-[6%]">
       <div data-ink className="shrink-0">
         <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.34em] text-slate-400/60 uppercase">
           {rationale.label}
@@ -2087,7 +2103,13 @@ function ProjectIndex({ services }: { services: PageService[] }) {
       // different places.
       aria-label="Projects"
       data-ink
-      className="mt-[1.6em] border-b border-white/12 lg:border-t lg:border-b-0"
+      // IT FILLS THE PAGE IN PORTRAIT, and that is the book's own device: a
+      // run set as equal rows rather than a column with a gap, which is what
+      // <ServiceEntries> says in its note -- "the gap version packed the
+      // entries against the top and left a third of every page blank at the
+      // foot". That is exactly what this page was: measured at 393x851 its
+      // ink stopped at y=536 and 315px of it, 37%, was blank.
+      className="mt-[1.6em] border-b border-white/12 portrait:flex portrait:min-h-0 portrait:flex-1 portrait:flex-col portrait:border-t portrait:border-b-0 lg:border-t lg:border-b-0"
     >
       {/* Two shapes, and the breakpoint is not decoration.
           At `lg` this is the verso of a spread with a page to itself: four
@@ -2099,9 +2121,16 @@ function ProjectIndex({ services }: { services: PageService[] }) {
           the metadata, the action and the colophon through each other at the
           foot. One row of short labels is 30px and navigates just as well --
           it is also exactly what the brief draws for mobile. */}
-      <ul className="m-0 flex list-none flex-wrap items-baseline gap-x-[clamp(0.7em,3.2vw,1.4em)] gap-y-[0.5em] p-0 pb-[0.7em] lg:block lg:gap-0 lg:pb-0">
+      <ul className="m-0 flex list-none flex-wrap items-baseline gap-x-[clamp(0.7em,3.2vw,1.4em)] gap-y-[0.5em] p-0 pb-[0.7em] portrait:grid portrait:min-h-0 portrait:flex-1 portrait:gap-0 portrait:pb-0 portrait:[grid-template-rows:repeat(var(--project-rows),minmax(0,1fr))] lg:block lg:gap-0 lg:pb-0"
+        style={
+          { "--project-rows": entries.length } as React.CSSProperties
+        }
+      >
         {entries.map((service, i) => (
-          <li key={service.title} className="lg:border-b lg:border-white/12">
+          <li
+            key={service.title}
+            className="portrait:flex portrait:min-h-0 portrait:items-center portrait:border-b portrait:border-white/12 lg:border-b lg:border-white/12"
+          >
             <button
               type="button"
               data-project={i}
@@ -2113,7 +2142,7 @@ function ProjectIndex({ services }: { services: PageService[] }) {
               // needed 335px of a 284px column and MOBILE ran 51px past the
               // page. A border costs nothing and says the same thing. flex-wrap
               // on the list is the backstop for a narrower phone still.
-              className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[1.05em] lg:pb-[1.05em] motion-reduce:transition-none"
+              className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 portrait:w-full portrait:gap-[0.9em] portrait:border-b-0 portrait:pb-0 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[1.05em] lg:pb-[1.05em] motion-reduce:transition-none"
             >
               <span className="shrink-0 text-[clamp(0.44rem,0.69vw,0.627rem)] tracking-[0.24em] tabular-nums opacity-70">
                 {service.project!.number}
@@ -2121,12 +2150,12 @@ function ProjectIndex({ services }: { services: PageService[] }) {
 
               {/* The short label, below `lg` only. WEB / AI / SAAS / MOBILE --
                   four words that fit one line at 390px. */}
-              <span className="text-[clamp(0.52rem,2.76vw,0.752rem)] tracking-[0.22em] uppercase lg:hidden">
+              <span className="text-[clamp(0.52rem,2.76vw,0.752rem)] tracking-[0.22em] uppercase portrait:hidden lg:hidden">
                 {service.project!.label}
               </span>
 
               {/* The named row, on the full spread only. */}
-              <span className="hidden min-w-0 flex-1 lg:block">
+              <span className="hidden min-w-0 flex-1 portrait:block lg:block">
                 <span className="block text-[clamp(0.54rem,0.86vw,0.75rem)] tracking-[0.26em] uppercase">
                   {service.project!.category}
                 </span>
@@ -3037,7 +3066,13 @@ function TeamRun({
       // one column and `flex-1` hands the second one zero height), and the
       // bottom padding reserves the drop folio in vh because the folio is
       // placed in vh.
-      className="grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 lg:pb-[clamp(14px,2vh,24px)] lg:[grid-template-rows:var(--team-rows)]"
+      // The row template is `lg` AND portrait. It was lg-only because below
+      // that the two halves stacked in ONE column and `flex-1` handed the
+      // second grid zero height -- members 03 and 04 were in the DOM at 0px.
+      // A portrait phone prints one page per sheet, so there is one grid on
+      // the page and that cannot happen; without the template its two rows
+      // sat at the top and left 246px of the page blank.
+      className="grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] portrait:h-full portrait:min-h-0 portrait:flex-1 portrait:pb-[clamp(14px,2vh,24px)] portrait:[grid-template-rows:var(--team-rows)] lg:h-full lg:min-h-0 lg:flex-1 lg:pb-[clamp(14px,2vh,24px)] lg:[grid-template-rows:var(--team-rows)]"
       style={
         {
           "--team-rows": `minmax(0, ${TEAM_HEAD_SLOT}fr) repeat(${rows}, minmax(0, 1fr))`,
@@ -3133,7 +3168,14 @@ function TeamPage({ team }: { team: NonNullable<BookPage["team"]> }) {
       head={
         // Hidden below lg, like 03's arc and note: there the spread is one
         // column and this would print between member 02 and member 03.
-        <div data-ink className="hidden min-h-0 flex-col pb-[1.1em] lg:flex">
+        // Printed in portrait for the reason given in <ContactVerso>: this
+        // page carries two members and had a 422px hole under them at
+        // 393x851. Still out on a small landscape phone, where the spread is
+        // one column and this would sit between member 02 and member 03.
+        <div
+          data-ink
+          className="hidden min-h-0 flex-col pb-[1.1em] portrait:flex lg:flex"
+        >
           <p className="text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.3em] text-slate-400/60 uppercase">
             {team.principlesTitle}
           </p>
@@ -3294,7 +3336,22 @@ function ContactVerso({
   contact: NonNullable<BookPage["contact"]>;
 }) {
   return (
-    <div data-ink className="mt-[2.2em] hidden flex-col gap-[2.4em] lg:flex">
+    // `portrait:flex` is the phone, and it is the SAME argument that hid this
+    // below `lg` read the other way round. It was hidden because down there the
+    // whole spread collapsed onto one sheet and this would have printed through
+    // the contact table. A portrait phone prints one page per sheet now, so
+    // this verso carries a chapter head and one sentence and nothing else --
+    // measured at 393x851, ink stopped at y=257 and 594px of the page was
+    // blank, 70% of it. The blocks left below `lg` are still hidden on a small
+    // LANDSCAPE phone, which is the viewport that collapse was written for.
+    // ...but NOT on a phone under 620px of height, and that is measured:
+    // at 320x568 the tags and the three stations put the page 4px past its own
+    // face with eight elements out of bounds. 360x640 clears by 34, which is
+    // where the threshold sits. The same number the cover's scroll cue uses.
+    <div
+      data-ink
+      className="mt-[2.2em] hidden flex-col gap-[2.4em] portrait:flex lg:flex [@media(max-height:620px)]:hidden"
+    >
       <section>
         <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
           {contact.helpTitle}
@@ -3461,6 +3518,29 @@ function VersoPage({
       style={{ paddingInlineStart: inset, paddingInlineEnd: endInset }}
     >
       <FacingCopy page={page} />
+
+      {/* THE FOOTNOTE, and only where this page is the whole sheet.
+          It is set in the `[data-left-page]` layer on a spread -- the one page
+          in the book that is not a sheet's back -- so a phone, whose verso IS
+          a sheet, never printed it at all. 01 is the only chapter that has
+          one, and its phone page ended at y=574 of 851 without it. `flush` is
+          exactly the condition: this page is a front face filling the screen.
+          mt-auto drops it at the foot, where a book puts an aside. */}
+      {flush && page.facing?.note ? (
+        <div data-ink className="mt-auto mb-[6%] max-w-[42ch]">
+          <span
+            aria-hidden
+            className="mb-[0.9em] block h-px w-[26%] bg-white/15"
+          />
+          <p className="text-[clamp(0.62rem,0.966vw,0.866rem)] leading-relaxed text-slate-400/65">
+            <sup className="me-[0.4em] align-super text-[0.7em] tabular-nums">
+              1
+            </sup>
+            {page.facing.note}
+          </p>
+        </div>
+      ) : null}
+
       <p
         className="absolute bottom-[7%] portrait:bottom-[3.5%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums"
         style={{ insetInlineStart: inset }}

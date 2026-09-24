@@ -911,12 +911,14 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
   // need all six of it -- the verso to print the first three, the recto to
   // print the rest and to know how many rows to leave room for.
   if (plateChapter >= 0) {
-    const { verso, rows } = stageHalves(BOOK_PAGES[plateChapter]?.services);
+    const { verso, versoRows } = stageHalves(
+      BOOK_PAGES[plateChapter]?.services,
+    );
     return (
       <StageRun
-        services={verso}
-        from={0}
-        rows={rows}
+        slots={verso}
+        rows={versoRows}
+        roomy
         head={
           <div className="flex min-h-0 flex-col">
             {/* No epigraph on this chapter, and it is the last ornament the
@@ -1256,29 +1258,61 @@ function spreadIsPlates(page: BookPage | BookSpread) {
  * blank -- which is what a book does rather than respacing one page against
  * the other.
  */
-// The head slot, as a multiple of one stage row.
-//
-// Measured, not chosen. At 1440x900 the four slots have 699px between them; a
-// stage row will not set below ~157 of those with its plate, its activities,
-// its deliverable and its outcome all printed; and the chapter head with its
-// description is 201 once the epigraph comes off. The three gaps come off the
-// page first -- 1vh each, 27px -- so 744 is what the four slots divide:
-// 201 + 3x181 = 744, and 201/181 = 1.11.
-//
-// Every one of those numbers was measured rather than chosen, and the spread
-// is over-subscribed enough that all of them are load-bearing. At 1.2 the head
-// had 187px and printed its last two lines through stage 01; at the opener's
-// full sinkage the rows had 148 and needed 182, so every row printed its
-// deliverable through its own activities.
-const STAGE_HEAD_SLOT = 1.11;
+/**
+ * Where one stage prints: on both layouts, only on a spread (`lg`), or only
+ * below it. See stageHalves() for why a stage can be in two places.
+ */
+type StageSlot = {
+  service: PageService;
+  index: number;
+  at: "both" | "lg" | "below-lg";
+};
 
-/** The run split across the gutter. Derived, so a seventh stage rebalances. */
+/**
+ * The run split across the gutter, and split DIFFERENTLY on a spread.
+ *
+ * Below `lg` it is halves -- three and three -- because a phone prints each
+ * page on its own sheet and the two pages carry equal loads.
+ *
+ * On a spread the verso keeps ONE FEWER, so six set as two and four. The
+ * verso's first slot is the chapter opening, which is about a stage row tall;
+ * the recto's is only the arc. Three and three put head + 3 rows against
+ * arc + 3 rows, which is why the recto carried a note for several revisions:
+ * something had to fill a 201px slot the recto did not need. Taking the note
+ * off and moving stage 03 (Design) across is the same total ink on two pages
+ * that now each fill themselves, and the verso's two rows get the air the
+ * chapter head used to squeeze out of three.
+ *
+ * The crossing stage is printed on BOTH pages and each copy is hidden at the
+ * other breakpoint, rather than the split being chosen in JS: which layout is
+ * showing is a media query, and a JS answer would disagree with it at the
+ * boundary on the first paint. `display: none` keeps the hidden copy out of
+ * the accessibility tree.
+ *
+ * Derived, so a seventh stage rebalances: four and three below `lg`, three
+ * and four on a spread.
+ */
 function stageHalves(services: PageService[] | undefined) {
   const entries = services?.filter((service) => service.stage) ?? [];
   const half = Math.ceil(entries.length / 2);
-  const verso = entries.slice(0, half);
-  const recto = entries.slice(half);
-  return { entries, verso, recto, rows: Math.max(verso.length, recto.length) };
+  const lgHalf = Math.max(1, half - 1);
+  const verso: StageSlot[] = entries
+    .slice(0, half)
+    .map((service, index) => ({
+      service,
+      index,
+      at: index < lgHalf ? "both" : "below-lg",
+    }));
+  const recto: StageSlot[] = entries.slice(lgHalf).map((service, k) => {
+    const index = lgHalf + k;
+    return { service, index, at: index < half ? "lg" : "both" };
+  });
+  return {
+    verso,
+    recto,
+    versoRows: lgHalf,
+    rectoRows: entries.length - lgHalf,
+  };
 }
 
 /**
@@ -1320,8 +1354,10 @@ function stageHalves(services: PageService[] | undefined) {
  * reading as a photograph at all and starts reading as an icon, which would
  * put an engraving's job on a picture that is not one.
  */
-function StageRow({ service, index }: { service: PageService; index: number }) {
+function StageRow({ service, index, at }: StageSlot) {
   const stage = service.stage!;
+  const display =
+    at === "lg" ? "hidden lg:grid" : at === "below-lg" ? "grid lg:hidden" : "grid";
   const number = String(index + 1).padStart(2, "0");
   return (
     // A GRID of three rows, and the PLATE SPANS THE LOWER TWO -- at every
@@ -1346,13 +1382,13 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
     // row-start/row-span are utilities that certainly generate.
     <article
       data-ink
-      className="grid grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,1.3vw,1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em] lg:gap-y-[0.55em] lg:pt-[0.9em]"
+      className={`${display} grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,1.3vw,1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em] lg:gap-y-[var(--stage-gap,0.6em)] lg:pt-[var(--stage-pt,1em)]`}
     >
       {/* The stage's own line: numeral and name at the leading edge, the plate
           number opposite. The plate number is set right because it belongs to
           the PICTURE and not to the stage -- the numeral has already numbered
           the stage, and printing IV beside 04 is one fact at two sizes. */}
-      <div className="col-span-2 row-start-1 flex items-baseline justify-between gap-[0.8em]">
+      <div className="col-span-2 row-start-1 flex items-baseline justify-between gap-[0.8em] lg:col-span-1 lg:col-start-2">
         <h3 className="flex min-w-0 items-baseline gap-[0.6em]">
           <span
             aria-hidden
@@ -1403,11 +1439,11 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
         // third and fourth line, and the six plates come out four different
         // heights, which is the one thing they may not be.
         style={{ aspectRatio: service.image!.ratio }}
-        className="col-start-1 row-span-2 row-start-2 h-full w-[70px] self-stretch object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-1 lg:h-auto lg:w-[clamp(80px,7vw,108px)] lg:self-start motion-reduce:transition-none"
+        className="col-start-1 row-span-2 row-start-2 h-full w-[70px] self-stretch object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-2 lg:row-start-1 lg:h-auto lg:w-[clamp(80px,7vw,108px)] lg:self-start motion-reduce:transition-none"
       />
 
-      <div className="col-start-2 row-start-2 flex min-w-0 flex-col">
-        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.28vw,1.16rem)] leading-tight font-light text-balance text-[#dce7f7]">
+      <div className="col-start-2 row-start-2 flex min-w-0 flex-col lg:contents">
+        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.28vw,1.16rem)] leading-tight font-light lg:col-start-2 lg:row-start-2 lg:leading-snug text-balance text-[#dce7f7]">
           {stage.headline}
         </h4>
         {/* What happens here -- the brief's KEY ACTIVITIES. A `ul` because it
@@ -1423,7 +1459,7 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
             Dropped below `lg`, and it is the last thing that goes: what a
             stage PRODUCES survives it, because the deliverable and the outcome
             are the two lines a client is deciding on. */}
-        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] text-[clamp(0.53rem,0.79vw,0.73rem)] leading-relaxed text-slate-300/60 lg:flex">
+        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] lg:col-span-2 lg:col-start-1 lg:row-start-3 lg:mt-0 lg:pt-[0.1em] text-[clamp(0.53rem,0.79vw,0.73rem)] leading-relaxed text-slate-300/60 lg:flex">
           {stage.work.map((item, k) => (
             <li key={item} className="flex items-baseline gap-[0.55em]">
               {k > 0 ? (
@@ -1443,17 +1479,17 @@ function StageRow({ service, index }: { service: PageService; index: number }) {
           which is most of what made it read as a grid. The two lines still sit
           on the same baselines from stage to stage, because the grid puts them
           there and not the ruling. */}
-      <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] gap-y-[0.15em] border-t border-white/18 pt-[0.4em] lg:col-span-2 lg:col-start-1 lg:gap-y-[0.45em] lg:pt-[0.75em]">
+      <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] gap-y-[0.15em] border-t border-white/18 pt-[0.4em] lg:col-span-2 lg:col-start-1 lg:row-start-4 lg:gap-y-[var(--stage-dl-gap,0.5em)] lg:pt-[var(--stage-dl-pt,0.75em)]">
         <dt className="text-[clamp(0.44rem,0.64vw,0.57rem)] tracking-[0.24em] text-slate-400/70">
           DELIVERABLE
         </dt>
-        <dd className="text-[clamp(0.62rem,0.95vw,0.88rem)] leading-tight text-white">
+        <dd className="text-[clamp(0.62rem,0.95vw,0.88rem)] leading-tight text-white lg:leading-snug">
           {stage.deliverable}
         </dd>
         <dt className="text-[clamp(0.44rem,0.64vw,0.57rem)] tracking-[0.24em] text-slate-400/70">
           OUTCOME
         </dt>
-        <dd className="text-[clamp(0.58rem,0.86vw,0.79rem)] leading-snug text-slate-300/75">
+        <dd className="text-[clamp(0.58rem,0.86vw,0.79rem)] leading-snug text-slate-300/75 lg:leading-normal">
           {stage.outcome}
         </dd>
       </dl>
@@ -1495,30 +1531,21 @@ function ArcArrow() {
   );
 }
 
-function ProcessArc({ labels, note }: { labels: string[]; note?: string }) {
+function ProcessArc({ labels }: { labels: string[] }) {
   if (!labels.length) return null;
   return (
-    // The arc LEADS the slot and the note hangs off its foot, which is the
-    // reverse of how this page was set for two revisions.
+    // The arc is the whole of the recto's head now, sized to its own
+    // content (`auto` in <StageRun>'s template). It shared a 201px slot with a
+    // note for several revisions because the slot's height was the VERSO's
+    // chapter head and the two grids had to agree; with the note gone and
+    // stage 03 moved across, the recto no longer mirrors the verso's rows, so
+    // the slot shrinks to the arc and the 170-odd pixels go to the stages.
     //
-    // It was the other way round on the argument that a running head for the
-    // second half of the procedure belongs against the thing it heads, sitting
-    // directly over stage 04's rule. This order is the more conventional one
-    // and it costs nothing: a running head sits at the TOP of a page, level
-    // with the ornament that opens the verso, so both pages now begin with a
-    // horizontal device on the same line. It also moves the note to where it
-    // is of most use -- immediately above the stages it qualifies rather than
-    // five inches from them.
-    //
-    // What this slot may NOT have is the space at one end and the ink at the
-    // other. See the note below for the 102px hole that taught that, and why
-    // enlarging the note rather than moving it is what closed it.
-    //
-    // Hidden below `lg`, note and all. Down there the spread has collapsed
-    // onto one sheet and the arc would sit between stage 03 and stage 04 --
-    // a summary of six stages printed halfway down them -- for 28px this
-    // page does not have. It is a device for a SPREAD, where it heads the
-    // second page; a column has no second page to head.
+    // Hidden below `lg`. Down there the spread has collapsed onto one sheet
+    // and the arc would sit between stage 03 and stage 04 -- a summary of six
+    // stages printed halfway down them -- for 28px this page does not have.
+    // It is a device for a SPREAD, where it heads the second page; a column
+    // has no second page to head.
     <div
       data-ink
       className="hidden min-h-0 flex-col pb-[1.1em] lg:flex"
@@ -1544,61 +1571,52 @@ function ProcessArc({ labels, note }: { labels: string[]; note?: string }) {
           </li>
         ))}
       </ol>
-      {/* The chapter's qualification -- that a reader need not start at stage
-          01 -- printed HERE and not on the verso, where it belongs by rights
-          and where it was.
-
-          The verso ran out of page: its head slot has ~220px and the chapter
-          head takes 189 of them. Hung off the FOOT of this slot it also lands
-          where it is of most use -- immediately above the stages it qualifies,
-          and at the reader halfway through the six rather than at the one who
-          has not begun.
-
-          Dropped below `lg`, where the whole spread collapses onto one 844px
-          sheet carrying all six stages: it is the only line here that no
-          reader needs in order to follow the procedure, which makes it the
-          right last thing to go.
-
-          IT IS SET AT THE PAGE'S OWN SIZE AND AT 30ch, and both numbers are
-          about the hole this slot used to have in it. The slot is 201px at
-          1440x900 and shared with the verso, which fills it -- chapter head
-          62..206, subtitle to 269. This side had the note at the top in 11px
-          type, three lines ending at 130, and the arc hung off the bottom at
-          232: 102px of nothing between them, on the one spread in the book
-          with no slack anywhere else. `mb-auto` is what opens it, absorbing
-          every spare pixel between the two.
-
-          Enlarging the note is what closed it, and it stayed closed when the
-          two later swapped ends -- which is the point: moving the ink around
-          only moves the hole, and the slot has to be FILLED. 11px on a page
-          whose body is 15px was already the caption-block mistake recorded
-          against 05, and correcting it to the verso subtitle's size gets 3
-          lines to 4; 30ch rather than 46 gets it to 5. 28px of gap where there
-          were 102, and no word was cut to find it. The measure is 60% of the
-          recto, the same fraction of its own page as the verso's 42ch
-          subtitle.
-
-          Measured across the desktop range, since this is the only breakpoint
-          band where the note prints at all: the gap is 42px at 1024, 23 at
-          1280, 28 at 1440 and 66 at 1920, and content clears the slot bottom
-          by 17-18px at every one of them. It grows at 1920 because the type
-          stops at its clamp maximum around 1466px of width while the slot
-          keeps growing with page HEIGHT -- the verso carries 26px of the same
-          slack there, so the two pages stay matched. */}
-      {/* Set as an EPIGRAPH and centred, which is what a two-line note can do
-          with this slot and a five-line one could not. The slot is 208px at
-          1440x900 and its height is the VERSO's chapter head, so it cannot
-          shrink; the old note filled it by being long. Asked for at two
-          lines, the only honest alternatives were a hole above it (mt-auto)
-          or a hole below it (mt-0). `my-auto` splits the remainder, and the
-          display italic carries the line at that size. */}
-      {note ? (
-        <p className="my-auto hidden max-w-[34ch] font-[family-name:var(--font-display)] text-[clamp(0.9rem,1.5vw,1.4rem)] leading-snug text-slate-300/70 italic lg:block">
-          {note}
-        </p>
-      ) : null}
     </div>
   );
+}
+
+/**
+ * The space between the lines of a stage, as ONE unit scaled by the viewport's
+ * HEIGHT, from which each gap is a fixed fraction.
+ *
+ * Height and not em alone, because the two sides of a stage do not scale
+ * together: the type is sized in vw and the slot it sits in is a share of the
+ * page, which is sized in vh. So a laptop that is wider for its height -- 16:9
+ * against 1440x900's 16:10 -- carries the same type in a shorter slot. Four
+ * stages on the recto, measured: at 1440x900 a slot is 178px and a stage
+ * needs 100 before its spacing; at 1366x768 and 1024x768 the slot is 150 and
+ * the stage still needs 99-107 (a narrower recto wraps its activity run). At
+ * a fixed 1em every recto row overflowed at 768 tall by 14-21px, printing
+ * each outcome into the next stage's plate.
+ *
+ * `14.4vh - 116px` is 13.6px at 900 tall, 8.4px at 864 and the 5.6px floor
+ * from about 820 down; it reaches 1em at 917. Steep, because the tight cases are all shorter
+ * than 900 for their width and they arrive fast: 1536x864 printed its recto
+ * rows 4px apart on a gentler `7vh - 47px`, 1280x800 7px apart, and at the
+ * first try's `5.4vh - 32px` 1024x768 was 4px. On the steep curve every
+ * measured laptop keeps at least ~11px between one stage's outcome and the
+ * next rule, and the spare still shared out between rows by `content-between`
+ * is what gives the taller ones more. 1440x900 sits just under 1em because
+ * the larger bottom padding (see <StageRun>) took 12px from its recto: at 1em
+ * its rows were 8px apart. It stops at 1em for anything taller.
+ *
+ * The verso's unit is larger for the reason given on `roomy`: 30px at 900
+ * and 22 at 768. It falls more gently than the recto's because the verso has
+ * slack at every size -- two stages to the recto's four -- and what it does
+ * not spend inside a row lands as a gap between rows: 96px at 1024x768 on a
+ * steeper curve, which read as the page running out again.
+ */
+function stageSpacing(roomy: boolean) {
+  const u = roomy
+    ? "clamp(1.2em, 6vh - 24px, 1.9em)"
+    : "clamp(0.35em, 14.4vh - 116px, 1em)";
+  const [gap, dlPt, dlGap] = roomy ? [0.68, 0.58, 0.42] : [0.6, 0.75, 0.5];
+  return {
+    "--stage-pt": u,
+    "--stage-gap": `calc(${u} * ${gap})`,
+    "--stage-dl-pt": `calc(${u} * ${dlPt})`,
+    "--stage-dl-gap": `calc(${u} * ${dlGap})`,
+  };
 }
 
 /**
@@ -1612,17 +1630,27 @@ function ProcessArc({ labels, note }: { labels: string[]; note?: string }) {
  * lines from the verso's.
  */
 function StageRun({
-  services,
-  from,
+  slots,
   rows,
   head,
+  roomy = false,
 }: {
-  services: PageService[];
-  from: number;
+  slots: StageSlot[];
   rows: number;
   head?: React.ReactNode;
+  /**
+   * The verso, which since stage 03 moved across prints two stages in the
+   * height the recto gives four. Set to the recto's spacing, each of its rows
+   * held ~105px of blank under its outcome at 1440x900: the content sat at the
+   * top of a slot twice its size and read as the page running out.
+   *
+   * So the verso's rows open up INSIDE -- about 45px more between the lines of
+   * a stage at 1440x900 -- and the rest falls evenly between the head and the
+   * two rows, as it does on the recto. lg-only, like the template.
+   */
+  roomy?: boolean;
 }) {
-  if (!services.length) return null;
+  if (!slots.length) return null;
   return (
     <div
       // A hook for tools/scroll-shots.mjs. Every fit on this spread is a
@@ -1650,16 +1678,34 @@ function StageRun({
       // each, the first one took the entire column and the second was handed
       // zero height: stages 04, 05 and 06 were in the DOM at 0px. Auto rows
       // down there, so the two grids stack at their content height.
-      className="grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 lg:pb-[clamp(14px,2vh,24px)] lg:[grid-template-rows:var(--stage-rows)]"
+      className={`grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 lg:content-between lg:pb-[clamp(24px,3.4vh,40px)] lg:[grid-template-rows:var(--stage-rows)]`}
       style={
         {
-          "--stage-rows": `minmax(0, ${STAGE_HEAD_SLOT}fr) repeat(${rows}, minmax(0, 1fr))`,
+          ...stageSpacing(roomy),
+          // Every track is `auto` and `content-between` shares out what is
+          // left, so the spare falls BETWEEN rows, equally, instead of under
+          // each one. It was a shared 1.11fr head and equal 1fr rows while
+          // both pages carried three and their rules had to line up; at two
+          // against four they cannot. Equal slots also wasted the recto: at
+          // 1280x800 Engineer wraps its activity run and Design its outcome,
+          // and an equal slot printed Engineer 18px into Launch while the
+          // shorter rows beside it had room to spare. Sized to content, the
+          // four fit with the spare shared out.
+          //
+          // `auto` rows end flush with the run, where a 1fr slot left a few px
+          // under its outcome, so the run's bottom padding is the larger one:
+          // it is what keeps the last line off the drop folio.
+          //
+          // `rows` counts the stages printed on a SPREAD -- the template is
+          // lg-only, and the crossing copy is display:none there on the page
+          // it has left, so it takes no cell.
+          "--stage-rows": `auto repeat(${rows}, auto)`,
         } as React.CSSProperties
       }
     >
       {head}
-      {services.map((service, i) => (
-        <StageRow key={service.title} service={service} index={from + i} />
+      {slots.map((slot) => (
+        <StageRow key={slot.service.title} {...slot} />
       ))}
     </div>
   );
@@ -2766,13 +2812,11 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
         // second half of the six stages. See <StageRun> for why the arc is at
         // the head of this page rather than at its foot.
         <StageRun
-          services={halves.recto}
-          from={halves.verso.length}
-          rows={halves.rows}
+          slots={halves.recto}
+          rows={halves.rectoRows}
           head={
             <ProcessArc
               labels={page.tailpiece?.arc ?? []}
-              note={page.tailpiece?.note}
             />
           }
         />

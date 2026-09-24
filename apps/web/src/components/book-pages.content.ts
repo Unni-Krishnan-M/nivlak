@@ -256,12 +256,6 @@ export type PageStage = {
  */
 export type PageTailpiece = {
   /**
-   * The qualification a reader needs once they have counted six stages: that
-   * they do not have to start at the first one. Set where a footnote goes,
-   * doing a footnote's job -- see `colophon`.
-   */
-  note: string;
-  /**
    * The whole procedure at one level up, drawn as a drafting diagram at the
    * head of the recto: IDEAS -> STRATEGY -> PRODUCT -> GROWTH.
    *
@@ -838,7 +832,7 @@ export const BOOK_PAGES: BookPage[] = [
           ],
           deliverable: "Working Product",
           outcome:
-            "Secure, scalable, and readable by whoever opens it next.",
+            "Secure, scalable, and readable by whoever is next.",
         },
       },
       {
@@ -860,7 +854,7 @@ export const BOOK_PAGES: BookPage[] = [
           ],
           deliverable: "Live Platform",
           outcome:
-            "In front of real users, instrumented so you know it is well.",
+            "Live for real users, and instrumented to prove it.",
         },
       },
       {
@@ -887,12 +881,9 @@ export const BOOK_PAGES: BookPage[] = [
       },
     ],
     tailpiece: {
-      // Two lines, asked for. It was five: "Not every project starts at the
-      // same stage. We can carry an idea from discovery through to launch, or
-      // step in at the one where your product is stuck." -- 150 characters in
-      // a 30ch measure. The claim is the same one; it is the sentence that is
-      // shorter, and the measure went to 38ch with it.
-      note: "Start at any stage: discovery to launch, or where your product is stuck.",
+      // No note. It was "Start at any stage: discovery to launch, or where
+      // your product is stuck." and was taken off on request, which is what
+      // freed the recto's head slot for stage 03 -- see stageHalves().
       arc: ["Ideas", "Strategy", "Product", "Growth"],
     },
   },

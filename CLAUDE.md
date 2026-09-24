@@ -189,7 +189,7 @@ the entries decides, the same way it decides whether the chapter paginates.
 
 | The entries carry | Setting | Where |
 | --- | --- | --- |
-| `stage` | process spread — six ruled rows, three to a page, all six printed | 03 |
+| `stage` | process spread — six ruled rows, two and four on a spread (three and three on a phone), all six printed | 03 |
 | `project` | project stage — a selectable 16:9 plate over its facts | 04 |
 | `image` | catalogue — photograph beside copy, alternating sides | 02 |
 | `perspective` | perspectives — six domains listed on the verso, the argument for them on the recto | 05 |
@@ -224,8 +224,37 @@ studies. It names every picture-bearing setting now
 the test getting cleverer. Ask what setting a run is in, never whether an entry
 happens to have an image.
 
-**03 is a process spread: six stages, all six printed, three to a page.** It
-has been three things — six one-line `steps`, then four paginated spreads one
+**03 is a process spread: six stages, all six printed — two on the verso and
+four on the recto on a spread, three and three on a phone.**
+
+**The spread split is 2/4 and the note is gone (latest revision; it
+supersedes the shared-grid, head-slot and recto-note notes below, which
+describe the 3/3 version).** Asked for: the recto's "Start at any stage…"
+note was removed and stage 03 (Design) moved to the right page, desktop only.
+`stageHalves()` prints the crossing stage on BOTH pages and hides each copy at
+the other breakpoint (`at: "lg" | "below-lg"`), so the phone's 3/3 is
+untouched and no JS decides the layout. What changed with it:
+
+- **The two grids no longer share a template.** Head `auto`, rows `auto`,
+  `content-between` — the spare falls equally BETWEEN rows. Equal 1fr slots
+  were tried first and printed Engineer 18px into Launch at 1280x800 while
+  shorter rows beside it had room. `pb` is the larger `clamp(24px,3.4vh,40px)`
+  on both pages because `auto` rows end flush with the run.
+- **At `lg` the plate spans the name line and the headline, and the activity
+  run takes the full measure under both.** Beside the headline the run
+  wrapped to two lines on a 417px recto (it needs 354–408px); full width it is
+  one line from 1440 up.
+- **Row spacing is one unit scaled by viewport HEIGHT** (`stageSpacing()`):
+  recto `clamp(0.35em, 14.4vh - 116px, 1em)`, verso `roomy`
+  `clamp(1.2em, 6vh - 24px, 1.9em)`. Type is sized in vw and the page in vh,
+  so 16:9 laptops carry the same type in a shorter page. Measured min air
+  between recto rows: 1024x768 and 1280x720 ~11–16, 1280x800 ~7+, 1366x768 19,
+  1440x900 17, 1536x864 13, 1920x1080 plenty.
+- **Two outcomes were trimmed to the recto's measure**, the chapter's standing
+  rule: Engineer "…readable by whoever is next." and Launch "Live for real
+  users, and instrumented to prove it." Both wrapped at 1440.
+
+It has been three things — six one-line `steps`, then four paginated spreads one
 stage to a page, then one spread with a window — and the window is the one
 worth understanding, because it was reverted deliberately.
 

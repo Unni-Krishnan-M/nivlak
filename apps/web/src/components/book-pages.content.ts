@@ -324,7 +324,13 @@ export type PageStep = {
 };
 
 /** One entry in a defined-terms list, e.g. the N/I/V of NIV. */
-export type PageTerm = { letter: string; term: string; body: string };
+export type PageTerm = {
+  letter: string;
+  term: string;
+  body: string;
+  /** A second line under the body, set a shade quieter: the "why". */
+  detail?: string;
+};
 
 /** One line of contact detail. */
 export type PageContact = {
@@ -463,13 +469,6 @@ export type BookPage = {
   /** A closing line under the terms. */
   termsFoot?: string;
   /**
-   * A table of contents under the terms: one plain-words gloss per chapter,
-   * in BOOK_PAGES order. The titles and numbers come from the chapters
-   * themselves, so only what each one is FOR is written here.
-   */
-  contentsTitle?: string;
-  contents?: string[];
-  /**
    * The team spread: a head slot on each page and one member to a row, two
    * rows a page, on one shared grid so the rows line up across the gutter.
    */
@@ -550,31 +549,27 @@ export const BOOK_PAGES: BookPage[] = [
     terms: [
       {
         letter: "N",
-        term: "Noble",
-        body: "We are honest with you and we do what we promise.",
+        term: "Novel Ideas",
+        body: "We challenge the expected to uncover ideas worth building.",
+        detail:
+          "Every meaningful solution begins with a perspective that sees beyond the obvious.",
       },
       {
         letter: "I",
-        term: "Intelligent",
-        body: "We pick the right technology to solve your real problem.",
+        term: "Intelligent Engineering",
+        body: "We turn thoughtful ideas into systems built with precision and purpose.",
+        detail:
+          "Technology should not merely function — it should make complexity feel effortless.",
       },
       {
         letter: "V",
-        term: "Vision",
-        body: "We build for the years ahead, not just for launch day.",
+        term: "Visionary Impact",
+        body: "We build for what the idea can become, not only for what it needs today.",
+        detail:
+          "Every solution should create lasting value and move the business forward.",
       },
     ],
     termsFoot: "Three letters we work by.",
-    contentsTitle: "Contents",
-    contents: [
-      "Who we are",
-      "What we build",
-      "How we work",
-      "Our studies",
-      "How we think",
-      "Who you'll meet",
-      "Get in touch",
-    ],
   },
   {
     number: "02",

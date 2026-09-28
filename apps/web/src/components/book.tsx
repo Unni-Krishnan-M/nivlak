@@ -103,6 +103,34 @@ const scrollLength = (turns: number) =>
 // instead of every frame arriving at the end.
 const BATCH = 8;
 
+// THE SMEAR ON THE RIGHT OF THE COVER IS IN THE FRAMES, and this shades it off.
+//
+// The clip arrived with a pillarbox matte on its first half, and
+// build-book-frames.sh fills the bars by stretching the last real column of
+// each row across them (its item 1). Across a featureless backdrop that is
+// invisible; where the rock plinth runs into the bar it prints as a band of
+// horizontal streaks, and the cover is exactly such a frame. Measured on the
+// shipped hd set as the mean horizontal gradient per column -- zero means
+// every row is one flat colour, i.e. a stretched fill:
+//
+//   frames 1-49    right fill 159-191 source px of 1920, gradient 0.0
+//   frames 50-91   7-127px, and only on flat page areas: real content
+//
+// At 1440x900 that is x=1305..1440 of the first screen, the "blurred" corner
+// next to the ribbon -- the ribbon's own note had taken 1305 for the end of
+// the plinth. It cannot be cropped away without moving the camera, and the
+// frames cannot be rebuilt without the source clip, which is not in the repo.
+// So the painter lays the letterbox colour over the band as a fall-off: the
+// shot is low-key and lit from the left, so rock going to shadow at the edge
+// of the frame reads as the lighting rather than as a mask. Solid over the last
+// 10% (the 8.3% fill plus its blurred seam), 85% at 11.5%, clear at 23%. Frame indices
+// here are 0-based, so MATTE_LAST 48 is frame-049.
+const MATTE_LAST = 48;
+const MATTE_SHADE_FROM = 0.77;
+// Gradient stops, as fractions of the band from MATTE_SHADE_FROM to the edge.
+const MATTE_SHADE_KNEE = (0.885 - MATTE_SHADE_FROM) / (1 - MATTE_SHADE_FROM);
+const MATTE_SHADE_SOLID = (0.9 - MATTE_SHADE_FROM) / (1 - MATTE_SHADE_FROM);
+
 export function Book() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -124,8 +152,18 @@ export function Book() {
   // for the frames they have; swapping the whole set out mid-scroll would cost
   // another few megabytes to make the picture worse.
   const tierRef = useRef<ReturnType<typeof pickTier> | null>(null);
+  //
+  // Asked of the screen's LONGER side, not of its current width. The tier is a
+  // property of the device, since it is kept across a rotation, and on width
+  // alone the same device got a different set depending on how it was held
+  // when the page loaded: an iPad Air is hd at 1180x820 and was sd at
+  // 820x1180 -- where its canvas is 1640px of backing store and the cover's
+  // frame is drawn ~1700 device px wide from a 1280px file, a 1.36x upscale
+  // that read as a soft book. A phone stays sd either way (393x851 -> 851),
+  // and a large phone that reaches 900 on its long side was already hd when
+  // opened in landscape.
   if (tierRef.current === null && typeof window !== "undefined") {
-    tierRef.current = pickTier(window.innerWidth);
+    tierRef.current = pickTier(Math.max(window.innerWidth, window.innerHeight));
   }
 
   const [reduced, setReduced] = useState(false);
@@ -402,6 +440,19 @@ export function Book() {
           if (!img) continue;
           ctx.globalAlpha = layer.alpha;
           ctx.drawImage(img, layer.x, layer.y, layer.width, layer.height);
+          // Same alpha as the frame it belongs to, so the 49 -> 50 cross-fade
+          // takes the shade out with the matte instead of popping it.
+          if (layer.index <= MATTE_LAST) {
+            const x0 = layer.x + layer.width * MATTE_SHADE_FROM;
+            const x1 = layer.x + layer.width;
+            const shade = ctx.createLinearGradient(x0, 0, x1, 0);
+            shade.addColorStop(0, `${LETTERBOX}00`);
+            shade.addColorStop(MATTE_SHADE_KNEE, `${LETTERBOX}d9`);
+            shade.addColorStop(MATTE_SHADE_SOLID, LETTERBOX);
+            shade.addColorStop(1, LETTERBOX);
+            ctx.fillStyle = shade;
+            ctx.fillRect(x0, layer.y, x1 - x0, layer.height);
+          }
         }
         ctx.globalAlpha = 1;
       };
@@ -1198,16 +1249,13 @@ export function Book() {
             className="max-w-[min(92vw,41rem)] portrait:flex portrait:h-full portrait:max-w-none portrait:flex-col portrait:items-center portrait:justify-between portrait:text-center"
           >
             <div className="portrait:w-full">
-              {/* The eyebrow, led in by a hairline in the headline's blue. The
-                  second half says what the company IS, which the cover did not
+              {/* The eyebrow. It was led in by a short hairline in the
+                  headline's blue, removed on request: flush left it starts on
+                  the same edge as the headline under it. The second half says what the company IS, which the cover did not
                   say anywhere -- in 01's words ("Nivlak is a small software
                   team from India."). Dropped in portrait, where the title block
                   sits over the plate and has no width for it. */}
               <p className="flex items-center gap-[0.9em] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.42em] text-slate-300/85 uppercase portrait:justify-center motion-safe:animate-hero-rise">
-                <span
-                  aria-hidden
-                  className="block h-px w-[2.6em] bg-gradient-to-r from-transparent to-[#9dc0ee] portrait:hidden"
-                />
                 Nivlak Technologies
                 <span aria-hidden className="text-[#9dc0ee]/70 portrait:hidden">
                   &middot;
@@ -1216,6 +1264,15 @@ export function Book() {
                   Software studio
                 </span>
               </p>
+            {/* THE COVER IS LEADED, asked for as "line spacing in all". Every
+                gap in the column went up by about half -- headline 2.2 -> 3.6vh,
+                tagline 2.4 -> 4vh, buttons 3.4 -> 5vh, services 3 -> 4.6vh --
+                and the headline's own leading 1.02 -> 1.12, which is what took
+                the italic line's ascenders off the first line's descenders. The
+                column is centred, so it grows both ways: at 1280x720, the
+                shortest landscape checked, it runs y=178..540 and still clears
+                the book. Portrait takes a smaller share (the two groups are
+                pushed apart by the book, not by these margins). */}
             {/* Two lines, and the second one is the mockup's blue. The break is
                 hard rather than left to the measure: "THE STORY / OF WHAT WE
                 BUILD." is the line it is written on, and a reflow that puts
@@ -1225,7 +1282,7 @@ export function Book() {
                 nothing more, measured at 365px at 393x851, where the block ran
                 414 at the landscape sizes. The alternative was cropping the
                 plate, which is the one thing the first screen is for. */}
-            <h1 className="mt-[2.2vh] font-[family-name:var(--font-display)] text-[clamp(2.1rem,5.2vw,4.6rem)] leading-[1.02] font-light text-white portrait:mt-[1.4vh] portrait:text-[clamp(1.7rem,8vw,2.4rem)] motion-safe:animate-hero-rise motion-safe:[animation-delay:90ms]">
+            <h1 className="mt-[3.6vh] font-[family-name:var(--font-display)] text-[clamp(2.1rem,5.2vw,4.6rem)] leading-[1.12] font-light text-white portrait:mt-[2.4vh] portrait:text-[clamp(1.7rem,8vw,2.4rem)] motion-safe:animate-hero-rise motion-safe:[animation-delay:90ms]">
               The Story
               {/* The blue line, in the display ITALIC so the two lines read as
                   a title and its turn rather than one sentence in two colours.
@@ -1248,7 +1305,7 @@ export function Book() {
 
             {/* ...and everything a reader can ACT on goes under the book. */}
             <div className="portrait:w-full">
-            <p className="mt-[2.4vh] text-[clamp(0.78rem,1.15vw,1.05rem)] tracking-[0.12em] text-slate-300/85 portrait:mt-[1.6vh] motion-safe:animate-hero-rise motion-safe:[animation-delay:180ms]">
+            <p className="mt-[4vh] leading-[1.7] text-[clamp(0.78rem,1.15vw,1.05rem)] tracking-[0.12em] text-slate-300/85 portrait:mt-[1.6vh] motion-safe:animate-hero-rise motion-safe:[animation-delay:180ms]">
               Technology built around your business.
             </p>
 
@@ -1287,7 +1344,7 @@ export function Book() {
                 0.5rem, 0.18em of tracking and 0.8rem of side padding the pair
                 fits the 338px a 393px phone has, and `flex-wrap` is the
                 backstop for narrower ones. */}
-            <div className="mt-[3.4vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)] portrait:mt-[2.2vh] portrait:justify-center portrait:gap-[0.5rem] motion-safe:animate-hero-rise motion-safe:[animation-delay:270ms]">
+            <div className="mt-[5vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)] portrait:mt-[3.2vh] portrait:justify-center portrait:gap-[0.5rem] motion-safe:animate-hero-rise motion-safe:[animation-delay:270ms]">
               <button
                 type="button"
                 data-nav-item
@@ -1338,7 +1395,7 @@ export function Book() {
                 cover says what is behind it before a reader commits to eight
                 viewports of scroll. Landscape only: in portrait the block
                 under the plate has no room left under the buttons. */}
-            <ul className="mt-[3vh] flex flex-wrap items-center gap-x-[1.1em] gap-y-[0.4em] text-[clamp(0.52rem,0.72vw,0.66rem)] tracking-[0.24em] text-slate-400/85 uppercase portrait:hidden motion-safe:animate-hero-rise motion-safe:[animation-delay:360ms]">
+            <ul className="mt-[4.6vh] flex flex-wrap items-center gap-x-[1.1em] gap-y-[0.7em] text-[clamp(0.52rem,0.72vw,0.66rem)] tracking-[0.24em] text-slate-400/85 uppercase portrait:hidden motion-safe:animate-hero-rise motion-safe:[animation-delay:360ms]">
               {["Web", "Mobile", "SaaS", "AI automation", "Branding"].map(
                 (label, k) => (
                   <li key={label} className="flex items-center gap-[1.1em]">
@@ -1367,8 +1424,8 @@ export function Book() {
             WHERE: the margin right of the photographed book, not over the
             headline. Above the title it needs ~190px between the head rule
             and the eyebrow, and a 16:9 laptop has 170-190 there; beside the
-            book the margin is empty at every size -- at 1440x900 the plinth
-            ends at x=1305 and the ribbon starts at 1354. In portrait it is
+            book the margin is empty at every size -- at 1440x900 the plinth has
+            shaded out by x=1305 (MATTE_LAST) and the ribbon starts at 1354. In portrait it is
             the right margin beside the title, clear of the book's top corner.
 
             HOW IT MOVES: it drops out from under the header on load

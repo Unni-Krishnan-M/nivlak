@@ -396,6 +396,7 @@ function SinglePageSheets() {
               <PageFace side="back">
                 <div
                   aria-hidden
+                  inert
                   className="pointer-events-none absolute inset-0 opacity-[0.14] [transform:scaleX(-1)]"
                 >
                   {page.kind === "facing" ? (
@@ -494,6 +495,7 @@ function SpreadSheets() {
           >
             NIVLAK
           </p>
+          <HomeMark className="start-[calc(4.5%+var(--facing-inset-start,0px))]" />
         </div>
       ) : null}
 
@@ -639,6 +641,49 @@ function PageFace({
  * studio's page -- so this is the circuit motif out of the N, reduced to a
  * rule that breaks for three nodes. Same idea, same job, our alphabet.
  */
+/**
+ * The small Nivlak mark printed in the outer bottom corner of every page --
+ * bottom-left on a left page, bottom-right on a right one, beside the folio,
+ * which is where a book prints its running foot. Clicking it goes back to the
+ * cover. It is the book's own navigation: `data-nav-item` with index -1,
+ * which <Book>'s seek maps to scroll position 0, so there is no second
+ * scroll mechanism to keep in step.
+ */
+function HomeMark({
+  className = "",
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    // In the page's OUTER MARGIN, on the folio's line -- never beside the
+    // folio inside the text column. It was set inline with the folio for one
+    // revision and its 27px box reached up into the last line of the three
+    // pages that fill themselves to the foot (03 and 05's versos, 04's recto;
+    // measured 19-22px of overlap at 1440x900). The outer margin is the one
+    // strip no copy enters. `translate-y` centres the mark on the folio's
+    // text rather than sitting it on the folio's baseline.
+    <button
+      type="button"
+      data-nav-item
+      data-index={-1}
+      aria-label="Back to the cover"
+      title="Back to the cover"
+      style={style}
+      className={`absolute bottom-[7%] portrait:bottom-[3.5%] z-[2] translate-y-[35%] pointer-events-auto inline-grid size-[clamp(20px,1.7vw,27px)] shrink-0 cursor-pointer place-items-center rounded-full opacity-55 outline-none transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-[#dce7f7] motion-reduce:transition-none ${className}`}
+    >
+      <img
+        src="/logo-mark.webp"
+        alt=""
+        aria-hidden
+        draggable={false}
+        className="h-auto w-[72%] select-none"
+      />
+    </button>
+  );
+}
+
 function Ornament({ className = "" }: { className?: string }) {
   return (
     <svg
@@ -807,11 +852,18 @@ function ChapterHead({
         >
           {page.number}
         </span>
-        <span className="text-[clamp(0.56rem,0.82vw,0.68rem)] leading-none tracking-[0.42em] text-slate-400/80">
+        {/* The chapter's name beside its numeral. Set brighter and heavier than
+            the rest of the book's tracked labels -- asked for directly: at
+            slate-400/80 and regular weight it read as a caption, and it is the
+            one word that says which chapter this is. */}
+        <span className="text-[clamp(0.6rem,0.9vw,0.76rem)] leading-none font-semibold tracking-[0.4em] text-[#c9d9ef]">
           {page.title.toUpperCase()}
         </span>
       </div>
-      <h2 className="mt-[0.3em] font-[family-name:var(--font-display)] text-[clamp(1.5rem,3vw,3rem)] leading-[1.03] font-light text-balance text-white">
+      {/* More air between "01 COMPANY" and the headline on the chapter that
+          opens the book (the one with an intro), asked for there. Not every
+          chapter: 03 and 05 fill their spreads to the pixel. */}
+      <h2 className={`${page.facing && "intro" in page.facing && page.facing.intro ? "mt-[0.6em]" : "mt-[0.3em]"} font-[family-name:var(--font-display)] text-[clamp(1.5rem,3vw,3rem)] leading-[1.03] font-light text-balance text-white`}>
         {headline}
       </h2>
       {/* The rule that closes a chapter head. */}
@@ -1082,7 +1134,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             at 390x844 the whole spread is on one sheet and this is 90px of it,
             and the headline above says it in six words. */}
         {subtitle ? (
-          <p className="mt-[1em] hidden max-w-[52ch] text-[clamp(0.7rem,1.14vw,1.04rem)] leading-[1.75] text-slate-300/80 portrait:block lg:block">
+          <p className="mt-[1em] hidden max-w-[52ch] text-[clamp(0.7rem,1.14vw,1.04rem)] leading-[1.75] text-slate-300/80 portrait:block lg:block [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-normal">
             {subtitle}
           </p>
         ) : null}
@@ -1814,7 +1866,7 @@ function PerspectiveIndex({ services }: { services: PageService[] }) {
           return (
             <li
               key={service.title}
-              className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.95em)] border-b border-white/10 py-[0.34em] portrait:min-h-0 portrait:content-center lg:py-[0.55em] [@media(max-height:480px)]:py-[0.18em]"
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.95em)] border-b border-white/10 py-[0.34em] portrait:min-h-0 portrait:content-center lg:py-[0.55em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.4em] [@media(max-height:480px)]:py-[0.18em]"
             >
               <span
                 aria-hidden
@@ -1827,7 +1879,7 @@ function PerspectiveIndex({ services }: { services: PageService[] }) {
                   {service.title}
                 </span>
                 {service.perspective ? (
-                  <span className="mt-[0.3em] block text-[clamp(0.6rem,0.98vw,0.88rem)] leading-snug text-slate-300/65 lg:leading-[1.9]">
+                  <span className="mt-[0.3em] block text-[clamp(0.6rem,0.98vw,0.88rem)] leading-snug text-slate-300/65 lg:leading-[1.9] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-snug">
                     {service.perspective.summary}
                   </span>
                 ) : null}
@@ -1925,7 +1977,7 @@ function IdeaFlow({
             <p className="text-[clamp(0.5rem,0.78vw,0.7rem)] tracking-[0.22em] text-white uppercase">
               {node.label}
             </p>
-            <p className="mt-[0.4em] text-[clamp(0.56rem,0.9vw,0.8rem)] leading-snug text-slate-300/65 lg:leading-[2.7]">
+            <p className="mt-[0.4em] text-[clamp(0.56rem,0.9vw,0.8rem)] leading-snug text-slate-300/65 lg:leading-[2.7] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-[1.7]">
               {node.note}
             </p>
           </li>
@@ -1980,7 +2032,7 @@ function Benefits({
                   stay at every size: three of them are still the answer to
                   "what do I get", where the sentence under each elaborates a
                   heading that is already printed. */}
-              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 portrait:block lg:block lg:leading-[2.6]">
+              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 portrait:block lg:block lg:leading-[2.6] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-[1.6]">
                 {item.body}
               </span>
             </span>
@@ -2075,11 +2127,27 @@ function RationalePage({
       // one lands exactly where the folio is: measured at 1440x900 the buttons
       // reached 835 against a folio whose top edge is 820. In vh because the
       // folio is placed in vh.
-      className="flex min-h-0 flex-col gap-[0.75em] portrait:flex-1 portrait:pb-[clamp(20px,3vh,34px)] lg:flex-1 lg:gap-[clamp(0.8em,2.9vh,2.3em)] lg:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:pt-[6%]">
+      className="flex min-h-0 flex-col gap-[0.75em] portrait:flex-1 portrait:pb-[clamp(20px,3vh,34px)] lg:flex-1 lg:gap-[clamp(0.8em,2.9vh,2.3em)] lg:pb-[clamp(20px,3vh,34px)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:gap-[0.9em] [@media(max-height:480px)]:pt-[6%]">
       <div data-ink className="shrink-0">
-        <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.34em] text-slate-400/60 uppercase">
-          {rationale.label}
-        </p>
+        {/* On a spread, "WHY IT MATTERS" sits on the verso's "05 PERSPECTIVES"
+            line, asked for directly: the same device as 07's GET IN TOUCH --
+            an invisible copy of <ChapterHead>'s headpiece, sized from the
+            VERSO's measure, and a zero-width numeral lending the row its
+            baseline. Set in the chapter label's own style so the two read as
+            a pair across the gutter. Below `lg` a phone page stands alone and
+            the old small label stays. */}
+        <Ornament className="invisible mb-[0.9em] hidden w-[calc((100%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))*0.38)] lg:block" />
+        <div className="flex items-baseline">
+          <span
+            aria-hidden
+            className="invisible hidden w-0 font-[family-name:var(--font-display)] text-[clamp(2.2rem,4.4vw,4.4rem)] leading-[0.8] font-light lg:inline"
+          >
+            0
+          </span>
+          <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.34em] text-slate-400/60 uppercase lg:text-[clamp(0.6rem,0.9vw,0.76rem)] lg:leading-none lg:font-semibold lg:tracking-[0.4em] lg:text-[#c9d9ef]">
+            {rationale.label}
+          </p>
+        </div>
         <h3 className="mt-[0.6em] font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.98vw,1.85rem)] leading-[1.1] font-light text-balance text-white">
           {rationale.headline}
         </h3>
@@ -3277,7 +3345,7 @@ function ContactPage({ page }: { page: BookPage }) {
           {page.number}
         </span>
         {/* CONNECT's size and tracking, so the two labels read as a pair. */}
-        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] leading-none tracking-[0.34em] text-slate-400/80 uppercase lg:text-[clamp(0.56rem,0.82vw,0.68rem)] lg:tracking-[0.42em]">
+        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] leading-none font-semibold tracking-[0.34em] text-[#c9d9ef] uppercase lg:text-[clamp(0.6rem,0.9vw,0.76rem)] lg:tracking-[0.4em]">
           {contact.eyebrow}
         </p>
       </div>
@@ -3372,21 +3440,69 @@ function ContactPage({ page }: { page: BookPage }) {
           and what can be done with it. Copy sits outside the link -- a button
           inside an anchor is invalid -- and on a laptop that cannot dial,
           copying the number IS the action. */}
-      <p className="mt-[2em] text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase lg:mt-[3.2em] xl:mt-[3.6em] [@media(max-height:480px)]:hidden">
-        {contact.detailsTitle}
-      </p>
-      <dl className="mt-[0.6em] border-t border-white/18 [@media(max-height:480px)]:mt-[0.8em]">
+      {/* SET AS A POSTED LETTER, asked for over a plain table: a paper
+          panel with an airmail border, a perforated stamp carrying the mark,
+          a postmark struck across its edge, and the details written as the
+          address lines, each on its own dotted rule. Everything that could be
+          done with a detail still can -- the value is the link, Copy and the
+          verb sit at the end of its line, now as small seals.
+
+          The airmail border is drawn with `border-image`, which only paints
+          the edge -- a masked background was tried first and the mask
+          shorthand reset its composite, so the stripes ran under the text. The envelope costs ~60px over the old table, so the
+          margin above it came down from 3.6em to 2.2em to pay for it; the
+          measurements are in CLAUDE.md. */}
+      <div
+        data-envelope
+        className="relative mt-[1.6em] border border-[#dce7f7]/20 bg-[#dce7f7]/[0.04] px-[1.2em] pt-[1em] pb-[0.8em] lg:mt-[2em] xl:mt-[2.2em] [@media(max-height:480px)]:mt-[0.8em] [@media(max-height:480px)]:py-[0.5em]"
+      >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-[3px] opacity-45"
+          style={{
+            borderStyle: "solid",
+            borderWidth: 5,
+            borderImage:
+              "repeating-linear-gradient(135deg, #dce7f7 0 7px, transparent 7px 14px, #7fa3d4 14px 21px, transparent 21px 28px) 5",
+          }}
+        />
+        <div className="relative flex items-start justify-between gap-[1em]">
+          <div className="pt-[0.2em]">
+            <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-300/70 uppercase [@media(max-height:480px)]:hidden">
+              {contact.detailsTitle}
+            </p>
+            <p className="mt-[0.3em] font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.05vw,0.95rem)] text-slate-400/80 italic [@media(max-height:480px)]:hidden">
+              To be delivered to Nivlak Technologies
+            </p>
+          </div>
+          {/* The stamp and the postmark struck across its left edge. */}
+          <div aria-hidden className="relative shrink-0">
+            <span className="grid h-[3.4em] w-[2.9em] place-items-center border border-dashed border-[#dce7f7]/45 bg-[#dce7f7]/[0.06] text-[clamp(0.7rem,1vw,0.9rem)] outline outline-1 outline-offset-2 outline-[#dce7f7]/15 [@media(max-height:480px)]:hidden">
+              <img
+                src="/logo-mark.webp"
+                alt=""
+                draggable={false}
+                className="h-auto w-[60%] opacity-80 select-none"
+              />
+            </span>
+            <span className="absolute top-[18%] right-[88%] grid size-[clamp(40px,3.6vw,52px)] -rotate-12 place-items-center rounded-full border border-double border-[#dce7f7]/40 [border-width:3px] text-center font-[family-name:var(--font-display)] text-[clamp(0.3rem,0.42vw,0.42rem)] leading-tight tracking-[0.04em] text-[#dce7f7]/65 uppercase [@media(max-height:480px)]:hidden">
+              Nagercoil
+              <br />· India ·
+            </span>
+          </div>
+        </div>
+      <dl className="relative mt-[0.5em] [@media(max-height:480px)]:mt-0">
         {contact.rows.map((row) => (
           <div
             key={row.value}
             // The label sits ABOVE the value below xl and BESIDE it from xl. Beside
             // it at 1024 and 844x390 the address broke to "@gmail / .com".
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-[0.8em] gap-y-[0.15em] border-b border-white/10 py-[0.6em] lg:py-[0.8em] xl:grid-cols-[minmax(0,5.2em)_minmax(0,1fr)_auto] xl:py-[1.15em] [@media(max-height:480px)]:py-[0.3em]"
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-[0.8em] gap-y-[0.15em] border-b border-dotted border-white/25 py-[0.55em] last:border-b-0 lg:py-[0.65em] xl:grid-cols-[minmax(0,5.2em)_minmax(0,1fr)_auto] xl:py-[0.85em] [@media(max-height:480px)]:py-[0.3em]"
           >
-            <dt className="col-span-2 text-[clamp(0.44rem,0.64vw,0.58rem)] tracking-[0.24em] text-slate-400/65 uppercase xl:col-span-1">
+            <dt className="col-span-2 font-[family-name:var(--font-display)] text-[clamp(0.62rem,0.86vw,0.8rem)] text-slate-400/80 italic xl:col-span-1">
               {row.label}
             </dt>
-            <dd className="min-w-0 break-words text-[clamp(0.68rem,1.02vw,0.94rem)] text-slate-100">
+            <dd className="min-w-0 break-words font-[family-name:var(--font-display)] text-[clamp(0.78rem,1.15vw,1.06rem)] text-slate-100">
               {row.href ? (
                 <a
                   href={row.href}
@@ -3419,7 +3535,7 @@ function ContactPage({ page }: { page: BookPage }) {
                   {...(row.href.startsWith("http")
                     ? { target: "_blank", rel: "noopener noreferrer" }
                     : {})}
-                  className="border border-white/15 px-[0.6em] py-[0.35em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.2em] text-slate-300/80 uppercase transition-colors duration-300 hover:border-white/45 hover:text-white motion-reduce:transition-none max-sm:hidden lg:max-xl:hidden [@media(max-height:480px)]:hidden"
+                  className="rounded-full border border-[#dce7f7]/30 bg-[#dce7f7]/[0.06] px-[0.75em] py-[0.35em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.2em] text-slate-200/85 uppercase transition-colors duration-300 hover:border-[#dce7f7]/70 hover:bg-[#dce7f7]/15 hover:text-white motion-reduce:transition-none max-sm:hidden lg:max-xl:hidden [@media(max-height:480px)]:hidden"
                 >
                   {row.action}
                 </a>
@@ -3428,6 +3544,7 @@ function ContactPage({ page }: { page: BookPage }) {
           </div>
         ))}
       </dl>
+      </div>
     </div>
   );
 }
@@ -3506,7 +3623,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
         }
       }}
       aria-label={copied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
-      className="shrink-0 cursor-pointer border border-white/15 px-[0.6em] py-[0.35em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.2em] text-slate-300/80 uppercase transition-colors duration-300 outline-none hover:border-white/45 hover:text-white focus-visible:border-[#dce7f7]/70 motion-reduce:transition-none"
+      className="shrink-0 cursor-pointer rounded-full border border-[#dce7f7]/30 bg-[#dce7f7]/[0.06] px-[0.75em] py-[0.35em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.2em] text-slate-200/85 uppercase transition-colors duration-300 outline-none hover:border-[#dce7f7]/70 hover:bg-[#dce7f7]/15 hover:text-white focus-visible:border-[#dce7f7]/70 motion-reduce:transition-none"
     >
       <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
     </button>
@@ -3655,6 +3772,7 @@ function VersoPage({
       >
         {page.number} &mdash; {page.title.toUpperCase()}
       </p>
+      <HomeMark style={{ insetInlineStart: `calc(${inset} - 6.5%)` }} />
     </div>
   );
 }
@@ -3696,9 +3814,17 @@ function Terms({ page }: { page: BookPage }) {
               <p className="mb-[0.4em] text-[clamp(0.85rem,1.438vw,1.254rem)] leading-none text-white">
                 {term.term}
               </p>
-              <p className="max-w-[32ch] text-[clamp(0.72rem,1.15vw,1.049rem)] leading-relaxed text-slate-300/85 lg:leading-[1.8] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-relaxed">
+              <p className="text-[clamp(0.72rem,1.15vw,1.049rem)] leading-relaxed text-slate-200/90 lg:leading-[1.7] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-relaxed">
                 {term.body}
               </p>
+              {/* The second line is the reason behind the first, so it is set
+                  a shade quieter and in the display italic, the way a book
+                  sets a gloss under a definition. */}
+              {term.detail ? (
+                <p className="mt-[0.35em] font-[family-name:var(--font-display)] text-[clamp(0.74rem,1.12vw,1.02rem)] leading-relaxed text-slate-400/85 italic lg:leading-[1.6]">
+                  {term.detail}
+                </p>
+              ) : null}
             </dd>
           </div>
         ))}
@@ -3711,72 +3837,11 @@ function Terms({ page }: { page: BookPage }) {
           {page.termsFoot}
         </p>
       ) : null}
-      {/* Tailpiece: the ornament that closes a chapter's text. Not when a
-          Contents follows: the Contents heading already opens a new section,
-          and at 1440x900 the ornament's ~30px was what pushed "Get in touch"
-          into the "01" folio once the rows were given more line spacing. */}
-      {page.terms && !page.contents?.length ? (
+      {page.terms ? (
         <div data-ink className="mt-[1.2em]">
+          {/* Tailpiece: the ornament that closes a chapter's text. */}
           <Ornament className="w-[30%] text-slate-300" />
         </div>
-      ) : null}
-
-      {/* THE CONTENTS, where "The mark" used to sit. The first chapter of a
-          book is where its contents page is, and this one is the book's own
-          navigation: each row is a `data-nav-item` carrying its chapter index,
-          wired by the same handler as the head bar and the thumb index, so it
-          turns to that chapter. Numeral, title, a dotted leader, and what the
-          chapter is FOR in plain words -- the leader is how a contents page
-          joins an entry to its page, and here the "page" is the answer to
-          "why would I turn there". The logo plate went because the mark is
-          already on the cover and in the head bar, and this half of the page
-          was asked to carry something a reader can use.
-
-          On a wide, short spread -- 16:9 or wider and under 880px tall, where
-          the type is sized by the width and the page by the height -- the
-          rows here and the NIV rows above tighten: at 1366x768 "Get in touch"
-          printed through the "01" folio.
-
-          The row padding (here and on the NIV rows) is also a function of
-          HEIGHT, full at 900px tall and near the old value at 800: with the
-          extra line spacing asked for, 1280x800 put "Get in touch" 10px from
-          the folio while 1440x900 had 22px to spare. */}
-      {page.contents?.length ? (
-        <nav
-          data-ink
-          aria-label={page.contentsTitle ?? "Contents"}
-          className="mt-[1.4em]"
-        >
-          {page.contentsTitle ? (
-            <p className="mb-[0.6em] text-[clamp(0.5rem,0.828vw,0.707rem)] tracking-[0.32em] text-slate-400/70 uppercase">
-              {page.contentsTitle}
-            </p>
-          ) : null}
-          <ol className="flex flex-col">
-            {BOOK_PAGES.map((chapter, index) => (
-              <li key={chapter.number}>
-                <button
-                  type="button"
-                  data-nav-item
-                  data-index={index}
-                  className="group flex w-full cursor-pointer items-baseline gap-[0.6em] py-[0.28em] lg:py-[clamp(1.5px,calc(3.3vh-23.4px),0.42em)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.1em] text-start text-[clamp(0.68rem,1.02vw,0.94rem)] text-slate-200/90 outline-none transition-colors duration-300 hover:text-white focus-visible:text-white motion-reduce:transition-none"
-                >
-                  <span className="w-[1.6em] shrink-0 font-[family-name:var(--font-display)] text-[#dce7f7]/70 tabular-nums">
-                    {chapter.number}
-                  </span>
-                  <span className="shrink-0">{chapter.title}</span>
-                  <span
-                    aria-hidden
-                    className="min-w-[1em] flex-1 border-b border-dotted border-white/25 transition-colors duration-300 group-hover:border-white/55 motion-reduce:transition-none"
-                  />
-                  <span className="shrink-0 font-[family-name:var(--font-display)] text-slate-400/85 italic group-hover:text-slate-200">
-                    {page.contents?.[index]}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ol>
-        </nav>
       ) : null}
     </div>
   );
@@ -3904,6 +3969,9 @@ function PageBody({
           {page.number}
         </p>
       ) : null}
+      {/* Every right page, opener or continuation, carries the home mark in
+          its outer corner. */}
+      <HomeMark className="end-[calc(3.5%+var(--page-text-inset-end,0px))]" />
     </div>
   );
 }

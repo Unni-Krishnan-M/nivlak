@@ -1111,7 +1111,10 @@ it, because there was no photograph. `founder` is gone from `BookPage`;
 - **The portraits are built, not dropped in.** `tools/build-team-portraits.sh`
   reads the four photographs from the repo root (not committed, like every
   other plate source), keys the studio white by floodfilling the FULL frame's
-  corners (a head-and-shoulders crop has the suit in its corners), crops each
+  corners (a head-and-shoulders crop has the suit in its corners) — GUARDED,
+  because the fill walked through a hairline seam at the collar and keyed
+  Laxman's and Gokul's whole shirt fronts to navy; anything reached only
+  through a seam under 10px is handed back to the subject — crops each
   to 4:5 so the four heads are one size at one height, lays the subject on a
   grey the ramp maps to a navy just above the page, draws a light pencil line
   over it, and maps it through the plates' ramp (`#16283f` → `#34557f` →
@@ -1132,6 +1135,13 @@ engraving on the verso. `git log` has the dialog, the route and the plate.
   row by `emblem`; "Email us" is `solid` — the ONE filled object in the book,
   asked for after two rounds of hairline panels read as not professional
   enough — and "Call us" is outlined. The email link pre-fills a subject.
+- **The contact details are a POSTED LETTER** (`data-envelope`): a paper
+  panel with a striped airmail border drawn by `border-image` (a masked
+  background was tried first and the `mask` shorthand reset its composite,
+  so the stripes ran under the text), a perforated stamp carrying the mark,
+  a double-ring NAGERCOIL · INDIA postmark struck across it, the details as
+  dotted address lines in the display serif, and Copy and the verbs as round
+  seals. Asked for in place of the ruled table.
 - **The two actions are set as BOOKPLATES**: a label plate with cut corners,
   a hairline edge and a second rule standing inside each end, the label in
   the display serif in `small-caps` (initial full height —
@@ -1177,10 +1187,27 @@ Asked for as four separate things and verified by two subagents across
   dropping it is what kept the page its old length. The footnote hangs off
   the name and cross-refers to NIV on the facing page. Fig. 1's steps are
   Talk / Plan / Build / Launch with two-word notes.
-- **01's recto ends in a CONTENTS page**, where "The mark" logo plate was:
-  numeral, title, dotted leader, and a plain gloss per chapter
-  (`page.contents`). Each row is a `data-nav-item` and turns to its chapter
-  (checked: "Team" → 06). The mark is on the cover and the head bar already.
+- **01's recto is NIV only: Novel Ideas, Intelligent Engineering, Visionary
+  Impact**, each a line and a quieter italic `detail` line under it (the
+  "why"). The CONTENTS list that followed the terms for two revisions was
+  removed on request, and with it the rule that dropped the tailpiece
+  ornament when a Contents followed.
+- **Every chapter label beside its numeral is brighter and heavier**
+  (`#c9d9ef`, semibold, a size up) — asked for, "PERSPECTIVES and the like".
+  07's GET IN TOUCH and 05's WHY IT MATTERS take the same style so each pair
+  reads as one across the gutter. 01 alone gets `mt-[0.6em]` under the label
+  (the chapter with an `intro`); 03 and 05 fill their spreads to the pixel.
+- **05's WHY IT MATTERS sits on the verso's "05 PERSPECTIVES" line** with 07's
+  device (invisible headpiece sized from the verso's measure + a zero-width
+  numeral). Measured at rest at 1440x900: 126 vs 127.
+- **Every page carries a small HOME MARK** (`<HomeMark>`, the head bar's logo)
+  in its OUTER margin on the folio's line — bottom-left on a left page,
+  bottom-right on a right one — that returns to the cover. It is a nav item
+  with index -1, which `<Book>`'s seek maps to y=0. It was inline with the
+  folio for one revision and its box reached 19–22px into the last line of
+  03's and 05's versos and 04's recto; the outer margin is the one strip no
+  copy enters. The phone's mirrored back face is `inert`, so its copies are
+  neither focusable nor announced.
 - **01's verso copy runs the full measure from `lg`**, where it was capped at
   44ch: the head and its rule span 556px at 1440 and the copy stopped at ~430,
   leaving an empty strip down the right of the page. The page's slack is split
@@ -1195,12 +1222,10 @@ Asked for as four separate things and verified by two subagents across
   printed through the "01" folio. 1920x1080 is the same shape but its type
   has hit its clamp maximum.
 - **01 is leaded more generously from `lg`**: both verso paragraphs at 1.95
-  with a wider gap between them, the NIV bodies at 1.8, and the NIV and
-  Contents rows given more padding. That padding is a function of HEIGHT
-  (`clamp(…, 4.6vh - 27.8px, 0.85em)` and `clamp(…, 3.3vh - 23.4px, 0.42em)`),
-  because at a flat value 1280x800 put "Get in touch" 10px from the folio.
-  The recto's tailpiece ornament is dropped when a Contents follows it; that
-  ~30px was the rest of the room at 1440x900.
+  with a wider gap between them, the NIV bodies at 1.7 (1.6 on the italic
+  detail), and the NIV rows given more padding as a function of HEIGHT
+  (`clamp(…, 4.6vh - 27.8px, 0.85em)`), because a flat value was measured
+  too tall at 1280x800 when a Contents list still followed the terms.
 - **01's drop cap spans exactly two lines** — its top on the top of the
   small-caps "IVLAK", its foot on line 2's baseline. On a spread it is a float
   driven by `--dc-size`/`--dc-drop` (3.7em / 0.17em; 3.2em / 0.2em on the
@@ -1364,6 +1389,30 @@ the first screen said `NIVLAK TECHNOLOGIES` and nothing else.
     filter instead; the buttons set `[text-shadow:none]` for the same reason.
   - **In portrait both pills are 42px tall and share one row at 393px**; at
     320x568 they wrap to two, which is the `flex-wrap` backstop working.
+
+- **The "blur" in the cover's right corner is IN THE FRAMES, and the painter
+  shades it.** The clip's first half carried a pillarbox matte that
+  `build-book-frames.sh` fills by stretching each row's last real column
+  across it. Measured on the shipped hd set as the mean horizontal gradient
+  per column: frames 1-49 have 159-191 source px of the right edge at exactly
+  0 -- every row one flat colour -- which on the cover is the rock plinth
+  smeared sideways from x=1305 to the window edge at 1440x900 (the ribbon's
+  note had taken 1305 for the end of the plinth). The source clip is not in
+  the repo, so the frames cannot be rebuilt; `draw()` lays a LETTERBOX
+  fall-off over the last 23% of the frame, solid over the last 10%, on
+  frames up to `MATTE_LAST` (0-based 48), drawn at each layer's own alpha so
+  the 49 -> 50 cross-fade takes it out. The hd tier is also a 1.5x Lanczos
+  upscale of a 1280x720 clip, so a desktop cover is as sharp as it can be
+  without a better source video.
+- **The tier is picked from the screen's LONGER side.** On width alone an
+  iPad at 820x1180 got the 1280px sd set while drawing the cover ~1700
+  device px wide; the same iPad was hd in landscape. Phones stay sd
+  (393x851, 844x390). The two `<link rel="preload">` hints in
+  `app/layout.tsx` carry the same rule as media queries and must move with
+  it, or the browser warms one tier and the canvas fetches the other.
+- **The eyebrow has no lead-in hairline** (removed on request), and the
+  cover's column is leaded: gaps 3.6 / 4 / 5 / 4.6vh and headline leading
+  1.12. Checked at 1024x768 through 1920x1080 and 360x640 through 820x1180.
 
 **The head bar is set BRIGHT.** At `text-slate-400/50` the seven numerals were
 the dimmest thing on the first screen and read as disabled, which is the wrong

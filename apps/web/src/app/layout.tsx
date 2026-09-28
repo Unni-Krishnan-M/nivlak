@@ -50,14 +50,15 @@ export default function RootLayout({
             requested from a client component is invisible to the preload
             scanner -- so it is hinted here instead. Two hints, because the
             frames come in two resolutions: the media queries have to agree
-            exactly with pickTier() in book-camera.ts, or the browser warms one
-            tier and the component then asks for the other. */}
+            exactly with the tier <Book> picks -- pickTier() of the screen's
+            LONGER side -- or the browser warms one tier and the component then
+            asks for the other. */}
         <link
           rel="preload"
           as="image"
           href={`/frames/${FRAME_SET}/sd/frame-001.webp`}
           type="image/webp"
-          media="(max-width: 899px)"
+          media="(max-width: 899px) and (max-height: 899px)"
           fetchPriority="high"
         />
         <link
@@ -65,7 +66,7 @@ export default function RootLayout({
           as="image"
           href={`/frames/${FRAME_SET}/hd/frame-001.webp`}
           type="image/webp"
-          media="(min-width: 900px)"
+          media="(min-width: 900px), (min-height: 900px)"
           fetchPriority="high"
         />
 

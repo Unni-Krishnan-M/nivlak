@@ -1,0 +1,23 @@
+# Upload only what the build needs, as an allowlist. A blocklist sent 947MB:
+# local build caches (.turbo 1.3GB, apps/web/.next 472MB), source photographs
+# at the root, and uncommitted .env files. The tracked tree is under 9MB.
+/*
+!/apps
+!/packages
+!/package.json
+!/pnpm-lock.yaml
+!/pnpm-workspace.yaml
+!/turbo.json
+!/tsconfig.json
+!/bts.jsonc
+**/node_modules
+**/.turbo
+**/.next
+**/.wrangler
+**/.netlify
+**/.vercel
+**/dist
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+/apps/web/apps

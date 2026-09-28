@@ -148,13 +148,23 @@ export function Book() {
   // SHEETS THEMSELVES differ: React has to render the other list first, and
   // the hook's `dependencies` then rebuild the timeline over it.
   const [single, setSingle] = useState(false);
-  // Whether a phone page has the HEIGHT to carry the larger type. 03 is the
-  // page that decides it: its phone page prints a chapter head and three
-  // stages, which fit at 393x851 and do not at 360x640 -- measured, the third
-  // stage was cut off and the drop folio printed over stage 02's outcome. 760
-  // is between the two, so a tall phone reads larger and a short one is
-  // exactly what it was.
-  const [bigType, setBigType] = useState(false);
+  // The ROOT FONT SIZE for a one-page (portrait) book, in px, or null for a
+  // spread. It SCALES with the screen from the one the phone pages were
+  // measured on -- 19px at 393x851 -- by the smaller of the width and height
+  // ratios, so type grows only as far as BOTH dimensions have room for it and
+  // every page keeps the proportions that were proved to fit.
+  //
+  // It was a switch (19px from 760px of height, 16 below), which gave every
+  // portrait TABLET the phone's type: measured, a 14.4px paragraph and a
+  // 28.5px headline on a 768, 820, 834 and 1024px-wide page alike, where
+  // that same paragraph reads at 14.4 on a 393px phone. Now:
+  //
+  //   393x851  19     768x1024 22.9    820x1180 26.3
+  //   360x740  16.5   834x1194 26.7    1024x1366 28 (cap)
+  //
+  // The floor is the old 16 -- 360x640 cut 03's third stage off at 18 -- and
+  // the cap keeps a 12.9" tablet from setting a phone layout at poster size.
+  const [rootPx, setRootPx] = useState<number | null>(null);
   useEffect(() => {
     // Re-decided on a WIDTH change only (a rotation, a resized desktop
     // window), never on a height-only resize. On a phone the address bar
@@ -180,7 +190,13 @@ export function Book() {
       lastWidth = w;
       lastHeight = h;
       const full = isFullBleed(w, h);
-      setBigType(full && h >= 760);
+      setRootPx(
+        full
+          ? Math.round(
+              Math.min(28, Math.max(16, 19 * Math.min(w / 393, h / 851))) * 2,
+            ) / 2
+          : null,
+      );
       return setSingle(full);
     };
     sync();
@@ -224,12 +240,12 @@ export function Book() {
   // that just changed.
   useEffect(() => {
     const root = document.documentElement;
-    root.style.fontSize = bigType ? "19px" : "";
+    root.style.fontSize = rootPx ? `${rootPx}px` : "";
     ScrollTrigger.refresh();
     return () => {
       root.style.fontSize = "";
     };
-  }, [bigType]);
+  }, [rootPx]);
 
   // Highest contiguous index present in imagesRef. Derived, never reset: the
   // ref survives a remount (and StrictMode's double invoke), so resetting would

@@ -1555,6 +1555,19 @@ at in `pnpm dev`.
   12.5% at once, and `ScrollTrigger.refresh()` goes with it because the pin's
   spacing was measured from the old layout.
 
+  **The one-page root size SCALES with the screen** (superseding the 760px
+  gate described below): `19px × min(width/393, height/851)`, clamped 16–28
+  and rounded to 0.5. Portrait tablets were getting the phone's type — a
+  14.4px paragraph on 768, 820, 834 and 1024px-wide pages alike. Now 393x851
+  19, 360x740 16.5, 768x1024 22.9, 820x1180 26.3, 834x1194 26.7, 1024x1366
+  28. Taking the SMALLER ratio keeps the proportions the phone pages were
+  measured to fit. Verified with a per-page fit probe (lowest text line vs
+  the drop folio, and right-edge overflow, on the topmost face at rest) over
+  all 14 pages at 360x640, 360x740, 393x851, 412x915, 768x1024, 820x1180,
+  834x1194 and 1024x1366: no page reaches its folio, nothing overflows.
+  Spreads (landscape tablets, laptops) are unchanged: their type is `vw`
+  and already scales with the width.
+
   **The phone layout is decided once, not on every resize.** A phone's
   address bar hides as you scroll down and returns as you scroll up, firing
   `resize` with a height ~56px different. The type gate re-ran on it: in the

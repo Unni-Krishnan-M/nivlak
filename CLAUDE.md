@@ -1555,6 +1555,19 @@ at in `pnpm dev`.
   12.5% at once, and `ScrollTrigger.refresh()` goes with it because the pin's
   spacing was measured from the old layout.
 
+  **The phone layout is decided once, not on every resize.** A phone's
+  address bar hides as you scroll down and returns as you scroll up, firing
+  `resize` with a height ~56px different. The type gate re-ran on it: in the
+  emulator at 393x800 → 744 the root font flipped 19px ↔ 16px and the
+  document changed 11536 ↔ 10728px, so the same scroll position landed on a
+  different point in the book and every page jumped when the reader changed
+  direction. `<Book>`'s sync now ignores a same-width height change under
+  180px, and `ScrollTrigger.config({ ignoreMobileResize: true })` is set
+  explicitly. Not "width changes only": a rotation reported 393x393 before
+  393x851 and a width-only rule left portrait laid out as a spread.
+  Reproduce with `Emulation.setDeviceMetricsOverride` mid-session — the
+  headless harness has no address bar of its own.
+
   **It is gated on HEIGHT (≥760px), and 03 is what sets the number.** Its
   phone page prints a chapter head and three stages: at 393x851 all three fit
   clear of the drop folio, and at 360x640 the third was cut off at the foot

@@ -34,6 +34,11 @@ import {
 } from "@/components/book-sheets";
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, useGSAP);
+// A phone's address bar showing and hiding is a height-only resize, and a
+// ScrollTrigger refresh on it re-measures the pin mid-scroll -- the page jumps
+// every time the reader changes direction. This is GSAP's default on touch
+// devices; it is set here so nothing depends on that default holding.
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 // The whole landing page: a book that opens, then turns six pages.
 //
@@ -151,9 +156,31 @@ export function Book() {
   // exactly what it was.
   const [bigType, setBigType] = useState(false);
   useEffect(() => {
+    // Re-decided on a WIDTH change only (a rotation, a resized desktop
+    // window), never on a height-only resize. On a phone the address bar
+    // hides as you scroll down and comes back as you scroll up, which fires
+    // `resize` with a height ~56px different -- enough to cross the 760
+    // threshold. Measured in the emulator at 393x800 -> 744: the root font
+    // flipped 19px <-> 16px and the document changed 11536 <-> 10728px, so
+    // the same scroll position landed on a different point in the book and
+    // every page jumped each time the scroll direction changed. The height
+    // taken is whatever the page loaded (or rotated) with, bar and all.
+    //
+    // A small height change at the same width is the bar; anything larger is
+    // a real resize and is taken. Not "width changes only": a rotation can
+    // report the new width one event before the new height (the emulator
+    // gave 393x393 then 393x851), and a width-only rule threw away the second
+    // event and left a portrait phone laid out as a spread. 180 clears a
+    // collapsing toolbar (~56px, ~120 with a bottom bar) and no rotation.
+    let lastWidth = -1;
+    let lastHeight = -1;
     const sync = () => {
-      const full = isFullBleed(window.innerWidth, window.innerHeight);
-      setBigType(full && window.innerHeight >= 760);
+      const { innerWidth: w, innerHeight: h } = window;
+      if (w === lastWidth && Math.abs(h - lastHeight) < 180) return;
+      lastWidth = w;
+      lastHeight = h;
+      const full = isFullBleed(w, h);
+      setBigType(full && h >= 760);
       return setSingle(full);
     };
     sync();

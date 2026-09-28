@@ -22,6 +22,7 @@ import {
   FIRST_MOBILE_PAGE_OF_CHAPTER,
   CHAPTER_OF_SPREAD,
   FIRST_SPREAD_OF_CHAPTER,
+  roman,
 } from "@/components/book-pages.content";
 import {
   BookPageColumn,
@@ -173,6 +174,40 @@ export function Book() {
     sync();
     query.addEventListener("change", sync);
     return () => query.removeEventListener("change", sync);
+  }, []);
+
+  // The ribbon hangs FROM the head rule, so its top is the rule's measured
+  // offset and not a formula. The rule sits under a row whose height is the
+  // logo's clamp, the type's line box and the portrait root size together,
+  // plus two vh terms; the old `calc(3.4vh + 1.9rem)` guessed at that sum and
+  // missed by -10px at 1920x1080 and +7 at 820x1180 -- above the rule on a
+  // desktop, a visible gap below it on a tablet. Both elements are positioned
+  // in the section, so the bar's offsetTop and the cue's top share an origin. A ResizeObserver on the bar catches every input at once -- a vh
+  // change (a phone's address bar), the portrait root size, a late font.
+  useEffect(() => {
+    const cue = cueRef.current;
+    const nav = cue?.parentElement?.querySelector<HTMLElement>("[data-book-nav]");
+    const rule = nav?.querySelector<HTMLElement>("[data-head-rule]");
+    if (!cue || !nav || !rule) return;
+    // The rule's offset inside the bar comes from the two rects, because
+    // offsetTop rounds to whole pixels and the rule sits on fractional ones
+    // (67.48 at 1440x900): rounded, the ribbon's top showed 0.8px above it.
+    // A difference of two rects is still blind to a translate on the bar.
+    // Half a pixel further down, so the sway's rotation (corners rise ~0.4px)
+    // stays under the rule's 1px line rather than peeking over it.
+    const place = () => {
+      const inBar =
+        rule.getBoundingClientRect().top - nav.getBoundingClientRect().top;
+      cue.style.setProperty("--head-rule-y", `${nav.offsetTop + inBar + 0.5}px`);
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(nav, { box: "border-box" });
+    window.addEventListener("resize", place);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", place);
+    };
   }, []);
 
   // ONE PAGE PER SHEET, on the viewports where a sheet is the whole screen.
@@ -1142,7 +1177,7 @@ export function Book() {
         if (runningHead) {
           const page = chapter >= 0 ? BOOK_PAGES[chapter] : undefined;
           runningHead.textContent = page
-            ? `${page.number} \u2014 ${page.title.toUpperCase()}`
+            ? `${roman(page.number)} \u2014 ${page.title.toUpperCase()}`
             : "";
           runningHead.style.opacity = page ? "1" : "0";
         }
@@ -1439,9 +1474,11 @@ export function Book() {
             It is OUTSIDE `kickerRef` because it is placed against the screen,
             and GSAP's transform on that block would make it the containing
             block for anything absolute inside. One tween fades both refs.
-            `top` tracks the head rule: the bar is `pt-[3.4vh]` plus a row,
-            so `3.4vh + 1.9rem` lands the ribbon's top a few px above the rule,
-            which draws across it -- tucked under, not stuck on. Shown at every
+            `top` IS the head rule's measured offset (`--head-rule-y`, set by
+            the effect near the top of <Book>), so the ribbon's first pixel
+            row is the rule's and the bar, drawn later at z-[100], lays the
+            rule over it: tucked under, not stuck on. The fallback is the same
+            sum in CSS for the frame before the effect runs. Shown at every
             height: the old cue hid below 620px because it sat on the buttons,
             and carrying that rule over hid the ribbon on ordinary laptops,
             whose browser chrome leaves a 1366x768 screen a window under 620.
@@ -1451,7 +1488,7 @@ export function Book() {
           ref={cueRef}
           data-scroll-cue
           aria-hidden
-          className="pointer-events-none absolute top-[calc(3.4vh+1.9rem)] right-[6vw] overflow-hidden px-[10px] pb-[10px] portrait:right-[5vw]"
+          className="pointer-events-none absolute top-[var(--head-rule-y,calc(5.1vh+clamp(17px,1.5vw,22px)))] right-[6vw] overflow-hidden px-[10px] pb-[10px] portrait:right-[5vw]"
         >
           <div className="motion-safe:animate-ribbon-drop motion-safe:[animation-delay:350ms]">
             <div className="origin-top [filter:drop-shadow(0_6px_8px_rgba(3,9,18,0.65))] motion-safe:animate-ribbon-sway motion-safe:[animation-delay:1.45s]">

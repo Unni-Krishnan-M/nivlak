@@ -506,6 +506,31 @@ export type BookPage = {
   };
 };
 
+/**
+ * Every number the book PRINTS is a Roman numeral -- chapters, folios, the
+ * head bar and thumb index, and every numbered run (stages, members,
+ * perspectives, benefits, steps, projects). Asked for as "all numbers roman".
+ * The data keeps its "01" strings, because they are also section ids and
+ * React keys; this is only how they are set on the page. Screen-reader
+ * labels keep arabic numbers: "I" is read aloud as the pronoun.
+ */
+export function roman(value: number | string): string {
+  let n = typeof value === "number" ? value : Number.parseInt(value, 10);
+  if (!Number.isFinite(n) || n <= 0) return String(value);
+  const table: [number, string][] = [
+    [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"],
+    [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+  ];
+  let out = "";
+  for (const [v, sym] of table) {
+    while (n >= v) {
+      out += sym;
+      n -= v;
+    }
+  }
+  return out;
+}
+
 export const BOOK_PAGES: BookPage[] = [
   {
     number: "01",
@@ -1206,15 +1231,15 @@ export const BOOK_PAGES: BookPage[] = [
           name: "Laxman S",
           role: "Founder & CEO",
           portrait: "/team/laxman.webp",
-          focus: ["Vision", "Engineering", "Continuous learning"],
+          focus: ["Leadership", "Innovation", "Growth"],
           line: "Leads Nivlak with a long-term vision of building intelligent digital products that help businesses grow with confidence.",
         },
         {
           name: "Unni Krishnan M",
           role: "Co-Founder",
           portrait: "/team/unni-krishnan-m.webp",
-          focus: ["Direction", "Delivery", "Partnership"],
-          line: "Builds Nivlak alongside Laxman, shaping what the studio takes on and how it gets delivered.",
+          focus: ["Engineering", "Design", "Delivery"],
+          line: "Builds Nivlak alongside Laxman, shaping what Nivlak takes on and how it gets delivered.",
         },
         {
           name: "Ashok",

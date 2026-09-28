@@ -1104,6 +1104,9 @@ it, because there was no photograph. `founder` is gone from `BookPage`;
 - **Below 480px of viewport height** the portrait drops to 56px and the
   member's sentence is not printed: at 844x390 a row has ~90px and needs 130
   with it. Role, name and focus words stay.
+- **Focus words** were rewritten on request: Laxman "Leadership ·
+  Innovation · Growth", Unni "Engineering · Design · Delivery"; Unni's line
+  no longer calls Nivlak a "studio".
 - **Only names and roles were given.** Laxman's focus words and sentence come
   from the old bio. Unni's, Ashok's and Gokul's are written from their ROLE and
   nothing else, and say so in a comment above the data — replace them with
@@ -1135,6 +1138,9 @@ engraving on the verso. `git log` has the dialog, the route and the plate.
   row by `emblem`; "Email us" is `solid` — the ONE filled object in the book,
   asked for after two rounds of hairline panels read as not professional
   enough — and "Call us" is outlined. The email link pre-fills a subject.
+- **07's "We can help with" tags are small BOOKPLATES**, the same object as
+  "Call us" (cut corners by a two-layer clip-path, inner end rules, display
+  serif small caps), not rounded pills. Not interactive.
 - **The contact details are a POSTED LETTER** (`data-envelope`): a paper
   panel with a striped airmail border drawn by `border-image` (a masked
   background was tried first and the `mask` shorthand reset its composite,
@@ -1200,14 +1206,27 @@ Asked for as four separate things and verified by two subagents across
 - **05's WHY IT MATTERS sits on the verso's "05 PERSPECTIVES" line** with 07's
   device (invisible headpiece sized from the verso's measure + a zero-width
   numeral). Measured at rest at 1440x900: 126 vs 127.
-- **Every page carries a small HOME MARK** (`<HomeMark>`, the head bar's logo)
-  in its OUTER margin on the folio's line — bottom-left on a left page,
-  bottom-right on a right one — that returns to the cover. It is a nav item
-  with index -1, which `<Book>`'s seek maps to y=0. It was inline with the
-  folio for one revision and its box reached 19–22px into the last line of
-  03's and 05's versos and 04's recto; the outer margin is the one strip no
-  copy enters. The phone's mirrored back face is `inert`, so its copies are
-  neither focusable nor announced.
+- **Every page carries a small HOME MARK** (`<HomeMark>`, the head bar's
+  logo) that returns to the cover — a nav item with index -1, which
+  `<Book>`'s seek maps to y=0. It sits ON THE PAGE, beside the folio: left
+  of it on a left page, right of it on a right one, positioned against the
+  (absolute) folio so it falls in the margin just past the text column,
+  where no copy runs. Two earlier placements, both measured wrong: inline
+  with the folio (its box reached 19–22px into the last line of 03's and
+  05's versos and 04's recto), then the page's outer margin (on a spread
+  wider than the window that is off the paper or at the window edge by the
+  thumb index — "the web corner, not the book corner"). A continuation
+  recto prints an empty folio box so the mark still has its line. The
+  phone's mirrored back face is `inert`.
+  **The RIGHT page's mark was then moved into its bottom-right corner**
+  (asked: "move it still to the corner"): `end-[calc(11%+var(--page-text-inset-end))]`,
+  `bottom-[5%]`, on the paper at every width. 11% because the sheet's edge
+  is the photographed page's, fore-edge stack included — at 4.5% the mark
+  sat on the white page-stack at 1366x768 and 1920x1080. The left page's
+  mark stays beside its folio.
+- **07's envelope tightens below `xl` and on wide-short spreads** (address
+  line hidden, rows and top margin reduced): its foot ran 5px into the
+  folio at 1024x768. Now 46px clear there, 61 at 1280x720.
 - **01's verso copy runs the full measure from `lg`**, where it was capped at
   44ch: the head and its rule span 556px at 1440 and the copy stopped at ~430,
   leaving an empty strip down the right of the page. The page's slack is split
@@ -1375,6 +1394,13 @@ the first screen said `NIVLAK TECHNOLOGIES` and nothing else.
   - **It is `cueRef`, outside `kickerRef`,** because it is placed against the
     screen and GSAP's transform on the hero block would make that block the
     containing block for anything absolute inside it. One tween fades both.
+  - **Its top is the head rule's MEASURED position**, not a formula: `<Book>`
+    reads `[data-head-rule]` in `<BookNav>` and writes `--head-rule-y` (plus
+    0.5px, so the sway's corners stay under the 1px line) on every resize of
+    the bar. The old `calc(3.4vh + 1.9rem)` missed by -10px at 1920x1080 and
+    +7 at 820x1180; measured now, the ribbon's top is 0.1–0.4px below the
+    rule's top at all seven QA sizes, and the bar (z-[100], later in the DOM)
+    draws the rule over it.
   - **Neither animation is on the ref.** A CSS animation with
     `fill-mode: both` keeps overriding inline styles after it ends, so on the
     ref it pinned opacity to 1 under GSAP's fade. Drop and sway are also on
@@ -1475,7 +1501,18 @@ at in `pnpm dev`.
 
 ### Rules that are not obvious from the code
 
-- **Illustrations are numbered in roman and chapters in arabic**, and 03 is
+- **EVERY printed number is now a Roman numeral** — chapters (I–VII),
+  folios, the head bar, the thumb index, the running head, and every
+  numbered run (stages, members, perspectives, benefits, steps, projects) —
+  asked for as "all numbers roman". One helper, `roman()` in
+  `book-pages.content.ts`; the data keeps its "01" strings because they are
+  section ids and keys, and screen-reader labels keep arabic numbers ("I"
+  is read as the pronoun). The thumb index gives the numeral a fixed-width,
+  end-aligned slot so the notches stay in one column. The note below is the
+  history: it SUPERSEDES the arabic-chapters rule, and `PLATE III` in 03 and
+  04 now sits beside chapter III — nothing refers to a plate from outside
+  its chapter, so the collision it warned about is a naming one only.
+- **Illustrations are numbered in roman and chapters in arabic** (historical), and 03 is
   why that rule earns its keep rather than merely being a convention. Its plate
   labels read `PLATE IV`, not the `FIG. 04` the brief asked for: an arabic 04
   printed inside chapter 03 reads as a pointer to chapter 04, which is one tab

@@ -1,6 +1,6 @@
 "use client";
 
-import { BOOK_PAGES } from "@/components/book-pages.content";
+import { BOOK_PAGES, roman } from "@/components/book-pages.content";
 
 // The navigation, set as a running head.
 //
@@ -68,7 +68,7 @@ export function BookNav() {
                 data-current="false"
                 className="group flex cursor-pointer items-baseline gap-[0.5em] text-[clamp(0.52rem,0.68vw,0.64rem)] tracking-[0.26em] text-slate-200/80 transition-colors duration-300 hover:text-white data-[current=true]:text-white"
               >
-                <span className="tabular-nums">{page.number}</span>
+                <span className="tabular-nums">{roman(page.number)}</span>
                 {/* The titles are the first thing to go when the head runs out
                     of room; the numerals alone still say where you are. */}
                 <span className="hidden xl:inline">
@@ -80,8 +80,10 @@ export function BookNav() {
         </ul>
       </div>
 
-      {/* The head rule. */}
-      <span aria-hidden className="mt-[1.7vh] block h-px w-full bg-white/25" />
+      {/* The head rule. <Book> measures it (`data-head-rule`) to hang the
+          scroll cue's ribbon from it; this bar is z-[100] and later in the
+          DOM, so the rule draws OVER the ribbon's top edge. */}
+      <span aria-hidden data-head-rule className="mt-[1.7vh] block h-px w-full bg-white/25" />
     </nav>
   );
 }
@@ -144,8 +146,11 @@ export function BookIndex() {
               <span className="hidden translate-x-[0.4em] text-[clamp(0.6rem,0.66vw,0.66rem)] tracking-[0.26em] whitespace-nowrap text-slate-200 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-70 group-data-[current=true]:translate-x-0 group-data-[current=true]:opacity-100 motion-reduce:transition-none lg:inline">
                 {page.title.toUpperCase()}
               </span>
-              <span className="text-[clamp(0.6rem,0.66vw,0.66rem)] tabular-nums tracking-[0.2em] text-slate-400/80 transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
-                {page.number}
+              {/* Roman, like every number the book prints. A fixed-width,
+                  end-aligned slot, because I and VII differ by three glyphs
+                  and the notches beside them have to stay in one column. */}
+              <span className="min-w-[2.6em] text-end text-[clamp(0.6rem,0.66vw,0.66rem)] tracking-[0.2em] text-slate-400/80 transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
+                {roman(page.number)}
               </span>
               {/* The notch. The current tab is cut deeper into the edge. */}
               <span

@@ -23,6 +23,7 @@ import {
   type PagePlate,
   type PageService,
   type PageStep,
+  roman,
 } from "@/components/book-pages.content";
 
 // The sheets that turn over the open book, and the arithmetic that puts them
@@ -493,9 +494,9 @@ function SpreadSheets() {
             data-ink
             className="absolute bottom-[7%] portrait:bottom-[3.5%] start-[calc(13%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.92vw,0.798rem)] tracking-[0.35em] text-slate-400/40"
           >
+            <HomeMark side="left" />
             NIVLAK
           </p>
-          <HomeMark className="start-[calc(4.5%+var(--facing-inset-start,0px))]" />
         </div>
       ) : null}
 
@@ -649,36 +650,40 @@ function PageFace({
  * which <Book>'s seek maps to scroll position 0, so there is no second
  * scroll mechanism to keep in step.
  */
-function HomeMark({
-  className = "",
-  style,
-}: {
-  className?: string;
-  style?: React.CSSProperties;
-}) {
+function HomeMark({ side }: { side: "left" | "right" | "corner" }) {
   return (
-    // In the page's OUTER MARGIN, on the folio's line -- never beside the
-    // folio inside the text column. It was set inline with the folio for one
-    // revision and its 27px box reached up into the last line of the three
-    // pages that fill themselves to the foot (03 and 05's versos, 04's recto;
-    // measured 19-22px of overlap at 1440x900). The outer margin is the one
-    // strip no copy enters. `translate-y` centres the mark on the folio's
-    // text rather than sitting it on the folio's baseline.
+    // ON THE PAGE, BESIDE ITS FOLIO: left of it on a left page, right of it
+    // on a right page -- asked for as "the book corner, not the web corner".
+    // It was in the page's outer margin for one revision, and on a spread
+    // wider than the window (1440x900 and up) that margin is off the paper's
+    // edge or at the window's edge beside the thumb index, so it read as a
+    // screen control rather than as something printed on the page.
+    //
+    // It is positioned against the FOLIO (which is `absolute`), outside it:
+    // the folio starts or ends exactly on the text column's edge, so the mark
+    // falls in the margin just past the column, where no copy ever runs. Set
+    // inline with the folio instead, its box reached 19-22px up into the last
+    // line of 03's and 05's versos and 04's recto.
     <button
       type="button"
       data-nav-item
       data-index={-1}
       aria-label="Back to the cover"
       title="Back to the cover"
-      style={style}
-      className={`absolute bottom-[7%] portrait:bottom-[3.5%] z-[2] translate-y-[35%] pointer-events-auto inline-grid size-[clamp(20px,1.7vw,27px)] shrink-0 cursor-pointer place-items-center rounded-full opacity-55 outline-none transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-[#dce7f7] motion-reduce:transition-none ${className}`}
+      className={`pointer-events-auto absolute grid size-[clamp(18px,1.5vw,24px)] cursor-pointer place-items-center rounded-full opacity-60 outline-none transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-[#dce7f7] motion-reduce:transition-none ${
+        side === "left"
+          ? "end-full top-1/2 me-[0.8em] -translate-y-1/2"
+          : side === "right"
+            ? "start-full top-1/2 ms-[0.8em] -translate-y-1/2"
+            : "inset-0"
+      }`}
     >
       <img
         src="/logo-mark.webp"
         alt=""
         aria-hidden
         draggable={false}
-        className="h-auto w-[72%] select-none"
+        className="h-auto w-[78%] select-none"
       />
     </button>
   );
@@ -850,7 +855,7 @@ function ChapterHead({
           aria-hidden
           className="font-[family-name:var(--font-display)] text-[clamp(2.2rem,4.4vw,4.4rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
         >
-          {page.number}
+          {roman(page.number)}
         </span>
         {/* The chapter's name beside its numeral. Set brighter and heavier than
             the rest of the book's tracked labels -- asked for directly: at
@@ -1219,32 +1224,6 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
 // was one more than anything needed at the time and would have started
 // printing `undefined` the first time a chapter grew past it -- the exact
 // change this file is now built to make easy.
-const ROMAN_PARTS: [number, string][] = [
-  [1000, "M"],
-  [900, "CM"],
-  [500, "D"],
-  [400, "CD"],
-  [100, "C"],
-  [90, "XC"],
-  [50, "L"],
-  [40, "XL"],
-  [10, "X"],
-  [9, "IX"],
-  [5, "V"],
-  [4, "IV"],
-  [1, "I"],
-];
-function roman(n: number) {
-  let rest = n;
-  let out = "";
-  for (const [value, numeral] of ROMAN_PARTS) {
-    while (rest >= value) {
-      out += numeral;
-      rest -= value;
-    }
-  }
-  return out;
-}
 
 /**
  * The lead entry: one plate set large enough to be the thing you see first.
@@ -1461,7 +1440,7 @@ function StageRow({ service, index, at }: StageSlot) {
   const stage = service.stage!;
   const display =
     at === "lg" ? "hidden lg:grid" : at === "below-lg" ? "grid lg:hidden" : "grid";
-  const number = String(index + 1).padStart(2, "0");
+  const number = roman(index + 1);
   return (
     // A GRID of three rows, and the PLATE SPANS THE LOWER TWO -- at every
     // size, which is the whole of what stops this spread reading as congested.
@@ -1862,7 +1841,7 @@ function PerspectiveIndex({ services }: { services: PageService[] }) {
         style={{ "--domain-rows": services.length } as React.CSSProperties}
       >
         {services.map((service, i) => {
-          const number = String(i + 1).padStart(2, "0");
+          const number = roman(i + 1);
           return (
             <li
               key={service.title}
@@ -2022,7 +2001,7 @@ function Benefits({
               aria-hidden
               className="text-[clamp(0.42rem,0.62vw,0.56rem)] tracking-[0.24em] text-slate-400/45 tabular-nums"
             >
-              {item.number}
+              {roman(item.number)}
             </span>
             <span className="min-w-0">
               <span className="block text-[clamp(0.56rem,0.86vw,0.78rem)] tracking-[0.2em] text-white uppercase">
@@ -2257,7 +2236,7 @@ function ProjectIndex({ services }: { services: PageService[] }) {
               className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 portrait:w-full portrait:gap-[0.9em] portrait:border-b-0 portrait:pb-0 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[1.05em] lg:pb-[1.05em] motion-reduce:transition-none"
             >
               <span className="shrink-0 text-[clamp(0.44rem,0.69vw,0.627rem)] tracking-[0.24em] tabular-nums opacity-70">
-                {service.project!.number}
+                {roman(service.project!.number)}
               </span>
 
               {/* The short label, below `lg` only. WEB / AI / SAAS / MOBILE --
@@ -2343,7 +2322,7 @@ function ProjectHeadIndex({ entries }: { entries: PageService[] }) {
           className="group flex cursor-pointer flex-col items-center gap-[0.45em] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
         >
           <span className="text-[clamp(0.46rem,0.69vw,0.627rem)] tracking-[0.2em] text-slate-400/45 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
-            {service.project!.number}
+            {roman(service.project!.number)}
           </span>
           {/* The notch, cut deeper where you are. Driven by data-current
               rather than by a render-time flag, because the current project
@@ -2453,7 +2432,7 @@ function ProjectStage({
                 aria-hidden
                 className="font-[family-name:var(--font-display)] text-[clamp(1.7rem,3.91vw,3.648rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
               >
-                {service.project!.number}
+                {roman(service.project!.number)}
               </span>
               <h3 className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.955vw,1.767rem)] leading-none font-light text-white">
                 {service.project!.category}
@@ -3112,7 +3091,7 @@ function StepList({ steps, from }: { steps: PageStep[]; from: number }) {
           </span>
           <div className="pt-[0.15em]">
             <p className="mb-[0.35em] text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.34em] text-slate-400/60 tabular-nums">
-              {String(from + i + 1).padStart(2, "0")}
+              {roman(from + i + 1)}
             </p>
             <p className="text-[clamp(0.78rem,1.242vw,1.117rem)] leading-tight text-white">
               {step.title}
@@ -3225,7 +3204,7 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
       <div className="flex min-w-0 flex-col justify-center">
         <p className="flex items-baseline gap-[0.8em] text-[clamp(0.5rem,0.74vw,0.66rem)] tracking-[0.14em] text-slate-400/75 uppercase xl:tracking-[0.3em]">
           <span aria-hidden className="tabular-nums text-slate-400/50">
-            {String(index + 1).padStart(2, "0")}
+            {roman(index + 1)}
           </span>
           {member.role}
         </p>
@@ -3342,7 +3321,7 @@ function ContactPage({ page }: { page: BookPage }) {
           aria-hidden
           className="invisible hidden w-0 font-[family-name:var(--font-display)] text-[clamp(2.2rem,4.4vw,4.4rem)] leading-[0.8] font-light lg:inline"
         >
-          {page.number}
+          {roman(page.number)}
         </span>
         {/* CONNECT's size and tracking, so the two labels read as a pair. */}
         <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] leading-none font-semibold tracking-[0.34em] text-[#c9d9ef] uppercase lg:text-[clamp(0.6rem,0.9vw,0.76rem)] lg:tracking-[0.4em]">
@@ -3451,10 +3430,13 @@ function ContactPage({ page }: { page: BookPage }) {
           the edge -- a masked background was tried first and the mask
           shorthand reset its composite, so the stripes ran under the text. The envelope costs ~60px over the old table, so the
           margin above it came down from 3.6em to 2.2em to pay for it; the
-          measurements are in CLAUDE.md. */}
+          measurements are in CLAUDE.md. On a small or wide-short spread
+          (below xl, and 16:9-or-wider under 880px tall) its italic address
+          line goes and its rows tighten: at 1024x768 the envelope's foot
+          ran 5px into the folio and 1280x720 cleared it by 8. */}
       <div
         data-envelope
-        className="relative mt-[1.6em] border border-[#dce7f7]/20 bg-[#dce7f7]/[0.04] px-[1.2em] pt-[1em] pb-[0.8em] lg:mt-[2em] xl:mt-[2.2em] [@media(max-height:480px)]:mt-[0.8em] [@media(max-height:480px)]:py-[0.5em]"
+        className="relative mt-[1.6em] border border-[#dce7f7]/20 bg-[#dce7f7]/[0.04] px-[1.2em] pt-[1em] pb-[0.8em] lg:mt-[1.3em] xl:mt-[2.2em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:mt-[1.3em] [@media(max-height:480px)]:mt-[0.8em] [@media(max-height:480px)]:py-[0.5em]"
       >
         <span
           aria-hidden
@@ -3471,7 +3453,7 @@ function ContactPage({ page }: { page: BookPage }) {
             <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-300/70 uppercase [@media(max-height:480px)]:hidden">
               {contact.detailsTitle}
             </p>
-            <p className="mt-[0.3em] font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.05vw,0.95rem)] text-slate-400/80 italic [@media(max-height:480px)]:hidden">
+            <p className="mt-[0.3em] font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.05vw,0.95rem)] text-slate-400/80 italic lg:max-xl:hidden [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:hidden [@media(max-height:480px)]:hidden">
               To be delivered to Nivlak Technologies
             </p>
           </div>
@@ -3497,7 +3479,7 @@ function ContactPage({ page }: { page: BookPage }) {
             key={row.value}
             // The label sits ABOVE the value below xl and BESIDE it from xl. Beside
             // it at 1024 and 844x390 the address broke to "@gmail / .com".
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-[0.8em] gap-y-[0.15em] border-b border-dotted border-white/25 py-[0.55em] last:border-b-0 lg:py-[0.65em] xl:grid-cols-[minmax(0,5.2em)_minmax(0,1fr)_auto] xl:py-[0.85em] [@media(max-height:480px)]:py-[0.3em]"
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-[0.8em] gap-y-[0.15em] border-b border-dotted border-white/25 py-[0.55em] last:border-b-0 lg:py-[0.45em] xl:grid-cols-[minmax(0,5.2em)_minmax(0,1fr)_auto] xl:py-[0.85em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.55em] [@media(max-height:480px)]:py-[0.3em]"
           >
             <dt className="col-span-2 font-[family-name:var(--font-display)] text-[clamp(0.62rem,0.86vw,0.8rem)] text-slate-400/80 italic xl:col-span-1">
               {row.label}
@@ -3583,11 +3565,28 @@ function ContactVerso({
         </p>
         <ul className="mt-[0.9em] flex flex-wrap gap-[0.55em]">
           {contact.help.map((tag) => (
+            // Set as small BOOKPLATES, the same object as the recto's "Call
+            // us": cut corners, a hairline edge, a second rule inside each
+            // end, the label in the display serif's small caps. Asked for in
+            // place of rounded pills, so the chapter's two sets of labels
+            // read as one family. Not interactive -- no hover, no focus.
+            // The chamfer is a clip-path on two layers (edge, then fill 1px
+            // in), as on the button; the fill is the page's own colour here.
             <li
               key={tag}
-              className="rounded-full border border-white/22 px-[0.95em] py-[0.4em] text-[clamp(0.6rem,0.92vw,0.84rem)] text-slate-200"
+              className="relative px-[1.15em] py-[0.42em] font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.02vw,0.94rem)] tracking-[0.06em] text-slate-100 [font-variant-caps:small-caps]"
             >
-              {tag}
+              <span
+                aria-hidden
+                className="absolute inset-0 bg-[#dce7f7]/45 [clip-path:polygon(6px_0,calc(100%-6px)_0,100%_6px,100%_calc(100%-6px),calc(100%-6px)_100%,6px_100%,0_calc(100%-6px),0_6px)]"
+              />
+              <span
+                aria-hidden
+                className="absolute inset-px bg-[#22385a] [clip-path:polygon(5.6px_0,calc(100%-5.6px)_0,100%_5.6px,100%_calc(100%-5.6px),calc(100%-5.6px)_100%,5.6px_100%,0_calc(100%-5.6px),0_5.6px)]"
+              />
+              <span aria-hidden className="absolute inset-y-[5px] start-[4px] w-px bg-[#dce7f7]/35" />
+              <span aria-hidden className="absolute inset-y-[5px] end-[4px] w-px bg-[#dce7f7]/35" />
+              <span className="relative">{tag}</span>
             </li>
           ))}
         </ul>
@@ -3658,7 +3657,7 @@ function HowItWorks({
               className="absolute top-[-1px] left-0 block h-[9px] w-px bg-white/45"
             />
             <p className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.6vw,1.45rem)] leading-none font-light text-[#dce7f7]/75 tabular-nums">
-              {String(i + 1).padStart(2, "0")}
+              {roman(i + 1)}
             </p>
             <p className="mt-[0.55em] text-[clamp(0.52rem,0.8vw,0.72rem)] tracking-[0.22em] text-white uppercase">
               {step.title}
@@ -3770,9 +3769,9 @@ function VersoPage({
         className="absolute bottom-[7%] portrait:bottom-[3.5%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums"
         style={{ insetInlineStart: inset }}
       >
-        {page.number} &mdash; {page.title.toUpperCase()}
+        <HomeMark side="left" />
+        {roman(page.number)} &mdash; {page.title.toUpperCase()}
       </p>
-      <HomeMark style={{ insetInlineStart: `calc(${inset} - 6.5%)` }} />
     </div>
   );
 }
@@ -3870,7 +3869,7 @@ function PageFoot({ page }: { page: BookPage }) {
       className="absolute inset-x-0 bottom-[8%] flex justify-start ps-[12%]"
     >
       <p className="text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/45 tabular-nums">
-        {page.number} &mdash; {page.title.toUpperCase()}
+        {roman(page.number)} &mdash; {page.title.toUpperCase()}
       </p>
     </div>
   );
@@ -3938,7 +3937,7 @@ function PageBody({
       ) : (
         <div data-ink>
           <p className="mb-3 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
-            {page.number} &mdash; {page.title.toUpperCase()}
+            {roman(page.number)} &mdash; {page.title.toUpperCase()}
           </p>
           <h2 className="mb-[0.4em] font-[family-name:var(--font-display)] text-[clamp(1.9rem,4vw,3.9rem)] leading-[1.03] font-light text-white">
             {page.title}
@@ -3961,17 +3960,28 @@ function PageBody({
       )}
 
       {/* Drop folio, flush with this page's outside margin -- the right. */}
-      {page.facing ? (
-        <p
-          data-ink
-          className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
-        >
-          {page.number}
-        </p>
-      ) : null}
-      {/* Every right page, opener or continuation, carries the home mark in
-          its outer corner. */}
-      <HomeMark className="end-[calc(3.5%+var(--page-text-inset-end,0px))]" />
+      {/* The folio on an opener; on every right page, opener or not, the
+          home mark just past it. A continuation page prints no number, so the
+          folio box is empty there and the mark stands on its line alone. */}
+      <p
+        data-ink
+        className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] min-h-[1em] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
+      >
+        {page.facing ? roman(page.number) : null}
+      </p>
+      {/* The right page's home mark sits IN ITS BOTTOM CORNER, asked for
+          ("move it still to the corner"): past the folio, toward the page's
+          outer edge and a little below the folio's line. Inset from the
+          VISIBLE edge (`--page-text-inset-end` is the part of a wide spread's
+          page that runs off the window), so it stays on the paper at every
+          width and never lands on the window edge; bottom 5% keeps it above
+          the paper's foot, which sits ~3.6% up the sheet element. 11% and not
+          less: the sheet's edge is the photographed page's, fore-edge stack
+          included, and at 4.5% the mark sat ON the white page-stack at
+          1366x768 and 1920x1080, where the whole book fits the window. */}
+      <span className="absolute end-[calc(11%+var(--page-text-inset-end,0px))] bottom-[5%] portrait:end-[6%] portrait:bottom-[2.6%] size-[clamp(18px,1.5vw,24px)]">
+        <HomeMark side="corner" />
+      </span>
     </div>
   );
 }

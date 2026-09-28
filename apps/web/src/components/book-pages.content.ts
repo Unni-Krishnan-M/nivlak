@@ -231,41 +231,6 @@ export type PageStage = {
  * stages rather than written here, for the same reason nothing in this file
  * says which page an entry is on: a seventh stage should change one place.
  */
-/**
- * What is left of the page that used to close 03, and the one part of it that
- * came back.
- *
- * The closing page had four things on it: an arc (the six stage names run on
- * with arrows), a value list (the six deliverables), this note, and a call to
- * action with two ruled buttons. It went when the chapter stopped paginating,
- * and three of the four have stayed gone.
- *
- * The SIX-NAME ARC and the VALUE LIST were restatements. Both printed, in
- * smaller type, a list the reader had just read at full size -- and the spread
- * now sets all six stages with their deliverables on two facing pages, so
- * either one would be the same list twice within eight inches.
- *
- * The CALL TO ACTION went for 05's reason: 07 is four sheets later and is the
- * whole of that argument. `git log` has the copy.
- *
- * `arc` is NOT the arc that went. That one named the six stages; this one
- * names the four things they add up to, which is a claim no single stage can
- * make and nothing else on the spread makes either. Four abstract nouns
- * against six named stages is a different statement, not the same statement
- * quieter.
- */
-export type PageTailpiece = {
-  /**
-   * The whole procedure at one level up, drawn as a drafting diagram at the
-   * head of the recto: IDEAS -> STRATEGY -> PRODUCT -> GROWTH.
-   *
-   * A list rather than a sentence because the page DRAWS it -- a hairline and
-   * a chevron between each pair -- and a sentence with arrows typed into it
-   * would be read aloud as "ideas arrow strategy".
-   */
-  arc: string[];
-};
-
 /** One entry in an illustrated catalogue: a plate and what it is. */
 export type PageService = {
   /**
@@ -397,7 +362,14 @@ export type BookPage = {
      * behind a drop cap -- the standard bridge from an oversized initial back
      * down to body text.
      */
-    intro?: { lead: string; body: string };
+    intro?: {
+      lead: string;
+      body: string;
+      /** A second paragraph: what working with us looks like. */
+      more?: string;
+      /** Signs the opening off, the way a foreword is signed. */
+      signature?: string;
+    };
     /** A short line under the chapter title, the way a book sets a quote. */
     epigraph?: string;
     /** A footnote, keyed to a superscript and set above the folio. */
@@ -485,17 +457,18 @@ export type BookPage = {
   columnPlate?: PageMask;
   /** The second half of a numbered procedure. */
   steps?: PageStep[];
-  /**
-   * The page that closes a PLATE SECTION. Only a chapter set as one has a use
-   * for it: see PageTailpiece, and the pagination at the foot of this file for
-   * where it lands.
-   */
-  tailpiece?: PageTailpiece;
   /** A defined-terms list, set as the body of the right-hand page. */
   termsTitle?: string;
   terms?: PageTerm[];
   /** A closing line under the terms. */
   termsFoot?: string;
+  /**
+   * A table of contents under the terms: one plain-words gloss per chapter,
+   * in BOOK_PAGES order. The titles and numbers come from the chapters
+   * themselves, so only what each one is FOR is written here.
+   */
+  contentsTitle?: string;
+  contents?: string[];
   /**
    * The team spread: a head slot on each page and one member to a row, two
    * rows a page, on one shared grid so the rows line up across the gutter.
@@ -538,49 +511,70 @@ export const BOOK_PAGES: BookPage[] = [
   {
     number: "01",
     title: "Company",
+    // Written for a client reading it once. It used to speak in slogans --
+    // "We Architect the Future.", "Building the Future with Intelligence." --
+    // which say nothing about what a visitor would actually get. The verso
+    // now answers three questions in plain words, in order: who we are (the
+    // lead), what we make (the rest of that paragraph), and what working
+    // with us looks like (`more`). Nothing claims a fact the rest of the book
+    // does not already state: a small team (06), India (07), the kinds of
+    // work (02).
+    //
+    // No subtitle. It said "websites, apps and AI tools" a second time, two
+    // lines above a paragraph that now says it; dropping it is what keeps
+    // the page the length it was with a second paragraph added.
     facing: {
-      headline: "We Architect the Future.",
-      subtitle: "Building the Future with Intelligence.",
-      epigraph: "The person who plans it is the person who builds it.",
-      // "Freelance studio" was the old lead, and it stopped being the true
-      // one when 06 became a team of four: a visitor reads "freelance" as one
-      // person, and the chapter two spreads later shows otherwise. "Product
-      // studio" is what the rest of the book already describes -- 02's five
-      // offers, 03's six stages, 04's four studies.
-      note: "A studio, not a pipeline: the same small team scopes the work, writes the code, and hands it over.",
+      headline: "We Turn Ideas into Software.",
+      epigraph: "The people you talk to are the people who build it.",
+      // The footnote hangs off the NAME in the lead, so it explains the name
+      // -- and sends the reader across the gutter, the way a book's note
+      // cross-refers.
+      note: "Nivlak comes from NIV: Noble, Intelligent, Vision. See the facing page.",
       intro: {
-        lead: "Nivlak is a product studio.",
-        body: "You work straight with the people who design and build it — no account managers in the middle, no handover to a team you have not met, and no guessing what happens next.",
+        lead: "Nivlak is a small software team from India.",
+        body: "We build websites, mobile apps, online software and AI tools that help businesses work better and grow.",
+        more: "Tell us your idea. We plan it with you, build it, launch it, and stay to look after it. You always talk to the people doing the work, with nobody in between.",
+        signature: "The Nivlak team",
       },
       figure: {
-        caption: "Fig. 1 — How the work runs",
+        caption: "Fig. 1 — How we work with you",
         steps: [
-          { label: "Talk", note: "free" },
-          { label: "Scope", note: "fixed" },
-          { label: "Build", note: "weekly" },
-          { label: "Ship", note: "yours" },
+          { label: "Talk", note: "free call" },
+          { label: "Plan", note: "clear price" },
+          { label: "Build", note: "every week" },
+          { label: "Launch", note: "you own it" },
         ],
       },
     },
-    termsTitle: "NIV — The Meaning",
+    termsTitle: "NIV — Our Name",
     terms: [
       {
         letter: "N",
         term: "Noble",
-        body: "We act with integrity and build with a purpose greater than business.",
+        body: "We are honest with you and we do what we promise.",
       },
       {
         letter: "I",
         term: "Intelligent",
-        body: "We use technology with smart thinking to create real impact.",
+        body: "We pick the right technology to solve your real problem.",
       },
       {
         letter: "V",
         term: "Vision",
-        body: "We look ahead and build solutions that create long term value.",
+        body: "We build for the years ahead, not just for launch day.",
       },
     ],
-    termsFoot: "Three letters. One way of working.",
+    termsFoot: "Three letters we work by.",
+    contentsTitle: "Contents",
+    contents: [
+      "Who we are",
+      "What we build",
+      "How we work",
+      "Our studies",
+      "How we think",
+      "Who you'll meet",
+      "Get in touch",
+    ],
   },
   {
     number: "02",
@@ -880,12 +874,10 @@ export const BOOK_PAGES: BookPage[] = [
         },
       },
     ],
-    tailpiece: {
-      // No note. It was "Start at any stage: discovery to launch, or where
-      // your product is stuck." and was taken off on request, which is what
-      // freed the recto's head slot for stage 03 -- see stageHalves().
-      arc: ["Ideas", "Strategy", "Product", "Growth"],
-    },
+    // No tailpiece. It carried a note ("Start at any stage…") and then the
+    // arc IDEAS -> STRATEGY -> PRODUCT -> GROWTH over the recto; both were
+    // taken off on request, the note to make room for stage 03 on the recto
+    // and the arc to give its four stages air. `git log` has both.
   },
   // 04 is the PROJECT STAGE: four studies, one 16:9 window, and an index that
   // changes which of them is in it. One spread, not two.

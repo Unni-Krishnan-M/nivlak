@@ -352,7 +352,14 @@ function SinglePageSheets() {
   return (
     <div
       data-stage
-      className="absolute inset-0"
+      // pointer-events-none on the STAGE and -auto on what it holds. The stage
+      // is a full-screen layer painted over the cover, and while the book is
+      // closed every sheet in it is visibility:hidden -- so it was an empty
+      // box catching every click on the hero: "Open the book" and "Begin a
+      // project" were under it (elementsFromPoint put [data-stage] first) and
+      // did nothing. Hidden sheets take no events, so the cover gets its
+      // clicks back; visible ones opt in and every control on a page works.
+      className="pointer-events-none absolute inset-0"
       style={{ perspective: "2200px" }}
     >
       {MOBILE_PAGES.map((page, index) => {
@@ -362,7 +369,7 @@ function SinglePageSheets() {
           <div
             key={`${spread.number}-${page.kind}-${index}`}
             data-sheet
-            className="absolute origin-left [transform-style:preserve-3d] [will-change:transform]"
+            className="pointer-events-auto absolute origin-left [transform-style:preserve-3d] [will-change:transform]"
           >
             <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]">
               <PageFace side="front">
@@ -416,13 +423,14 @@ function SpreadSheets() {
   return (
     <div
       data-stage
-      className="absolute inset-0"
+      // See SinglePageSheets: the stage passes clicks through, its pages opt in.
+      className="pointer-events-none absolute inset-0"
       style={{ perspective: "2200px" }}
     >
       {opening?.facing ? (
         <div
           data-left-page
-          className="absolute z-[5] overflow-hidden"
+          className="pointer-events-auto absolute z-[5] overflow-hidden"
           style={{ display: "none" }}
         >
           {/* overflow-hidden is safe HERE and nowhere else in this file: this
@@ -461,7 +469,7 @@ function SpreadSheets() {
                 paragraph. mt-auto drops it there however long the text above
                 turns out to be. */}
             {opening.facing?.note ? (
-              <div data-ink className="mt-auto mb-[9%] max-w-[42ch]">
+              <div data-ink className="mt-auto mb-[9%] max-w-[42ch] lg:max-w-none">
                 <span
                   aria-hidden
                   className="mb-[0.9em] block h-px w-[26%] bg-white/15"
@@ -493,7 +501,7 @@ function SpreadSheets() {
         <div
           key={`${page.number}-${index}`}
           data-sheet
-          className="absolute origin-left [transform-style:preserve-3d] [will-change:transform]"
+          className="pointer-events-auto absolute origin-left [transform-style:preserve-3d] [will-change:transform]"
         >
           {/* Front: the page you are reading. */}
           <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]">
@@ -686,7 +694,7 @@ function Figure({
     // footnote alone hung off the foot, every spare pixel on the phone page
     // collected in ONE gap above it -- 154px at 393x851. Two auto margins
     // divide it, which is air rather than a hole.
-    <figure data-ink className="mt-[2.2em] max-w-[42ch] portrait:mt-auto lg:mt-auto">
+    <figure data-ink className="mt-[2.2em] max-w-[42ch] portrait:mt-auto lg:mt-auto lg:max-w-none">
       <svg
         viewBox="0 0 320 30"
         aria-hidden="true"
@@ -955,7 +963,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
                 // the head that overflows first because a chapter opening
                 // cannot be made shorter -- the numeral, the title and the
                 // rule are what say which chapter this is.
-                className="mt-[0.9em] max-w-[42ch] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-balance text-slate-300/80 [@media(max-height:480px)]:hidden"
+                className="mt-[0.9em] max-w-[42ch] text-[clamp(0.68rem,1.185vw,1.085rem)] leading-relaxed text-balance text-slate-300/80 [@media(max-height:480px)]:hidden"
               >
                 {subtitle}
               </p>
@@ -988,9 +996,25 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       ) : null}
 
       {intro ? (
+        // THE DROP CAP spans exactly two lines: its top on the top of the
+        // small-caps lead-in ("IVLAK"), its foot on the second line's
+        // baseline. Asked for in those words.
+        //
+        // On a spread it is a FLOAT sized and dropped by two variables,
+        // --dc-size and --dc-drop, measured rather than derived: at 1440x900
+        // N runs 279..321 against IVLAK's top at 280 and the baseline at 321.
+        // `initial-letter` was tried first and Chrome does not honour its
+        // sink at this 1.95 leading -- the N floated a line high with its
+        // foot mid-way down line 2 -- so it is kept only below `lg`, where
+        // the leading is normal. The wide-short spread (1366x768 etc.) sets
+        // the paragraph at 1.625 and takes its own pair of values.
+        //
+        // `font-variant-caps: normal` is load-bearing: the letter sits inside
+        // the all-small-caps lead-in span and inherited it, so a 61px N
+        // printed as a 25px small capital.
         <p
           data-ink
-          className="mt-[1.6em] max-w-[44ch] text-[clamp(0.76rem,1.173vw,1.072rem)] leading-relaxed text-slate-300/75 first-letter:float-left first-letter:me-[0.08em] first-letter:mt-[0.04em] first-letter:text-[3.4em] first-letter:leading-[0.82] first-letter:font-light first-letter:text-[#dce7f7]"
+          className="mt-[1.6em] max-w-[44ch] text-[clamp(0.76rem,1.173vw,1.072rem)] leading-relaxed text-pretty lg:max-w-none lg:leading-[1.95] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-relaxed text-slate-300/75 first-letter:float-left first-letter:me-[0.08em] first-letter:mt-[0.04em] first-letter:text-[3.4em] first-letter:leading-[0.82] first-letter:font-light first-letter:text-[#dce7f7] max-lg:supports-[initial-letter:2]:first-letter:float-none max-lg:supports-[initial-letter:2]:first-letter:m-0 max-lg:supports-[initial-letter:2]:first-letter:me-[0.14em] max-lg:supports-[initial-letter:2]:first-letter:text-[1em] max-lg:supports-[initial-letter:2]:first-letter:leading-none max-lg:supports-[initial-letter:2]:first-letter:[initial-letter:2] max-lg:supports-[initial-letter:2]:first-letter:[-webkit-initial-letter:2] lg:first-letter:me-[0.12em] lg:first-letter:text-[length:var(--dc-size)] lg:first-letter:leading-[0.72] lg:first-letter:mt-[var(--dc-drop)] lg:first-letter:[font-variant-caps:normal] lg:first-letter:tracking-normal lg:[--dc-size:3.7em] lg:[--dc-drop:0.17em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:[--dc-size:3.2em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:[--dc-drop:0.2em]"
         >
           <span className="[font-variant-caps:all-small-caps] tracking-[0.08em] text-slate-200">
             {intro.lead}
@@ -1001,6 +1025,33 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             </sup>
           ) : null}{" "}
           {intro.body}
+        </p>
+      ) : null}
+      {/* The second paragraph -- what working with us looks like -- and the
+          signature under it, set the way a foreword is signed off: the
+          display italic, ranged to the paragraph's own measure.
+
+          The 44ch cap is lifted from `lg` on both paragraphs, the signature,
+          01's figure and its footnote. The headline and its rule run the
+          page's full 556px at 1440, and with the copy held at ~430 there was
+          a 130px empty strip down the right of the page under a head that
+          spans it. Full measure is ~70 characters, inside a readable line,
+          and it makes the page SHORTER rather than fuller. A phone column is
+          narrower than the cap, so nothing changes there. */}
+      {intro?.more ? (
+        <p
+          data-ink
+          className="mt-[0.8em] max-w-[44ch] text-[clamp(0.76rem,1.173vw,1.072rem)] leading-relaxed text-pretty text-slate-300/75 lg:mt-[1.2em] lg:max-w-none lg:leading-[1.95] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:mt-[0.8em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-relaxed"
+        >
+          {intro.more}
+        </p>
+      ) : null}
+      {intro?.signature ? (
+        <p
+          data-ink
+          className="mt-[0.6em] max-w-[44ch] text-end font-[family-name:var(--font-display)] lg:max-w-none text-[clamp(0.85rem,1.3vw,1.2rem)] text-slate-200/85 italic"
+        >
+          &mdash; {intro.signature}
         </p>
       ) : null}
 
@@ -1392,15 +1443,15 @@ function StageRow({ service, index, at }: StageSlot) {
         <h3 className="flex min-w-0 items-baseline gap-[0.6em]">
           <span
             aria-hidden
-            className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.12vw,1.05rem)] leading-none font-light text-[#dce7f7]/80 tabular-nums"
+            className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.254vw,1.176rem)] leading-none font-light text-[#dce7f7]/80 tabular-nums"
           >
             {number}
           </span>
-          <span className="truncate text-[clamp(0.52rem,0.79vw,0.7rem)] tracking-[0.28em] text-white uppercase">
+          <span className="truncate text-[clamp(0.52rem,0.885vw,0.784rem)] tracking-[0.28em] text-white uppercase">
             {service.title}
           </span>
         </h3>
-        <p className="shrink-0 text-[clamp(0.44rem,0.64vw,0.57rem)] tracking-[0.26em] text-slate-400/45">
+        <p className="shrink-0 text-[clamp(0.44rem,0.717vw,0.638rem)] tracking-[0.26em] text-slate-400/45">
           PLATE {stage.figure}
         </p>
       </div>
@@ -1443,7 +1494,7 @@ function StageRow({ service, index, at }: StageSlot) {
       />
 
       <div className="col-start-2 row-start-2 flex min-w-0 flex-col lg:contents">
-        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.28vw,1.16rem)] leading-tight font-light lg:col-start-2 lg:row-start-2 lg:leading-snug text-balance text-[#dce7f7]">
+        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.434vw,1.299rem)] leading-tight font-light lg:col-start-2 lg:row-start-2 lg:leading-snug text-balance text-[#dce7f7]">
           {stage.headline}
         </h4>
         {/* What happens here -- the brief's KEY ACTIVITIES. A `ul` because it
@@ -1459,7 +1510,7 @@ function StageRow({ service, index, at }: StageSlot) {
             Dropped below `lg`, and it is the last thing that goes: what a
             stage PRODUCES survives it, because the deliverable and the outcome
             are the two lines a client is deciding on. */}
-        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] lg:col-span-2 lg:col-start-1 lg:row-start-3 lg:mt-0 lg:pt-[0.1em] text-[clamp(0.53rem,0.79vw,0.73rem)] leading-relaxed text-slate-300/60 lg:flex">
+        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] lg:col-span-2 lg:col-start-1 lg:row-start-3 lg:mt-0 lg:pt-[0.1em] text-[clamp(0.53rem,0.885vw,0.818rem)] leading-relaxed text-slate-300/60 lg:flex">
           {stage.work.map((item, k) => (
             <li key={item} className="flex items-baseline gap-[0.55em]">
               {k > 0 ? (
@@ -1480,16 +1531,16 @@ function StageRow({ service, index, at }: StageSlot) {
           on the same baselines from stage to stage, because the grid puts them
           there and not the ruling. */}
       <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] gap-y-[0.15em] border-t border-white/18 pt-[0.4em] lg:col-span-2 lg:col-start-1 lg:row-start-4 lg:gap-y-[var(--stage-dl-gap,0.5em)] lg:pt-[var(--stage-dl-pt,0.75em)]">
-        <dt className="text-[clamp(0.44rem,0.64vw,0.57rem)] tracking-[0.24em] text-slate-400/70">
+        <dt className="text-[clamp(0.44rem,0.717vw,0.638rem)] tracking-[0.24em] text-slate-400/70">
           DELIVERABLE
         </dt>
-        <dd className="text-[clamp(0.62rem,0.95vw,0.88rem)] leading-tight text-white lg:leading-snug">
+        <dd className="text-[clamp(0.62rem,1.064vw,0.986rem)] leading-tight text-white lg:leading-snug">
           {stage.deliverable}
         </dd>
-        <dt className="text-[clamp(0.44rem,0.64vw,0.57rem)] tracking-[0.24em] text-slate-400/70">
+        <dt className="text-[clamp(0.44rem,0.717vw,0.638rem)] tracking-[0.24em] text-slate-400/70">
           OUTCOME
         </dt>
-        <dd className="text-[clamp(0.58rem,0.86vw,0.79rem)] leading-snug text-slate-300/75 lg:leading-normal">
+        <dd className="text-[clamp(0.58rem,0.963vw,0.885rem)] leading-snug text-slate-300/75 lg:leading-normal">
           {stage.outcome}
         </dd>
       </dl>
@@ -1498,21 +1549,9 @@ function StageRow({ service, index, at }: StageSlot) {
 }
 
 /**
- * The arc: the four words the six stages add up to, drawn as a drafting
- * diagram rather than written as a sentence.
- *
- * It is NOT the arc this chapter used to carry at its foot, which was the six
- * stage names run on with arrows -- that one was a restatement of the list
- * directly above it and went for that reason. These four are a level up from
- * the six: nothing else on the spread says that the whole procedure turns an
- * idea into growth, and no stage can, because each one only knows its own
- * link. Four abstract nouns against six named stages is a different claim, not
- * the same claim twice.
- *
- * Drawn with a hairline and a chevron per link, at the weight of a rule rather
- * than of type, because it is furniture: the reader should be able to take it
- * in without stopping on it. The connectors carry the flex, so the diagram
- * spans the measure at every width instead of clustering at the leading edge.
+ * The book's one chevron, drawn at the weight of a rule rather than of type.
+ * 05's idea flow and 07's timeline use it. It was drawn for 03's arc, which
+ * was removed; a book that invents a second arrowhead stops reading as one book.
  */
 function ArcArrow() {
   return (
@@ -1531,50 +1570,6 @@ function ArcArrow() {
   );
 }
 
-function ProcessArc({ labels }: { labels: string[] }) {
-  if (!labels.length) return null;
-  return (
-    // The arc is the whole of the recto's head now, sized to its own
-    // content (`auto` in <StageRun>'s template). It shared a 201px slot with a
-    // note for several revisions because the slot's height was the VERSO's
-    // chapter head and the two grids had to agree; with the note gone and
-    // stage 03 moved across, the recto no longer mirrors the verso's rows, so
-    // the slot shrinks to the arc and the 170-odd pixels go to the stages.
-    //
-    // Hidden below `lg`. Down there the spread has collapsed onto one sheet
-    // and the arc would sit between stage 03 and stage 04 -- a summary of six
-    // stages printed halfway down them -- for 28px this page does not have.
-    // It is a device for a SPREAD, where it heads the second page; a column
-    // has no second page to head.
-    <div
-      data-ink
-      className="hidden min-h-0 flex-col pb-[1.1em] lg:flex"
-    >
-      <ol className="flex w-full list-none items-center p-0">
-        {labels.map((label, i) => (
-          <li
-            key={label}
-            className={`flex items-center ${i > 0 ? "min-w-0 flex-1" : "shrink-0"}`}
-          >
-            {i > 0 ? (
-              <span
-                aria-hidden
-                className="mx-[0.55em] flex min-w-[1.1em] flex-1 items-center gap-[0.2em]"
-              >
-                <span className="h-px flex-1 bg-white/18" />
-                <ArcArrow />
-              </span>
-            ) : null}
-            <span className="shrink-0 text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.26em] text-slate-300/65 uppercase">
-              {label}
-            </span>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
-
 /**
  * The space between the lines of a stage, as ONE unit scaled by the viewport's
  * HEIGHT, from which each gap is a fixed fraction.
@@ -1589,16 +1584,14 @@ function ProcessArc({ labels }: { labels: string[] }) {
  * a fixed 1em every recto row overflowed at 768 tall by 14-21px, printing
  * each outcome into the next stage's plate.
  *
- * `14.4vh - 116px` is 13.6px at 900 tall, 8.4px at 864 and the 5.6px floor
- * from about 820 down; it reaches 1em at 917. Steep, because the tight cases are all shorter
- * than 900 for their width and they arrive fast: 1536x864 printed its recto
- * rows 4px apart on a gentler `7vh - 47px`, 1280x800 7px apart, and at the
- * first try's `5.4vh - 32px` 1024x768 was 4px. On the steep curve every
- * measured laptop keeps at least ~11px between one stage's outcome and the
- * next rule, and the spare still shared out between rows by `content-between`
- * is what gives the taller ones more. 1440x900 sits just under 1em because
- * the larger bottom padding (see <StageRun>) took 12px from its recto: at 1em
- * its rows were 8px apart. It stops at 1em for anything taller.
+ * `min(7vh - 47px, 2.4vw - 18.6px)`: 16px at 1440x900, 13.5 at 1536x864,
+ * 9 at 1280x800, ~6 at 768 tall and at 1024 wide, and at most 1.15em. The
+ * width term is for 1024x768, whose recto is 232px wide and wraps three of
+ * four outcomes. Measured min air between recto rows with the arc gone:
+ * 1440x900 22, 1536x864 16, 1280x800 20, 1024x768 18. A steeper
+ * `14.4vh - 116px` was needed while the arc took ~35px of the recto; without
+ * it that curve bottomed out at 1280x800 with 5.6px inside each stage and
+ * 36px between them, which is the congestion in the wrong place.
  *
  * The verso's unit is larger for the reason given on `roomy`: 30px at 900
  * and 22 at 768. It falls more gently than the recto's because the verso has
@@ -1609,7 +1602,7 @@ function ProcessArc({ labels }: { labels: string[] }) {
 function stageSpacing(roomy: boolean) {
   const u = roomy
     ? "clamp(1.2em, 6vh - 24px, 1.9em)"
-    : "clamp(0.35em, 14.4vh - 116px, 1em)";
+    : "clamp(0.35em, min(7vh - 47px, 2.4vw - 18.6px), 1.15em)";
   const [gap, dlPt, dlGap] = roomy ? [0.68, 0.58, 0.42] : [0.6, 0.75, 0.5];
   return {
     "--stage-pt": u,
@@ -1645,8 +1638,13 @@ function StageRun({
    * top of a slot twice its size and read as the page running out.
    *
    * So the verso's rows open up INSIDE -- about 45px more between the lines of
-   * a stage at 1440x900 -- and the rest falls evenly between the head and the
-   * two rows, as it does on the recto. lg-only, like the template.
+   * a stage at 1440x900 -- and the rows STACK from the head down
+   * (`content-start`), with what is left at the foot. It was shared out
+   * between the rows like the recto's for one revision, which put Strategize
+   * hard against the drop folio with ~100px over it, and was asked to come
+   * back up under Discover. The gap between the rows opens to ~29px at 900
+   * tall instead, because stacked at the recto's 4px gap Discover's outcome
+   * sat 14px over Strategize's rule. lg-only, like the template.
    */
   roomy?: boolean;
 }) {
@@ -1678,7 +1676,7 @@ function StageRun({
       // each, the first one took the entire column and the second was handed
       // zero height: stages 04, 05 and 06 were in the DOM at 0px. Auto rows
       // down there, so the two grids stack at their content height.
-      className={`grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 lg:content-between lg:pb-[clamp(24px,3.4vh,40px)] lg:[grid-template-rows:var(--stage-rows)]`}
+      className={`grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 ${roomy ? "lg:content-start lg:gap-y-[clamp(0.9em,3.2vh,2em)]" : "lg:content-between"} lg:pb-[clamp(24px,3.4vh,40px)] lg:[grid-template-rows:var(--stage-rows)]`}
       style={
         {
           ...stageSpacing(roomy),
@@ -1699,7 +1697,7 @@ function StageRun({
           // `rows` counts the stages printed on a SPREAD -- the template is
           // lg-only, and the crossing copy is display:none there on the page
           // it has left, so it takes no cell.
-          "--stage-rows": `auto repeat(${rows}, auto)`,
+          "--stage-rows": `${head ? "auto " : ""}repeat(${rows}, auto)`,
         } as React.CSSProperties
       }
     >
@@ -2808,17 +2806,12 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
           It answers true for the plate section and the project stage as well,
           and would print their plates as thumbnails beside sentences. */}
       {plates && halves ? (
-        // The recto of the process spread: the arc in the head slot, then the
-        // second half of the six stages. See <StageRun> for why the arc is at
-        // the head of this page rather than at its foot.
+        // The recto of the process spread: the last four stages and nothing
+        // else. It had the arc IDEAS -> STRATEGY -> PRODUCT -> GROWTH in a
+        // head slot; that was removed on request for the stages' spacing.
         <StageRun
           slots={halves.recto}
           rows={halves.rectoRows}
-          head={
-            <ProcessArc
-              labels={page.tailpiece?.arc ?? []}
-            />
-          }
         />
       ) : projects ? (
         <ProjectStage
@@ -3260,42 +3253,113 @@ function ContactPage({ page }: { page: BookPage }) {
   const byEmblem = (emblem: string) =>
     contact.rows.find((row) => row.emblem === emblem);
   return (
-    // `my-auto` centres the whole block on the page. PageBody starts its
-    // column at the top because this chapter has a facing verso, which is
-    // right for a page that fills it and wrong for this one: the details
-    // table ends around two thirds down and left the last third empty.
-    <div data-ink className="my-auto flex flex-col">
-      <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.34em] text-slate-400/70 uppercase">
-        {contact.eyebrow}
-      </p>
-      <h3 className="mt-[0.45em] font-[family-name:var(--font-display)] text-[clamp(1.3rem,2.4vw,2.2rem)] leading-[1.08] font-light text-balance text-white">
+    // ON A SPREAD the page starts at the TOP, with "GET IN TOUCH" on the same
+    // line as the verso's "07  CONNECT", and spreads its sections down the
+    // page from there. It was centred (`my-auto`) for a revision, which put
+    // the eyebrow 100px below the chapter label it answers across the gutter;
+    // asked to be level with it. Below `lg` there is no facing page to be
+    // level with, so the old centring stays.
+    <div data-ink className="my-auto flex flex-col lg:my-0 lg:flex-1">
+      {/* The eyebrow is set on <ChapterHead>'s own label line: an invisible
+          copy of its headpiece and of the numeral's line box, so the baseline
+          lands where the verso's does at every size without a measured
+          offset. The headpiece is 38% of the VERSO's measure and its height
+          follows its width (a 16:1 svg), so it is sized from this page's
+          width plus the two insets that make the recto narrower -- measured
+          off by 3px at 1440 when it was 38% of the recto. The numeral is a
+          zero-width box: it lends the row its baseline and takes no room. */}
+      <Ornament className="invisible mb-[0.9em] hidden w-[calc((100%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))*0.38)] lg:block" />
+      <div className="flex items-baseline">
+        <span
+          aria-hidden
+          className="invisible hidden w-0 font-[family-name:var(--font-display)] text-[clamp(2.2rem,4.4vw,4.4rem)] leading-[0.8] font-light lg:inline"
+        >
+          {page.number}
+        </span>
+        {/* CONNECT's size and tracking, so the two labels read as a pair. */}
+        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] leading-none tracking-[0.34em] text-slate-400/80 uppercase lg:text-[clamp(0.56rem,0.82vw,0.68rem)] lg:tracking-[0.42em]">
+          {contact.eyebrow}
+        </p>
+      </div>
+      <h3 className="mt-[0.45em] font-[family-name:var(--font-display)] text-[clamp(1.3rem,2.4vw,2.2rem)] lg:mt-[0.35em] leading-[1.08] font-light text-balance text-white">
         {contact.headline}
       </h3>
       {/* Gone below 480px of viewport height: at 844x390 the recto has ~330px
           and the details table is what must not be clipped. */}
-      <p className="mt-[0.7em] max-w-[38ch] text-[clamp(0.7rem,1.06vw,0.96rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
+      <p className="mt-[0.7em] max-w-[38ch] text-[clamp(0.7rem,1.06vw,0.96rem)] leading-relaxed text-slate-300/80 lg:mt-[1.5em] lg:leading-[1.85] [@media(max-height:480px)]:hidden">
         {contact.directBody}
       </p>
 
-      <div className="mt-[1.2em] flex flex-wrap gap-[0.7em] [@media(max-height:480px)]:mt-[0.6em]">
+      <div className="mt-[1.2em] flex flex-wrap gap-[0.7em] lg:mt-[1.9em] [@media(max-height:480px)]:mt-[0.6em]">
         {contact.actions.map((action) => {
           const row = byEmblem(action.emblem);
           if (!row?.href) return null;
           return (
+            // A BOOKPLATE, not a button: a small label plate with its corners
+            // cut, a hairline edge, and a second rule standing inside each end
+            // -- the frame an ex-libris plate pasted inside a cover has. Set
+            // in the book's serif in small capitals rather than tracked sans,
+            // so the two actions read as printed on the page like everything
+            // else on it. "Email us" is still the one FILLED object in the
+            // book, in the paper colour; "Call us" is the same plate in line.
+            //
+            // The chamfer is a clip-path, and a clip-path clips outlines too,
+            // so it lives on two layers INSIDE the link -- an edge layer and a
+            // fill layer 1px in -- and the link keeps a focus outline that is
+            // drawn outside the plate. The fill layer has to be opaque (the
+            // edge layer is a solid shape under it), so "Call us" is filled
+            // with the page's own colour where it sits, sampled off the frame
+            // at rgb(35,56,87); a darker navy read as a hole in the paper.
+            //
+            // `small-caps`, not `all-small-caps`: the initial stays a full
+            // capital, which is how a printed label sets it, and at
+            // all-small-caps every glyph was x-height and the label read at
+            // about 9px.
             <a
               key={action.label}
               href={row.href}
-              className={`group inline-flex items-center gap-[0.7em] px-[1.3em] py-[0.8em] text-[clamp(0.56rem,0.86vw,0.78rem)] font-medium tracking-[0.24em] uppercase transition-colors duration-300 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#dce7f7] motion-reduce:transition-none [@media(max-height:480px)]:py-[0.55em] ${
-                action.solid
-                  ? "bg-[#dce7f7] text-[#0b1728] hover:bg-white"
-                  : "border border-[#dce7f7]/55 text-white hover:border-[#dce7f7] hover:bg-[#dce7f7]/10"
+              className={`group relative inline-flex items-center gap-[0.6em] px-[1.45em] py-[0.6em] font-[family-name:var(--font-display)] text-[clamp(0.88rem,1.2vw,1.12rem)] tracking-[0.08em] [font-variant-caps:small-caps] outline-none transition-[color,transform] duration-300 hover:-translate-y-px focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-[#dce7f7] motion-reduce:transition-none [@media(max-height:480px)]:py-[0.5em] ${
+                action.solid ? "text-[#0b1728]" : "text-white"
               }`}
             >
-              <Emblem name={action.emblem} className="w-[1.35em] shrink-0" />
-              {action.label}
               <span
                 aria-hidden
-                className="transition-transform duration-300 group-hover:translate-x-[0.2em] motion-reduce:transition-none"
+                className={`absolute inset-0 transition-colors duration-300 [clip-path:polygon(8px_0,calc(100%-8px)_0,100%_8px,100%_calc(100%-8px),calc(100%-8px)_100%,8px_100%,0_calc(100%-8px),0_8px)] motion-reduce:transition-none ${
+                  action.solid
+                    ? "bg-[#dce7f7]"
+                    : "bg-[#dce7f7]/55 group-hover:bg-[#dce7f7]"
+                }`}
+              />
+              <span
+                aria-hidden
+                className={`absolute inset-px transition-colors duration-300 [clip-path:polygon(7.6px_0,calc(100%-7.6px)_0,100%_7.6px,100%_calc(100%-7.6px),calc(100%-7.6px)_100%,7.6px_100%,0_calc(100%-7.6px),0_7.6px)] motion-reduce:transition-none ${
+                  action.solid
+                    ? "bg-[#dce7f7] group-hover:bg-white"
+                    : "bg-[#22385a] group-hover:bg-[#2b4469]"
+                }`}
+              />
+              {/* The inner rules at each end -- the second line of the
+                  plate's frame. */}
+              <span
+                aria-hidden
+                className={`absolute inset-y-[6px] start-[6px] w-px ${
+                  action.solid ? "bg-[#0b1728]/35" : "bg-[#dce7f7]/45"
+                }`}
+              />
+              <span
+                aria-hidden
+                className={`absolute inset-y-[6px] end-[6px] w-px ${
+                  action.solid ? "bg-[#0b1728]/35" : "bg-[#dce7f7]/45"
+                }`}
+              />
+              <Emblem
+                name={action.emblem}
+                className="relative w-[1em] shrink-0 opacity-90"
+              />
+              <span className="relative">{action.label}</span>
+              <span
+                aria-hidden
+                className="relative transition-transform duration-300 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
               >
                 &rarr;
               </span>
@@ -3308,7 +3372,7 @@ function ContactPage({ page }: { page: BookPage }) {
           and what can be done with it. Copy sits outside the link -- a button
           inside an anchor is invalid -- and on a laptop that cannot dial,
           copying the number IS the action. */}
-      <p className="mt-[2em] text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase xl:mt-[3em] [@media(max-height:480px)]:hidden">
+      <p className="mt-[2em] text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase lg:mt-[3.2em] xl:mt-[3.6em] [@media(max-height:480px)]:hidden">
         {contact.detailsTitle}
       </p>
       <dl className="mt-[0.6em] border-t border-white/18 [@media(max-height:480px)]:mt-[0.8em]">
@@ -3317,7 +3381,7 @@ function ContactPage({ page }: { page: BookPage }) {
             key={row.value}
             // The label sits ABOVE the value below xl and BESIDE it from xl. Beside
             // it at 1024 and 844x390 the address broke to "@gmail / .com".
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-[0.8em] gap-y-[0.15em] border-b border-white/10 py-[0.6em] xl:grid-cols-[minmax(0,5.2em)_minmax(0,1fr)_auto] xl:py-[0.95em] [@media(max-height:480px)]:py-[0.3em]"
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-[0.8em] gap-y-[0.15em] border-b border-white/10 py-[0.6em] lg:py-[0.8em] xl:grid-cols-[minmax(0,5.2em)_minmax(0,1fr)_auto] xl:py-[1.15em] [@media(max-height:480px)]:py-[0.3em]"
           >
             <dt className="col-span-2 text-[clamp(0.44rem,0.64vw,0.58rem)] tracking-[0.24em] text-slate-400/65 uppercase xl:col-span-1">
               {row.label}
@@ -3620,7 +3684,7 @@ function Terms({ page }: { page: BookPage }) {
           <div
             key={term.letter}
             data-ink
-            className="grid grid-cols-[1.4em_1fr] gap-x-[0.8em] border-t border-white/10 py-[0.7em]"
+            className="grid grid-cols-[1.4em_1fr] gap-x-[0.8em] border-t border-white/10 py-[0.7em] lg:py-[clamp(0.45em,calc(4.6vh-27.8px),0.85em)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.45em]"
           >
             {/* The letter is the artwork on this page -- same silver as the
                 lit page edge in the frame, so it reads as pressed into the
@@ -3632,7 +3696,7 @@ function Terms({ page }: { page: BookPage }) {
               <p className="mb-[0.4em] text-[clamp(0.85rem,1.438vw,1.254rem)] leading-none text-white">
                 {term.term}
               </p>
-              <p className="max-w-[32ch] text-[clamp(0.72rem,1.15vw,1.049rem)] leading-relaxed text-slate-300/85">
+              <p className="max-w-[32ch] text-[clamp(0.72rem,1.15vw,1.049rem)] leading-relaxed text-slate-300/85 lg:leading-[1.8] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-relaxed">
                 {term.body}
               </p>
             </dd>
@@ -3647,41 +3711,72 @@ function Terms({ page }: { page: BookPage }) {
           {page.termsFoot}
         </p>
       ) : null}
-      {page.terms ? (
+      {/* Tailpiece: the ornament that closes a chapter's text. Not when a
+          Contents follows: the Contents heading already opens a new section,
+          and at 1440x900 the ornament's ~30px was what pushed "Get in touch"
+          into the "01" folio once the rows were given more line spacing. */}
+      {page.terms && !page.contents?.length ? (
         <div data-ink className="mt-[1.2em]">
-          {/* Tailpiece: the ornament that closes a chapter's text. */}
           <Ornament className="w-[30%] text-slate-300" />
         </div>
       ) : null}
 
-      {/* The plate. A chapter's blank lower half is where a book puts a
-          picture, and the recto has the most of it. The same mark that is
-          embossed on the cover in the reveal, cut out of its photographic card
-          so the page shows through the circuit grooves -- inlaid in the paper
-          rather than pasted onto it. It sits on this page rather than the
-          verso for two reasons: the space is here, and this page is also the
-          full-bleed sheet a portrait phone gets, so the plate survives there
-          instead of disappearing with the left-hand page. */}
-      {page.terms ? (
-        <figure
+      {/* THE CONTENTS, where "The mark" used to sit. The first chapter of a
+          book is where its contents page is, and this one is the book's own
+          navigation: each row is a `data-nav-item` carrying its chapter index,
+          wired by the same handler as the head bar and the thumb index, so it
+          turns to that chapter. Numeral, title, a dotted leader, and what the
+          chapter is FOR in plain words -- the leader is how a contents page
+          joins an entry to its page, and here the "page" is the answer to
+          "why would I turn there". The logo plate went because the mark is
+          already on the cover and in the head bar, and this half of the page
+          was asked to carry something a reader can use.
+
+          On a wide, short spread -- 16:9 or wider and under 880px tall, where
+          the type is sized by the width and the page by the height -- the
+          rows here and the NIV rows above tighten: at 1366x768 "Get in touch"
+          printed through the "01" folio.
+
+          The row padding (here and on the NIV rows) is also a function of
+          HEIGHT, full at 900px tall and near the old value at 800: with the
+          extra line spacing asked for, 1280x800 put "Get in touch" 10px from
+          the folio while 1440x900 had 22px to spare. */}
+      {page.contents?.length ? (
+        <nav
           data-ink
-          className="mt-[1.4em] flex items-center gap-[1.1em]"
+          aria-label={page.contentsTitle ?? "Contents"}
+          className="mt-[1.4em]"
         >
-          <img
-            src="/logo-mark.webp"
-            alt=""
-            aria-hidden="true"
-            width={192}
-            height={192}
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            className="h-auto w-[clamp(74px,9.5vw,128px)] opacity-90 select-none"
-          />
-          <figcaption className="text-[clamp(0.5rem,0.828vw,0.707rem)] tracking-[0.32em] text-slate-400/45">
-            THE MARK
-          </figcaption>
-        </figure>
+          {page.contentsTitle ? (
+            <p className="mb-[0.6em] text-[clamp(0.5rem,0.828vw,0.707rem)] tracking-[0.32em] text-slate-400/70 uppercase">
+              {page.contentsTitle}
+            </p>
+          ) : null}
+          <ol className="flex flex-col">
+            {BOOK_PAGES.map((chapter, index) => (
+              <li key={chapter.number}>
+                <button
+                  type="button"
+                  data-nav-item
+                  data-index={index}
+                  className="group flex w-full cursor-pointer items-baseline gap-[0.6em] py-[0.28em] lg:py-[clamp(1.5px,calc(3.3vh-23.4px),0.42em)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.1em] text-start text-[clamp(0.68rem,1.02vw,0.94rem)] text-slate-200/90 outline-none transition-colors duration-300 hover:text-white focus-visible:text-white motion-reduce:transition-none"
+                >
+                  <span className="w-[1.6em] shrink-0 font-[family-name:var(--font-display)] text-[#dce7f7]/70 tabular-nums">
+                    {chapter.number}
+                  </span>
+                  <span className="shrink-0">{chapter.title}</span>
+                  <span
+                    aria-hidden
+                    className="min-w-[1em] flex-1 border-b border-dotted border-white/25 transition-colors duration-300 group-hover:border-white/55 motion-reduce:transition-none"
+                  />
+                  <span className="shrink-0 font-[family-name:var(--font-display)] text-slate-400/85 italic group-hover:text-slate-200">
+                    {page.contents?.[index]}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </nav>
       ) : null}
     </div>
   );

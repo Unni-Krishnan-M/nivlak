@@ -67,3 +67,4 @@ temp
 
 # Local Netlify folder
 .netlify
+.env*

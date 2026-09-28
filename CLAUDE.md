@@ -235,8 +235,11 @@ note was removed and stage 03 (Design) moved to the right page, desktop only.
 the other breakpoint (`at: "lg" | "below-lg"`), so the phone's 3/3 is
 untouched and no JS decides the layout. What changed with it:
 
-- **The two grids no longer share a template.** Head `auto`, rows `auto`,
-  `content-between` — the spare falls equally BETWEEN rows. Equal 1fr slots
+- **The two grids no longer share a template.** Head `auto`, rows `auto`.
+  The recto is `content-between`, so its spare falls equally BETWEEN its four
+  rows. The verso is `content-start` with a ~29px row gap: shared out there,
+  it pushed Strategize hard against the drop folio, and it was asked to sit
+  under Discover instead. Equal 1fr slots
   were tried first and printed Engineer 18px into Launch at 1280x800 while
   shorter rows beside it had room. `pb` is the larger `clamp(24px,3.4vh,40px)`
   on both pages because `auto` rows end flush with the run.
@@ -245,11 +248,19 @@ untouched and no JS decides the layout. What changed with it:
   wrapped to two lines on a 417px recto (it needs 354–408px); full width it is
   one line from 1440 up.
 - **Row spacing is one unit scaled by viewport HEIGHT** (`stageSpacing()`):
-  recto `clamp(0.35em, 14.4vh - 116px, 1em)`, verso `roomy`
+  recto `clamp(0.35em, min(7vh - 47px, 2.4vw - 18.6px), 1.15em)`, verso `roomy`
   `clamp(1.2em, 6vh - 24px, 1.9em)`. Type is sized in vw and the page in vh,
   so 16:9 laptops carry the same type in a shorter page. Measured min air
-  between recto rows: 1024x768 and 1280x720 ~11–16, 1280x800 ~7+, 1366x768 19,
-  1440x900 17, 1536x864 13, 1920x1080 plenty.
+  between recto rows: 1024x768 18, 1280x800 20, 1440x900 22, 1536x864 16.
+- **The recto has no head.** The IDEAS → STRATEGY → PRODUCT → GROWTH arc was
+  removed on request to give the four stages room; `ProcessArc`,
+  `PageTailpiece` and 03's `tailpiece` went with it. The notes below about the
+  arc and the note describe what is gone. `ArcArrow` stays for 05 and 07.
+- **03's type went up 12% on a spread** (every `vw` term and maximum in
+  `<StageRow>` and the verso's description; minimums untouched, so phones are
+  unchanged). The recto is tight after it: measured min air between its rows
+  1024x768 4px, 1280x800 10, 1366x768 26, 1440x900 9, 1536x864 6, 1920x1080
+  42, and no row reaches the folio. The next increase needs room found first.
 - **Two outcomes were trimmed to the recto's measure**, the chapter's standing
   rule: Engineer "…readable by whoever is next." and Launch "Live for real
   users, and instrumented to prove it." Both wrapped at 1440.
@@ -1121,6 +1132,15 @@ engraving on the verso. `git log` has the dialog, the route and the plate.
   row by `emblem`; "Email us" is `solid` — the ONE filled object in the book,
   asked for after two rounds of hairline panels read as not professional
   enough — and "Call us" is outlined. The email link pre-fills a subject.
+- **The two actions are set as BOOKPLATES**: a label plate with cut corners,
+  a hairline edge and a second rule standing inside each end, the label in
+  the display serif in `small-caps` (initial full height —
+  `all-small-caps` read at about 9px). The chamfer is a `clip-path` on two
+  layers INSIDE the link, an edge and a fill 1px in, because a clip-path on
+  the link would clip its focus outline too. The fill has to be opaque, so
+  "Call us" is filled with the page's own colour where it sits (sampled
+  rgb(35,56,87) → `#22385a`); a darker navy read as a hole. Sized to share
+  one row on the recto from 1280 up (they stack at 1024, as before).
 - **The details table** (`<dl>`) is label / value / actions: the value is the
   link, Copy is a separate button outside it (a button inside an anchor is
   invalid), and a verb button (Write, Call, Open, Map) repeats the link for
@@ -1148,11 +1168,46 @@ Asked for as four separate things and verified by two subagents across
   printed them in the upper 55% and left ~190px of hole above the plate.
   `<Terms>` is wrapped in a centred flex column now and every `py`/`mt` in it
   came down; no line spacing changed.
-- **01's lead is "Nivlak is a product studio."** It said "freelance studio",
-  and that stopped being true when 06 became a team of four — a visitor reads
-  "freelance" as one person and the chapter two spreads later shows otherwise.
-  The footnote moved with it: it explained the word "freelance" and now
-  explains the studio ("A studio, not a pipeline…").
+- **01 is written for a client reading it once**, in plain words: the
+  headline "We Turn Ideas into Software.", a lead ("Nivlak is a small
+  software team from India.") that says who we are and what we make, a second
+  paragraph (`intro.more`) that says what working with us looks like, and a
+  signature ("— The Nivlak team", `intro.signature`) set like a signed
+  foreword. The subtitle went: it repeated the paragraph under it, and
+  dropping it is what kept the page its old length. The footnote hangs off
+  the name and cross-refers to NIV on the facing page. Fig. 1's steps are
+  Talk / Plan / Build / Launch with two-word notes.
+- **01's recto ends in a CONTENTS page**, where "The mark" logo plate was:
+  numeral, title, dotted leader, and a plain gloss per chapter
+  (`page.contents`). Each row is a `data-nav-item` and turns to its chapter
+  (checked: "Team" → 06). The mark is on the cover and the head bar already.
+- **01's verso copy runs the full measure from `lg`**, where it was capped at
+  44ch: the head and its rule span 556px at 1440 and the copy stopped at ~430,
+  leaving an empty strip down the right of the page. The page's slack is split
+  between Fig. 1's `mt-auto` and the footnote's, which at 1440x900 lands the
+  figure level with the recto's CONTENTS title and the footnote's last line on
+  "Connect". An "At a glance" facts ledger filled the gap above Fig. 1 for one
+  revision and was removed on request.
+- **Wide, short spreads are the binding case for 01's recto**:
+  `[@media(min-aspect-ratio:17/10)_and_(max-height:880px)]` (1366x768,
+  1536x864, 1280x720) tightens the NIV and Contents rows. The type there is
+  sized by the WIDTH and the page by the HEIGHT; at 1366x768 "Get in touch"
+  printed through the "01" folio. 1920x1080 is the same shape but its type
+  has hit its clamp maximum.
+- **01 is leaded more generously from `lg`**: both verso paragraphs at 1.95
+  with a wider gap between them, the NIV bodies at 1.8, and the NIV and
+  Contents rows given more padding. That padding is a function of HEIGHT
+  (`clamp(…, 4.6vh - 27.8px, 0.85em)` and `clamp(…, 3.3vh - 23.4px, 0.42em)`),
+  because at a flat value 1280x800 put "Get in touch" 10px from the folio.
+  The recto's tailpiece ornament is dropped when a Contents follows it; that
+  ~30px was the rest of the room at 1440x900.
+- **01's drop cap spans exactly two lines** — its top on the top of the
+  small-caps "IVLAK", its foot on line 2's baseline. On a spread it is a float
+  driven by `--dc-size`/`--dc-drop` (3.7em / 0.17em; 3.2em / 0.2em on the
+  wide-short spread, whose leading is 1.625), measured: 279..321 against
+  280..321 at 1440x900. `initial-letter` is used only below `lg`: Chrome
+  ignored its sink at 1.95 leading. `font-variant-caps: normal` on the letter
+  is required — it inherited the lead-in's small caps and printed at 25px.
 - **01's verso splits its slack between TWO auto margins.** The footnote is
   hung off the foot; with one auto margin every spare pixel collected between
   the Fig. 1 caption and that footnote — 110px at 1440x900, 220 at 1920x1080.
@@ -1181,9 +1236,17 @@ Asked for as four separate things and verified by two subagents across
 - **04's services run puts the separator AFTER its word.** At 1024 it wrapped
   to "· Deployment", starting a line with a middot. Same fix as 07's contact
   rows.
-- **07's recto is centred** with `my-auto`: `PageBody` starts its column at the
-  top because the chapter has a facing verso, which is right for a page that
-  fills it and wrong for one whose table ends two thirds down.
+- **07's recto starts level with the verso's chapter label on a spread.**
+  "GET IN TOUCH" shares a baseline with "07  CONNECT": an invisible copy of
+  `<ChapterHead>`'s headpiece (sized from the VERSO's measure — the recto's
+  own width plus `--page-text-inset-end` and `--page-index-inset` — because
+  the 16:1 ornament's height follows its width) and a zero-width numeral that
+  lends the row its baseline. Measured 125–136 against 126–137 at 1440x900,
+  and the headlines land 4px apart. The sections below are spaced out
+  (`lg:` headline, body leading 1.85, button and table margins, row `py`) so
+  the table's last rule ends at ~637 against the verso's last line at 649.
+  It was centred with `my-auto`, which put the eyebrow 100px under the label
+  it answers; below `lg`, with no facing page, it still is.
 
 ### The cover carries the mockup's hero
 
@@ -1259,6 +1322,48 @@ the first screen said `NIVLAK TECHNOLOGIES` and nothing else.
     foot padding instead of 14.
 - **The cue goes below 620px of viewport height**, where it would otherwise
   sit on the buttons; 844x390 and 320x568 are the two that hit it.
+- **The cover's buttons were dead until `[data-stage]` stopped taking clicks.**
+  `<BookSheets>` paints a full-screen stage OVER the hero, and while the book
+  is closed every sheet in it is hidden — so the empty stage swallowed every
+  click on "Open the book" and "Begin a project" (`elementsFromPoint` put it
+  first). The stage is `pointer-events-none` now and the sheets and the
+  `[data-left-page]` layer are `-auto`; hidden sheets take no events, so the
+  cover gets its clicks and every control on a page still works (checked on
+  04's index and 07's contact links).
+- **The hero is styled as the site's front door, not as a page of the book.**
+  Pills instead of hairline boxes: a solid primary in the paper colour
+  (`#dce7f7`, navy type, a hover sheen, the arrow in its own disc) and a
+  frosted-glass secondary. The second headline line is the display italic.
+  An eyebrow says "Software studio" and a landscape-only row lists 02's five
+  categories. The lines rise in on load (`animate-hero-rise` in
+  `packages/ui/src/styles/globals.css`), `motion-safe:`.
+- **The scroll cue is a bookmark ribbon** hanging from under the head rule,
+  SCROLL TO BEGIN printed down it, a down-arrow over a swallowtail end. It
+  drops out from under the header on load (`animate-ribbon-drop`, clipped so
+  it appears from behind the rule) and then swings from its top
+  (`animate-ribbon-sway`). It replaced an open-book glyph at the foot of the
+  screen, which replaced a hairline and tracked caps in the hero column.
+  - **It hangs in the margin right of the book**, not over the headline:
+    above the title it needs ~190px between the rule and the eyebrow and a
+    16:9 laptop has 170–190. In portrait it is the right margin beside the
+    title, clear of the book's top corner.
+  - **It is `cueRef`, outside `kickerRef`,** because it is placed against the
+    screen and GSAP's transform on the hero block would make that block the
+    containing block for anything absolute inside it. One tween fades both.
+  - **Neither animation is on the ref.** A CSS animation with
+    `fill-mode: both` keeps overriding inline styles after it ends, so on the
+    ref it pinned opacity to 1 under GSAP's fade. Drop and sway are also on
+    two separate boxes, because both animate `transform`.
+  - **Shown at every height.** It was hidden below 620px, a rule carried over
+    from the old cue (which sat on the buttons), and that hid it on ordinary
+    laptops: browser chrome leaves a 1366x768 screen a window under 620.
+    Checked clear of the book at 1280x590 and 844x390.
+  - **The blue line had been printing grey.** The block's `textShadow` is
+    inherited, and on `bg-clip-text` type Chrome paints the shadow over the
+    gradient. That span sets `textShadow: none` and takes a `drop-shadow`
+    filter instead; the buttons set `[text-shadow:none]` for the same reason.
+  - **In portrait both pills are 42px tall and share one row at 393px**; at
+    320x568 they wrap to two, which is the `flex-wrap` backstop working.
 
 **The head bar is set BRIGHT.** At `text-slate-400/50` the seven numerals were
 the dimmest thing on the first screen and read as disabled, which is the wrong

@@ -102,6 +102,10 @@ export function Book() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const kickerRef = useRef<HTMLDivElement>(null);
+  // The scroll cue, which sits at the foot of the SCREEN and so cannot live
+  // inside the hero block (see where it is rendered). It fades in the same
+  // tween as `kickerRef`, as a second target, not in a second tween.
+  const cueRef = useRef<HTMLDivElement>(null);
 
   const imagesRef = useRef<(HTMLImageElement | null)[]>([]);
   // Highest frame index that is decoded and safe to draw. The playhead is
@@ -646,7 +650,7 @@ export function Book() {
         // Park the book open and let <BookPageColumn> below carry the copy.
         scroll.u = 1;
         draw();
-        gsap.set(kickerRef.current, { autoAlpha: 1, y: 0 });
+        gsap.set([kickerRef.current, cueRef.current], { autoAlpha: 1, y: 0 });
         // Reduced motion has no spread and no fore-edge -- it is an ordinary
         // scrolling column -- so the head bar stays and the thumb index, which
         // only makes sense on an open book, is not shown at all.
@@ -722,7 +726,7 @@ export function Book() {
       // starts opening so the reveal gets a clean, text-free stage.
       if (kickerRef.current) {
         tl.to(
-          kickerRef.current,
+          [kickerRef.current, cueRef.current].filter(Boolean),
           { autoAlpha: 0, y: -16, duration: 0.1 * OPEN },
           0.05 * OPEN,
         );
@@ -1116,7 +1120,7 @@ export function Book() {
             wrapper is `pointer-events-none` and the two buttons switch it back
             on, so the cover's copy never eats a click meant for the page and
             the buttons stop taking them the moment GSAP hides the block.  */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-stretch portrait:pt-[9vh] portrait:pb-[4vh] landscape:ps-[7vw] landscape:pe-[4vw]">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-stretch portrait:pt-[9vh] portrait:pb-[11vh] portrait:[@media(max-height:700px)]:pb-[5vh] landscape:ps-[7vw] landscape:pe-[4vw]">
           <div
             ref={kickerRef}
             // The hero sits DIRECTLY on the photograph in portrait, with no
@@ -1151,8 +1155,23 @@ export function Book() {
             className="max-w-[min(92vw,41rem)] portrait:flex portrait:h-full portrait:max-w-none portrait:flex-col portrait:items-center portrait:justify-between portrait:text-center"
           >
             <div className="portrait:w-full">
-              <p className="text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.42em] text-slate-300/85 uppercase">
+              {/* The eyebrow, led in by a hairline in the headline's blue. The
+                  second half says what the company IS, which the cover did not
+                  say anywhere -- in 01's words ("Nivlak is a small software
+                  team from India."). Dropped in portrait, where the title block
+                  sits over the plate and has no width for it. */}
+              <p className="flex items-center gap-[0.9em] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.42em] text-slate-300/85 uppercase portrait:justify-center motion-safe:animate-hero-rise">
+                <span
+                  aria-hidden
+                  className="block h-px w-[2.6em] bg-gradient-to-r from-transparent to-[#9dc0ee] portrait:hidden"
+                />
                 Nivlak Technologies
+                <span aria-hidden className="text-[#9dc0ee]/70 portrait:hidden">
+                  &middot;
+                </span>
+                <span className="text-slate-400/80 portrait:hidden">
+                  Software studio
+                </span>
               </p>
             {/* Two lines, and the second one is the mockup's blue. The break is
                 hard rather than left to the measure: "THE STORY / OF WHAT WE
@@ -1163,9 +1182,22 @@ export function Book() {
                 nothing more, measured at 365px at 393x851, where the block ran
                 414 at the landscape sizes. The alternative was cropping the
                 plate, which is the one thing the first screen is for. */}
-            <h1 className="mt-[2.2vh] font-[family-name:var(--font-display)] text-[clamp(2.1rem,5.2vw,4.6rem)] leading-[1.02] font-light text-white portrait:mt-[1.4vh] portrait:text-[clamp(1.7rem,8vw,2.4rem)]">
+            <h1 className="mt-[2.2vh] font-[family-name:var(--font-display)] text-[clamp(2.1rem,5.2vw,4.6rem)] leading-[1.02] font-light text-white portrait:mt-[1.4vh] portrait:text-[clamp(1.7rem,8vw,2.4rem)] motion-safe:animate-hero-rise motion-safe:[animation-delay:90ms]">
               The Story
-              <span className="block bg-gradient-to-r from-[#9dc0ee] via-[#bcd4f2] to-[#dce7f7] bg-clip-text text-transparent">
+              {/* The blue line, in the display ITALIC so the two lines read as
+                  a title and its turn rather than one sentence in two colours.
+
+                  `textShadow: none` is a fix, not taste. The block's shadow is
+                  inherited, and on text whose colour is transparent (the
+                  gradient is a background clipped to the glyphs) Chrome paints
+                  the shadow OVER that background -- the blue came out a murky
+                  slate grey. The depth goes back as a `drop-shadow` filter,
+                  which is drawn behind the painted glyphs. A filter is safe
+                  here: this is the cover, not a sheet. */}
+              <span
+                className="block bg-gradient-to-r from-[#9dc0ee] via-[#bcd4f2] to-[#e6eefa] bg-clip-text pe-[0.08em] text-transparent italic [filter:drop-shadow(0_2px_14px_rgba(3,9,18,0.7))]"
+                style={{ textShadow: "none" }}
+              >
                 of What We Build.
               </span>
             </h1>
@@ -1173,7 +1205,7 @@ export function Book() {
 
             {/* ...and everything a reader can ACT on goes under the book. */}
             <div className="portrait:w-full">
-            <p className="mt-[2.4vh] text-[clamp(0.78rem,1.15vw,1.05rem)] tracking-[0.12em] text-slate-300/85 portrait:mt-[1.6vh]">
+            <p className="mt-[2.4vh] text-[clamp(0.78rem,1.15vw,1.05rem)] tracking-[0.12em] text-slate-300/85 portrait:mt-[1.6vh] motion-safe:animate-hero-rise motion-safe:[animation-delay:180ms]">
               Technology built around your business.
             </p>
 
@@ -1189,55 +1221,163 @@ export function Book() {
                 393x851 and 273 of 275 at 320x568, which is the narrowest
                 phone this book is checked at. `flex-wrap` is still the
                 backstop under that. */}
-            <div className="mt-[3.4vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)] portrait:mt-[2.2vh] portrait:justify-center portrait:gap-[0.5rem]">
+            {/* THE HERO'S OWN BUTTONS, and deliberately not the book's.
+                Everywhere inside the book an action is a hairline box in
+                tracked caps, because it is printed on a page. The cover is not
+                a page -- it is the one screen that has to be SELLING -- so it
+                sets its actions the way the site's front door should: a solid
+                primary and a glass secondary, both pills.
+
+                - The primary is the book's paper colour (#dce7f7) with navy
+                  type, the brightest object on the screen after the embossed
+                  logo. A sheen crosses it on hover, and the arrow sits in its
+                  own disc and moves.
+                - The secondary is frosted glass over the photograph, so it
+                  reads as an option rather than as a second primary.
+                - `[text-shadow:none]` on both: the block's shadow is for type
+                  on a photograph, and on the primary it put a dark smear under
+                  navy letters on a light fill.
+                - The focus ring is drawn outside the pill, in the headline's
+                  blue, because both fills are close to what surrounds them.
+
+                ONE ROW in portrait, and that constraint is unchanged: at
+                0.5rem, 0.18em of tracking and 0.8rem of side padding the pair
+                fits the 338px a 393px phone has, and `flex-wrap` is the
+                backstop for narrower ones. */}
+            <div className="mt-[3.4vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)] portrait:mt-[2.2vh] portrait:justify-center portrait:gap-[0.5rem] motion-safe:animate-hero-rise motion-safe:[animation-delay:270ms]">
               <button
                 type="button"
                 data-nav-item
                 data-index="0"
-                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/35 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] portrait:px-[0.7rem] portrait:py-[0.55rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] text-white uppercase transition-colors duration-300 outline-none hover:border-white hover:bg-white/10 focus-visible:border-white focus-visible:bg-white/10 motion-reduce:transition-none"
+                className="group relative pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] overflow-hidden rounded-full bg-[#dce7f7] py-[clamp(0.35rem,0.8vh,0.55rem)] ps-[clamp(1.1rem,1.9vw,1.6rem)] pe-[clamp(0.35rem,0.5vw,0.5rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] font-medium tracking-[0.26em] text-[#0b1a2e] uppercase shadow-[0_12px_40px_-14px_rgba(157,192,238,0.75)] outline-none transition-[background-color,box-shadow,transform] duration-300 [text-shadow:none] hover:-translate-y-px hover:bg-white hover:shadow-[0_16px_50px_-12px_rgba(157,192,238,0.95)] focus-visible:ring-2 focus-visible:ring-[#9dc0ee] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050b14] active:translate-y-0 portrait:py-[0.51rem] portrait:ps-[0.8rem] portrait:pe-[0.3rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] motion-reduce:transition-none"
               >
-                Open the book
                 <span
                   aria-hidden
-                  className="transition-transform duration-300 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
+                  className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/80 to-transparent opacity-0 transition-[left,opacity] duration-700 ease-out group-hover:left-[120%] group-hover:opacity-100 motion-reduce:hidden"
+                />
+                <span className="relative">Open the book</span>
+                <span
+                  aria-hidden
+                  className="relative grid size-[2.7em] place-items-center rounded-full bg-[#0b1a2e] text-[#dce7f7] transition-transform duration-300 group-hover:translate-x-[0.2em] motion-reduce:transition-none portrait:size-[2.4em]"
                 >
-                  &rarr;
+                  {/* Drawn, not typed: at this size the font's arrow was a
+                      4px dash lost in the disc. */}
+                  <svg
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="size-[48%]"
+                  >
+                    <path d="M3 8h10M9 4l4 4-4 4" />
+                  </svg>
                 </span>
               </button>
               <button
                 type="button"
                 data-nav-item
                 data-index={BOOK_PAGES.length - 1}
-                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] border border-white/20 px-[clamp(1rem,1.9vw,1.7rem)] py-[clamp(0.6rem,1.3vh,0.95rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.3em] portrait:px-[0.7rem] portrait:py-[0.55rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] text-slate-200 uppercase transition-colors duration-300 outline-none hover:border-white/60 hover:text-white focus-visible:border-white/60 focus-visible:text-white motion-reduce:transition-none"
+                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.8em] rounded-full border border-white/25 bg-white/[0.06] px-[clamp(1.1rem,1.9vw,1.6rem)] py-[clamp(0.7rem,1.45vh,1rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.26em] text-white uppercase backdrop-blur-md outline-none transition-[background-color,border-color] duration-300 [text-shadow:none] hover:border-white/55 hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-[#9dc0ee] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050b14] portrait:px-[0.8rem] portrait:py-[0.7rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] motion-reduce:transition-none"
               >
                 Begin a project
                 <span
                   aria-hidden
-                  className="transition-transform duration-300 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
+                  className="text-[#9dc0ee] transition-transform duration-300 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
                 >
                   &rarr;
                 </span>
               </button>
             </div>
 
-            {/* The cue. This page is 8.8 viewports of scroll behind a closed
-                book, and a visitor who does not scroll sees a photograph and
-                leaves. The rule above it is the mockup's. Hidden where the
-                viewport is too short for it to sit clear of the buttons. */}
-            <div className="mt-[5vh] flex flex-col gap-[1.2vh] portrait:mt-[2.6vh] portrait:items-center [@media(max-height:620px)]:hidden">
-              {/* The rule is 5vh of the height the title block has not got in
-                  portrait; the words alone still say scroll. */}
-              <span
-                aria-hidden
-                className="block h-[5vh] w-px bg-white/25 portrait:hidden"
-              />
-              <span className="flex items-center gap-[0.8em] text-[clamp(0.5rem,0.7vw,0.62rem)] tracking-[0.34em] text-slate-300/75 uppercase">
-                Scroll to begin
-                <span aria-hidden className="text-[0.9rem] leading-none">
-                  &darr;
-                </span>
-              </span>
+            {/* What the studio makes, in 02's own five categories, so the
+                cover says what is behind it before a reader commits to eight
+                viewports of scroll. Landscape only: in portrait the block
+                under the plate has no room left under the buttons. */}
+            <ul className="mt-[3vh] flex flex-wrap items-center gap-x-[1.1em] gap-y-[0.4em] text-[clamp(0.52rem,0.72vw,0.66rem)] tracking-[0.24em] text-slate-400/85 uppercase portrait:hidden motion-safe:animate-hero-rise motion-safe:[animation-delay:360ms]">
+              {["Web", "Mobile", "SaaS", "AI automation", "Branding"].map(
+                (label, k) => (
+                  <li key={label} className="flex items-center gap-[1.1em]">
+                    {k > 0 ? (
+                      <span
+                        aria-hidden
+                        className="size-[3px] rounded-full bg-[#9dc0ee]/60"
+                      />
+                    ) : null}
+                    {label}
+                  </li>
+                ),
+              )}
+            </ul>
+
             </div>
+          </div>
+        </div>
+
+        {/* THE SCROLL CUE IS A BOOKMARK RIBBON, hanging from under the head
+            bar the way a ribbon hangs out of the head of a book, with SCROLL
+            TO BEGIN printed down its length. It replaced a small open-book
+            glyph at the foot of the screen, and before that a hairline and
+            tracked caps in the hero's column.
+
+            WHERE: the margin right of the photographed book, not over the
+            headline. Above the title it needs ~190px between the head rule
+            and the eyebrow, and a 16:9 laptop has 170-190 there; beside the
+            book the margin is empty at every size -- at 1440x900 the plinth
+            ends at x=1305 and the ribbon starts at 1354. In portrait it is
+            the right margin beside the title, clear of the book's top corner.
+
+            HOW IT MOVES: it drops out from under the header on load
+            (`ribbon-drop`, clipped by the box so it appears from behind the
+            rule rather than sliding in over it) and then swings from its top
+            (`ribbon-sway`). Two animations, two boxes, because both animate
+            `transform`. Neither is on `cueRef`: a CSS animation with fill
+            `both` keeps overriding inline styles, so on the ref it would pin
+            the transform and opacity GSAP's fade writes.
+
+            It is OUTSIDE `kickerRef` because it is placed against the screen,
+            and GSAP's transform on that block would make it the containing
+            block for anything absolute inside. One tween fades both refs.
+            `top` tracks the head rule: the bar is `pt-[3.4vh]` plus a row,
+            so `3.4vh + 1.9rem` lands the ribbon's top a few px above the rule,
+            which draws across it -- tucked under, not stuck on. Shown at every
+            height: the old cue hid below 620px because it sat on the buttons,
+            and carrying that rule over hid the ribbon on ordinary laptops,
+            whose browser chrome leaves a 1366x768 screen a window under 620.
+            aria-hidden: it describes a gesture, and a screen reader has the
+            page's headings. */}
+        <div
+          ref={cueRef}
+          data-scroll-cue
+          aria-hidden
+          className="pointer-events-none absolute top-[calc(3.4vh+1.9rem)] right-[6vw] overflow-hidden px-[10px] pb-[10px] portrait:right-[5vw]"
+        >
+          <div className="motion-safe:animate-ribbon-drop motion-safe:[animation-delay:350ms]">
+            <div className="origin-top [filter:drop-shadow(0_6px_8px_rgba(3,9,18,0.65))] motion-safe:animate-ribbon-sway motion-safe:[animation-delay:1.45s]">
+              <div
+                // Satin: darker at both edges, a highlight just off centre.
+                // The swallowtail is the clip-path; the stitching is the
+                // dashed inner border. The shadow is a filter on the wrapper
+                // below, because a box-shadow would be cut by the clip-path.
+                className="relative flex w-[clamp(26px,2.1vw,34px)] flex-col items-center gap-[0.9em] bg-[linear-gradient(90deg,#6f93c4_0%,#b9cfee_30%,#e6eefa_48%,#c4d6f0_62%,#7fa3d4_100%)] pt-[1.6em] pb-[2.1em] text-[clamp(0.5rem,0.62vw,0.6rem)] text-[#0b1a2e] [clip-path:polygon(0_0,100%_0,100%_100%,50%_calc(100%-11px),0_100%)] portrait:w-[24px] portrait:text-[0.42rem]"
+              >
+                <span className="pointer-events-none absolute inset-y-0 inset-x-[3px] border-x border-dashed border-[#0b1a2e]/20" />
+                <span className="relative font-medium tracking-[0.34em] uppercase [writing-mode:vertical-rl]">
+                  Scroll to begin
+                </span>
+                <svg
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="relative size-[1.3em]"
+                >
+                  <path d="M6 2v8M2.5 6.5 6 10l3.5-3.5" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>

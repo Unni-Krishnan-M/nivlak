@@ -128,3 +128,43 @@
     @apply font-sans;
   }
 }
+
+/* The landing page's cover. `hero-rise` staggers its lines in on first paint;
+   `ribbon-drop` lowers the bookmark ribbon (the scroll cue) out from under
+   the header and `ribbon-sway` then swings it from its top. All opted into
+   with `motion-safe:`, so reduced motion gets a ribbon hanging still. */
+@theme {
+  --animate-hero-rise: hero-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-ribbon-drop: ribbon-drop 1.1s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+  --animate-ribbon-sway: ribbon-sway 5s ease-in-out infinite;
+
+  @keyframes hero-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ribbon-drop {
+    from {
+      transform: translateY(-105%);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @keyframes ribbon-sway {
+    0%,
+    100% {
+      transform: rotate(1.4deg);
+    }
+    50% {
+      transform: rotate(-1.4deg);
+    }
+  }
+}

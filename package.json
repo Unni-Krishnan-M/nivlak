@@ -12,6 +12,7 @@
     "check-types": "turbo run check-types",
     "dev:web": "turbo run dev -F web --",
     "dev:server": "turbo run dev -F server --",
+    "mobileview": "bash tools/mobileview.sh",
     "db:push": "turbo run db:push -F @nivlak/db --",
     "db:studio": "turbo run db:studio -F @nivlak/db --",
     "db:generate": "turbo run db:generate -F @nivlak/db --",

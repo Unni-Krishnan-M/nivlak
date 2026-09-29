@@ -1595,10 +1595,10 @@ export function Book() {
                     className={`flex items-center ${k >= 5 ? "motion-reduce:hidden" : ""}`}
                   >
                     <span className="px-[1.6em]">{label}</span>
-                    <span
-                      aria-hidden
-                      className="size-[4px] rotate-45 bg-[#9dc0ee]/70"
-                    />
+                    {/* A short DASH between words (asked for "-", after a
+                        diamond and then a tiny ribbon were both turned down):
+                        a hairline, the same rule the book uses everywhere. */}
+                    <span aria-hidden className="h-px w-[1.1em] bg-[#9dc0ee]/60" />
                   </li>
                 ))}
               </ul>

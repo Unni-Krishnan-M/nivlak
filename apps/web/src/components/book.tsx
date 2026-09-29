@@ -1221,8 +1221,15 @@ export function Book() {
           instead. */}
       <section
         ref={sectionRef}
-        className="relative h-svh w-full overflow-hidden"
-        /* Colour comes from the frames themselves rather than a matching
+        className="relative h-svh w-full overflow-hidden [--page-vw:min(1vw,1.4vh)]"
+        /* --page-vw is 1vw on tall windows and follows the HEIGHT on anything
+           wider than 1.4:1. 03 and 05 fill their pages to the pixel and size
+           their type with it: in plain vw, 03's last stage ran 100px off the
+           recto at 1440x900 and 1280x800, and off the foot at 1280x720 and
+           1366x768 too. Measured with it, the last line clears the folio by
+           8-19px from 1024x768 to 1920x1080.
+
+           Colour comesColour comes from the frames themselves rather than a matching
            literal, so a rebuilt set cannot leave the section a different colour
            to the canvas sitting on it. */
         style={{ backgroundColor: LETTERBOX }}
@@ -1513,6 +1520,42 @@ export function Book() {
         </div>
 
         {reduced ? null : <BookSheets single={single} />}
+
+        {/* TURN THE PHONE UPRIGHT. A touch phone held sideways (under 500px
+            of height) gets a spread whose pages are ~410x390: measured at
+            844x390, 14 of the 18 page faces overflowed their own page or
+            their folio -- 01's verso by 162px past the foot, 03's by 96. The
+            type there is already at its floor, so nothing can be made to
+            fit; the upright phone layout passes every page at 360-412px
+            wide. `hover: none` keeps it off a short desktop window, which can
+            still be resized rather than rotated. Fixed and above everything,
+            so it covers the book rather than laying out beside it. */}
+        <div
+          role="note"
+          className="fixed inset-0 z-[300] hidden flex-col items-center justify-center gap-4 bg-[#050b14] px-8 text-center [@media(orientation:landscape)_and_(max-height:500px)_and_(hover:none)]:flex"
+        >
+          <svg
+            viewBox="0 0 48 48"
+            aria-hidden
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="size-12 text-[#dce7f7]/80"
+          >
+            <rect x="15" y="6" width="18" height="32" rx="3" />
+            <path d="M22 33h4" />
+            <path d="M6 30a18 18 0 0 0 10 12" />
+            <path d="M12 42l4 0 0-4" />
+          </svg>
+          <p className="font-[family-name:var(--font-display)] text-xl text-white">
+            Turn your phone upright to read the book.
+          </p>
+          <p className="text-[0.7rem] tracking-[0.3em] text-slate-300/80 uppercase">
+            Nivlak Technologies
+          </p>
+        </div>
 
         <BookNav />
         <BookRunningHead />

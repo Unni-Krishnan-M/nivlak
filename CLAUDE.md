@@ -971,6 +971,37 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   first page ends 11px into its drop folio and 04's colophon 7px into it. So
   does 844x390 on 04 and 05, which is the collapsed landscape layout.
 
+### Wide laptops, landscape phones and label brightness
+
+Found by a full-device audit (every at-rest face, text vs folio / home mark /
+page edges) across 13 viewports.
+
+- **`--page-vw` is `min(1vw, 1.4vh)`, set on `<Book>`'s section, and 03 and
+  05 size their type with it** (`calc(X*var(--page-vw))` in `<StageRow>`,
+  `<PerspectiveIndex>` and 05's opening sentence). In plain vw 03's last stage
+  ("Growth Roadmap") ran 100px off the recto at 1440x900 and 1280x800 — live
+  in production — and 05's last summary wrapped into its folio at 1280x720
+  and 1366x768. 1.6vh was tried first and left 16:10 overflowing. Measured
+  after, 03's last line clears the folio by 8–19px at 1024x768, 1280x720,
+  1280x800, 1366x768, 1440x900, 1536x864, 1680x1050 and 1920x1080. Tall
+  windows (1024x768 and narrower) are unchanged.
+  05's RECTO takes it too (`<IdeaFlow>`, `<Benefits>`, `<PerspectiveCta>`,
+  `<RationalePage>`): at 1440x900 "Have a problem worth solving?" sat on the
+  folio and both buttons printed below the paper. At 1920x1080 the recto's
+  descriptions now set on one line each, so the call to action's `mt-auto`
+  leaves ~250px of air above it — the page's own device, not a hole in it.
+- **A landscape phone gets a "Turn your phone upright" notice**
+  (`[@media(orientation:landscape)_and_(max-height:500px)_and_(hover:none)]`).
+  At 844x390 the spread pages are ~410x390 with every clamp already on its
+  floor, and 14 faces overflowed — 01's verso by 162px, 03's by 96. No layout
+  fits two pages into that. `hover:none` keeps it off a short desktop window.
+- **Small tracked labels are brighter**: `text-slate-400/40–60` became
+  `text-slate-300/80` and `/65–85` became `text-slate-200/90` across
+  `book-sheets.tsx` (asked for: "Founder & CEO … clear visible"). Only the
+  `/30`–`/35` separators were left dim.
+- **01's phone footnote is `portrait:mb-[10%]`**: at 6% its last line ended
+  2px above "I — COMPANY" at 393x851, because the folio drops to 3.5% there.
+
 ### The phone reads at 19px, and the holes paid for it
 
 The standing note below — that the clamp MINIMUMS are what a phone gets and

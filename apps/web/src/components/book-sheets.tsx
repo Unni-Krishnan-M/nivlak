@@ -476,7 +476,7 @@ function SpreadSheets() {
                   aria-hidden
                   className="mb-[0.9em] block h-px w-[26%] bg-white/15"
                 />
-                <p className="text-[clamp(0.62rem,0.966vw,0.866rem)] leading-relaxed text-slate-400/65">
+                <p className="text-[clamp(0.62rem,0.966vw,0.866rem)] leading-relaxed text-slate-200/90">
                   <sup className="me-[0.4em] align-super text-[0.7em] tabular-nums">
                     1
                   </sup>
@@ -492,7 +492,7 @@ function SpreadSheets() {
               the same value twice. */}
           <p
             data-ink
-            className="absolute bottom-[7%] portrait:bottom-[3.5%] start-[calc(13%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.92vw,0.798rem)] tracking-[0.35em] text-slate-400/40"
+            className="absolute bottom-[7%] portrait:bottom-[3.5%] start-[calc(13%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.92vw,0.798rem)] tracking-[0.35em] text-slate-300/80"
           >
             <HomeMark side="left" />
             NIVLAK
@@ -815,13 +815,13 @@ function Figure({
             {/* On a phone each column is ~62px and the tracked notes ran into
                 each other ("free call clear price every week..."): they wrap
                 inside their own column there, with less tracking. */}
-            <p className="mt-[0.45em] text-[clamp(0.52rem,0.828vw,0.73rem)] leading-snug tracking-[0.16em] text-balance text-slate-400/55 portrait:px-[0.2em] portrait:tracking-[0.06em]">
+            <p className="mt-[0.45em] text-[clamp(0.52rem,0.828vw,0.73rem)] leading-snug tracking-[0.16em] text-balance text-slate-300/80 portrait:px-[0.2em] portrait:tracking-[0.06em]">
               {step.note}
             </p>
           </div>
         ))}
       </div>
-      <figcaption className="mt-[1.3em] text-[clamp(0.52rem,0.851vw,0.73rem)] tracking-[0.26em] text-slate-400/45">
+      <figcaption className="mt-[1.3em] text-[clamp(0.52rem,0.851vw,0.73rem)] tracking-[0.26em] text-slate-300/80">
         {figure.caption.toUpperCase()}
       </figcaption>
     </figure>
@@ -1104,7 +1104,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             {intro.lead}
           </span>
           {note ? (
-            <sup className="ms-[0.15em] text-[0.62em] align-super text-slate-400/70 tabular-nums">
+            <sup className="ms-[0.15em] text-[0.62em] align-super text-slate-200/90 tabular-nums">
               1
             </sup>
           ) : null}{" "}
@@ -1166,11 +1166,11 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             at 390x844 the whole spread is on one sheet and this is 90px of it,
             and the headline above says it in six words. */}
         {subtitle ? (
-          <p className="mt-[1em] hidden max-w-[52ch] text-[clamp(0.7rem,1.14vw,1.04rem)] leading-[1.75] text-slate-300/80 portrait:block lg:block [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-normal">
+          <p className="mt-[1em] hidden max-w-[52ch] text-[length:clamp(0.7rem,calc(1.14*var(--page-vw)),1.04rem)] leading-[1.75] text-slate-300/80 portrait:block lg:block [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-normal">
             {subtitle}
           </p>
         ) : null}
-        <div className="mt-[1em] flex min-h-0 items-start gap-[clamp(0.7em,1.6vw,1.5em)] portrait:flex-1 portrait:items-stretch portrait:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:mt-[0.5em]">
+        <div className="mt-[1em] flex min-h-0 items-start gap-[clamp(0.7em,calc(1.6*var(--page-vw)),1.5em)] portrait:flex-1 portrait:items-stretch portrait:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:mt-[0.5em]">
           <PerspectiveIndex services={page.services ?? []} />
           {(page as BookPage).columnPlate ? (
             <PerspectiveColumn plate={(page as BookPage).columnPlate!} />
@@ -1209,7 +1209,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             aria-hidden
             className="mb-[0.9em] block h-px w-[26%] bg-white/15"
           />
-          <p className="text-[clamp(0.55rem,0.862vw,0.775rem)] leading-relaxed text-slate-400/60">
+          <p className="text-[clamp(0.55rem,0.862vw,0.775rem)] leading-relaxed text-slate-300/80">
             {(page as BookPage).colophon}
           </p>
         </div>
@@ -1275,7 +1275,7 @@ function LeadService({ service }: { service: PageService }) {
           />
         ) : null}
         <div className="pt-[0.2em]">
-          <p className="mb-[0.55em] text-[clamp(0.5rem,0.805vw,0.707rem)] tracking-[0.34em] text-slate-400/55">
+          <p className="mb-[0.55em] text-[clamp(0.5rem,0.805vw,0.707rem)] tracking-[0.34em] text-slate-300/80">
             PLATE {roman(1)}
           </p>
           <p className="font-[family-name:var(--font-display)] text-[clamp(1.1rem,2.012vw,1.824rem)] leading-tight font-light text-white">
@@ -1491,7 +1491,7 @@ function StageRow({ service, index, at }: StageSlot) {
     // row-start/row-span are utilities that certainly generate.
     <article
       data-ink
-      className={`${display} grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,1.3vw,1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em] lg:gap-y-[var(--stage-gap,0.6em)] lg:pt-[var(--stage-pt,1em)]`}
+      className={`${display} grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,calc(1.3*var(--page-vw)),1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em] lg:gap-y-[var(--stage-gap,0.6em)] lg:pt-[var(--stage-pt,1em)]`}
     >
       {/* The stage's own line: numeral and name at the leading edge, the plate
           number opposite. The plate number is set right because it belongs to
@@ -1501,15 +1501,15 @@ function StageRow({ service, index, at }: StageSlot) {
         <h3 className="flex min-w-0 items-baseline gap-[0.6em]">
           <span
             aria-hidden
-            className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.254vw,1.176rem)] leading-none font-light text-[#dce7f7]/80 tabular-nums"
+            className="shrink-0 font-[family-name:var(--font-display)] text-[length:clamp(0.72rem,calc(1.254*var(--page-vw)),1.176rem)] leading-none font-light text-[#dce7f7]/80 tabular-nums"
           >
             {number}
           </span>
-          <span className="truncate text-[clamp(0.52rem,0.885vw,0.784rem)] tracking-[0.28em] text-white uppercase">
+          <span className="truncate text-[length:clamp(0.52rem,calc(0.885*var(--page-vw)),0.784rem)] tracking-[0.28em] text-white uppercase">
             {service.title}
           </span>
         </h3>
-        <p className="shrink-0 text-[clamp(0.44rem,0.717vw,0.638rem)] tracking-[0.26em] text-slate-400/45">
+        <p className="shrink-0 text-[length:clamp(0.44rem,calc(0.717*var(--page-vw)),0.638rem)] tracking-[0.26em] text-slate-300/80">
           PLATE {stage.figure}
         </p>
       </div>
@@ -1548,11 +1548,11 @@ function StageRow({ service, index, at }: StageSlot) {
         // third and fourth line, and the six plates come out four different
         // heights, which is the one thing they may not be.
         style={{ aspectRatio: service.image!.ratio }}
-        className="col-start-1 row-span-2 row-start-2 h-full w-[70px] self-stretch object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-2 lg:row-start-1 lg:h-auto lg:w-[clamp(80px,7vw,108px)] lg:self-start motion-reduce:transition-none"
+        className="col-start-1 row-span-2 row-start-2 h-full w-[70px] self-stretch object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-2 lg:row-start-1 lg:h-auto lg:w-[clamp(80px,calc(7*var(--page-vw)),108px)] lg:self-start motion-reduce:transition-none"
       />
 
       <div className="col-start-2 row-start-2 flex min-w-0 flex-col lg:contents">
-        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.434vw,1.299rem)] leading-tight font-light lg:col-start-2 lg:row-start-2 lg:leading-snug text-balance text-[#dce7f7]">
+        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[length:clamp(0.8rem,calc(1.434*var(--page-vw)),1.299rem)] leading-tight font-light lg:col-start-2 lg:row-start-2 lg:leading-snug text-balance text-[#dce7f7]">
           {stage.headline}
         </h4>
         {/* What happens here -- the brief's KEY ACTIVITIES. A `ul` because it
@@ -1568,7 +1568,7 @@ function StageRow({ service, index, at }: StageSlot) {
             Dropped below `lg`, and it is the last thing that goes: what a
             stage PRODUCES survives it, because the deliverable and the outcome
             are the two lines a client is deciding on. */}
-        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] lg:col-span-2 lg:col-start-1 lg:row-start-3 lg:mt-0 lg:pt-[0.1em] text-[clamp(0.53rem,0.885vw,0.818rem)] leading-relaxed text-slate-300/60 lg:flex">
+        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] lg:col-span-2 lg:col-start-1 lg:row-start-3 lg:mt-0 lg:pt-[0.1em] text-[length:clamp(0.53rem,calc(0.885*var(--page-vw)),0.818rem)] leading-relaxed text-slate-300/60 lg:flex">
           {stage.work.map((item, k) => (
             <li key={item} className="flex items-baseline gap-[0.55em]">
               {k > 0 ? (
@@ -1589,16 +1589,16 @@ function StageRow({ service, index, at }: StageSlot) {
           on the same baselines from stage to stage, because the grid puts them
           there and not the ruling. */}
       <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] gap-y-[0.15em] border-t border-white/18 pt-[0.4em] lg:col-span-2 lg:col-start-1 lg:row-start-4 lg:gap-y-[var(--stage-dl-gap,0.5em)] lg:pt-[var(--stage-dl-pt,0.75em)]">
-        <dt className="text-[clamp(0.44rem,0.717vw,0.638rem)] tracking-[0.24em] text-slate-400/70">
+        <dt className="text-[length:clamp(0.44rem,calc(0.717*var(--page-vw)),0.638rem)] tracking-[0.24em] text-slate-200/90">
           DELIVERABLE
         </dt>
-        <dd className="text-[clamp(0.62rem,1.064vw,0.986rem)] leading-tight text-white lg:leading-snug">
+        <dd className="text-[length:clamp(0.62rem,calc(1.064*var(--page-vw)),0.986rem)] leading-tight text-white lg:leading-snug">
           {stage.deliverable}
         </dd>
-        <dt className="text-[clamp(0.44rem,0.717vw,0.638rem)] tracking-[0.24em] text-slate-400/70">
+        <dt className="text-[length:clamp(0.44rem,calc(0.717*var(--page-vw)),0.638rem)] tracking-[0.24em] text-slate-200/90">
           OUTCOME
         </dt>
-        <dd className="text-[clamp(0.58rem,0.963vw,0.885rem)] leading-snug text-slate-300/75 lg:leading-normal">
+        <dd className="text-[length:clamp(0.58rem,calc(0.963*var(--page-vw)),0.885rem)] leading-snug text-slate-300/75 lg:leading-normal">
           {stage.outcome}
         </dd>
       </dl>
@@ -1621,7 +1621,7 @@ function ArcArrow() {
       stroke="currentColor"
       strokeWidth="1"
       strokeLinecap="square"
-      className="h-[0.6em] w-[0.75em] shrink-0 text-slate-400/45"
+      className="h-[0.6em] w-[0.75em] shrink-0 text-slate-300/80"
     >
       <path d="M7.5 1.2 10.6 4 7.5 6.8" />
     </svg>
@@ -1859,7 +1859,7 @@ function PerspectiveIndex({ services }: { services: PageService[] }) {
       {/* The chapter's opening sentence used to be printed here, squeezed to
           the index's width; it is above the row now, at the page's measure.
           See the verso. */}
-      <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+      <p className="text-[length:clamp(0.44rem,calc(0.66*var(--page-vw)),0.6rem)] tracking-[0.3em] text-slate-300/80 uppercase">
         What we think about
       </p>
       {/* Equal rows on a phone page, where this run IS the page: six domains
@@ -1872,20 +1872,20 @@ function PerspectiveIndex({ services }: { services: PageService[] }) {
           return (
             <li
               key={service.title}
-              className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.95em)] border-b border-white/10 py-[0.34em] portrait:min-h-0 portrait:content-center lg:py-[0.55em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.4em] [@media(max-height:480px)]:py-[0.18em]"
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,calc(1.1*var(--page-vw)),0.95em)] border-b border-white/10 py-[0.34em] portrait:min-h-0 portrait:content-center lg:py-[0.55em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.4em] [@media(max-height:480px)]:py-[0.18em]"
             >
               <span
                 aria-hidden
-                className="font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.36vw,1.3rem)] leading-none font-light text-slate-400/45 tabular-nums"
+                className="font-[family-name:var(--font-display)] text-[length:clamp(0.8rem,calc(1.36*var(--page-vw)),1.3rem)] leading-none font-light text-slate-300/80 tabular-nums"
               >
                 {number}
               </span>
               <span className="min-w-0">
-                <span className="block text-[clamp(0.48rem,0.74vw,0.66rem)] tracking-[0.26em] text-white uppercase">
+                <span className="block text-[length:clamp(0.48rem,calc(0.74*var(--page-vw)),0.66rem)] tracking-[0.26em] text-white uppercase">
                   {service.title}
                 </span>
                 {service.perspective ? (
-                  <span className="mt-[0.3em] block text-[clamp(0.6rem,0.98vw,0.88rem)] leading-snug text-slate-300/65 lg:leading-[1.9] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-snug">
+                  <span className="mt-[0.3em] block text-[length:clamp(0.6rem,calc(0.98*var(--page-vw)),0.88rem)] leading-snug text-slate-300/65 lg:leading-[1.9] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-snug">
                     {service.perspective.summary}
                   </span>
                 ) : null}
@@ -1965,14 +1965,14 @@ function IdeaFlow({
 }) {
   return (
     <section data-ink className="shrink-0">
-      <h4 className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+      <h4 className="text-[length:clamp(0.44rem,calc(0.66*var(--page-vw)),0.6rem)] tracking-[0.3em] text-slate-300/80 uppercase">
         {title}
       </h4>
       <div aria-hidden className="mt-[1.1em] flex items-center gap-[0.35em] lg:mt-[1.3em]">
         <span className="h-px flex-1 bg-white/22" />
         <ArcArrow />
       </div>
-      <ol className="grid grid-cols-4 gap-x-[clamp(0.35em,0.8vw,0.7em)]">
+      <ol className="grid grid-cols-4 gap-x-[clamp(0.35em,calc(0.8*var(--page-vw)),0.7em)]">
         {flow.map((node) => (
           <li key={node.label} className="relative pt-[0.85em]">
             {/* The station mark, hanging up into the rule above. */}
@@ -1980,10 +1980,10 @@ function IdeaFlow({
               aria-hidden
               className="absolute top-[-1px] left-0 block h-[9px] w-px bg-white/45"
             />
-            <p className="text-[clamp(0.5rem,0.78vw,0.7rem)] tracking-[0.22em] text-white uppercase">
+            <p className="text-[length:clamp(0.5rem,calc(0.78*var(--page-vw)),0.7rem)] tracking-[0.22em] text-white uppercase">
               {node.label}
             </p>
-            <p className="mt-[0.4em] text-[clamp(0.56rem,0.9vw,0.8rem)] leading-snug text-slate-300/65 lg:leading-[2.7] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-[1.7]">
+            <p className="mt-[0.4em] text-[length:clamp(0.56rem,calc(0.9*var(--page-vw)),0.8rem)] leading-snug text-slate-300/65 lg:leading-[2.7] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-[1.7]">
               {node.note}
             </p>
           </li>
@@ -2010,7 +2010,7 @@ function Benefits({
 }) {
   return (
     <section data-ink className="shrink-0 portrait:flex portrait:min-h-0 portrait:shrink portrait:flex-1 portrait:flex-col">
-      <h4 className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+      <h4 className="text-[length:clamp(0.44rem,calc(0.66*var(--page-vw)),0.6rem)] tracking-[0.3em] text-slate-300/80 uppercase">
         {title}
       </h4>
       {/* Equal rows in portrait: the call to action under this is hung off the
@@ -2022,23 +2022,23 @@ function Benefits({
         {items.map((item) => (
           <li
             key={item.number}
-            className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,1.1vw,0.9em)] border-b border-white/10 py-[0.55em] portrait:min-h-0 portrait:content-center lg:py-[0.35em] [@media(max-height:480px)]:py-[0.25em]"
+            className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,calc(1.1*var(--page-vw)),0.9em)] border-b border-white/10 py-[0.55em] portrait:min-h-0 portrait:content-center lg:py-[0.35em] [@media(max-height:480px)]:py-[0.25em]"
           >
             <span
               aria-hidden
-              className="text-[clamp(0.42rem,0.62vw,0.56rem)] tracking-[0.24em] text-slate-400/45 tabular-nums"
+              className="text-[length:clamp(0.42rem,calc(0.62*var(--page-vw)),0.56rem)] tracking-[0.24em] text-slate-300/80 tabular-nums"
             >
               {roman(item.number)}
             </span>
             <span className="min-w-0">
-              <span className="block text-[clamp(0.56rem,0.86vw,0.78rem)] tracking-[0.2em] text-white uppercase">
+              <span className="block text-[length:clamp(0.56rem,calc(0.86*var(--page-vw)),0.78rem)] tracking-[0.2em] text-white uppercase">
                 {item.title}
               </span>
               {/* Dropped below `lg`, on both phone orientations. The TITLES
                   stay at every size: three of them are still the answer to
                   "what do I get", where the sentence under each elaborates a
                   heading that is already printed. */}
-              <span className="mt-[0.25em] hidden text-[clamp(0.54rem,0.86vw,0.78rem)] leading-snug text-slate-300/60 portrait:block lg:block lg:leading-[2.6] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-[1.6]">
+              <span className="mt-[0.25em] hidden text-[length:clamp(0.54rem,calc(0.86*var(--page-vw)),0.78rem)] leading-snug text-slate-300/60 portrait:block lg:block lg:leading-[2.6] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-[1.6]">
                 {item.body}
               </span>
             </span>
@@ -2079,7 +2079,7 @@ function PerspectiveCta({
       data-ink
       className="mt-auto shrink-0 border-t border-white/18 pt-[0.9em] lg:pt-[0.6em]"
     >
-      <h3 className="font-[family-name:var(--font-display)] text-[clamp(0.92rem,1.55vw,1.45rem)] leading-tight font-light text-balance text-white">
+      <h3 className="font-[family-name:var(--font-display)] text-[length:clamp(0.92rem,calc(1.55*var(--page-vw)),1.45rem)] leading-tight font-light text-balance text-white">
         {cta.headline}
       </h3>
       <div className="mt-[0.8em] flex flex-wrap items-center gap-x-[1.6em] gap-y-[0.5em]">
@@ -2089,7 +2089,7 @@ function PerspectiveCta({
             type="button"
             data-nav-item
             data-index={action.chapter}
-            className={`group flex w-fit cursor-pointer items-center gap-[0.6em] border-b pb-[0.28em] text-[clamp(0.48rem,0.76vw,0.68rem)] tracking-[0.26em] uppercase transition-colors duration-200 outline-none focus-visible:border-white focus-visible:text-white motion-reduce:transition-none ${
+            className={`group flex w-fit cursor-pointer items-center gap-[0.6em] border-b pb-[0.28em] text-[length:clamp(0.48rem,calc(0.76*var(--page-vw)),0.68rem)] tracking-[0.26em] uppercase transition-colors duration-200 outline-none focus-visible:border-white focus-visible:text-white motion-reduce:transition-none ${
               // The first action is the one the chapter is asking for, so it
               // is the one set in the page's ink. The second is a way to keep
               // reading rather than a second request, and is ruled quieter.
@@ -2146,15 +2146,15 @@ function RationalePage({
         <div className="flex items-baseline">
           <span
             aria-hidden
-            className="invisible hidden w-0 font-[family-name:var(--font-display)] text-[clamp(2.2rem,4.4vw,4.4rem)] leading-[0.8] font-light lg:inline"
+            className="invisible hidden w-0 font-[family-name:var(--font-display)] text-[length:clamp(2.2rem,calc(4.4*var(--page-vw)),4.4rem)] leading-[0.8] font-light lg:inline"
           >
             0
           </span>
-          <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.34em] text-slate-400/60 uppercase lg:text-[clamp(0.6rem,0.9vw,0.76rem)] lg:leading-none lg:font-semibold lg:tracking-[0.4em] lg:text-[#c9d9ef]">
+          <p className="text-[length:clamp(0.44rem,calc(0.66*var(--page-vw)),0.6rem)] tracking-[0.34em] text-slate-300/80 uppercase lg:text-[length:clamp(0.6rem,calc(0.9*var(--page-vw)),0.76rem)] lg:leading-none lg:font-semibold lg:tracking-[0.4em] lg:text-[#c9d9ef]">
             {rationale.label}
           </p>
         </div>
-        <h3 className="mt-[0.6em] font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.98vw,1.85rem)] leading-[1.1] font-light text-balance text-white">
+        <h3 className="mt-[0.6em] font-[family-name:var(--font-display)] text-[length:clamp(1.05rem,calc(1.98*var(--page-vw)),1.85rem)] leading-[1.1] font-light text-balance text-white">
           {rationale.headline}
         </h3>
       </div>
@@ -2260,7 +2260,7 @@ function ProjectIndex({ services }: { services: PageService[] }) {
               // needed 335px of a 284px column and MOBILE ran 51px past the
               // page. A border costs nothing and says the same thing. flex-wrap
               // on the list is the backstop for a narrower phone still.
-              className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-400/70 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 portrait:w-full portrait:gap-[0.9em] portrait:border-b-0 portrait:pb-0 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[1.05em] lg:pb-[1.05em] motion-reduce:transition-none"
+              className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-200/90 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 portrait:w-full portrait:gap-[0.9em] portrait:border-b-0 portrait:pb-0 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[1.05em] lg:pb-[1.05em] motion-reduce:transition-none"
             >
               <span className="shrink-0 text-[clamp(0.44rem,0.69vw,0.627rem)] tracking-[0.24em] tabular-nums opacity-70">
                 {roman(service.project!.number)}
@@ -2348,7 +2348,7 @@ function ProjectHeadIndex({ entries }: { entries: PageService[] }) {
           aria-label={`${service.project!.number} ${service.project!.category}`}
           className="group flex cursor-pointer flex-col items-center gap-[0.45em] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
         >
-          <span className="text-[clamp(0.46rem,0.69vw,0.627rem)] tracking-[0.2em] text-slate-400/45 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
+          <span className="text-[clamp(0.46rem,0.69vw,0.627rem)] tracking-[0.2em] text-slate-300/80 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
             {roman(service.project!.number)}
           </span>
           {/* The notch, cut deeper where you are. Driven by data-current
@@ -2492,7 +2492,7 @@ function ProjectStage({
             {/* Roman, like every other illustration in this book, and
                 restarting at I for this chapter: 03's six are its own series.
                 Arabic here would read as a pointer to a chapter number. */}
-            <p className="shrink-0 text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-400/50">
+            <p className="shrink-0 text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-300/80">
               PLATE {roman(i + 1)}
             </p>
           </div>
@@ -2601,13 +2601,13 @@ function ProjectStage({
                   only at lg: on the stacked portrait sheet there is no page
                   foot to drop to, only the next block. */}
               <dl className="mt-[1em] grid shrink-0 grid-cols-[auto_1fr] items-baseline gap-x-[1.2em] pt-[0.6em] lg:mt-auto lg:pt-[1.2em]">
-                <dt className="border-t border-white/18 pt-[0.6em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-400/70">
+                <dt className="border-t border-white/18 pt-[0.6em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-200/90">
                   PLATFORM
                 </dt>
                 <dd className="border-t border-white/18 pt-[0.6em] text-[clamp(0.78rem,1.242vw,1.14rem)] leading-tight text-white">
                   {project.platform}
                 </dd>
-                <dt className="border-t border-white/10 pt-[0.6em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-400/70">
+                <dt className="border-t border-white/10 pt-[0.6em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-200/90">
                   ACTION
                 </dt>
                 <dd className="border-t border-white/10 pt-[0.6em]">
@@ -2661,7 +2661,7 @@ function ProjectStage({
               "says so.04". It clears by 55px at 1440 and 460 at 1920 -- 1280
               is simply the width where the wrap lands there -- so the fix is
               a reserved column rather than a number tuned for one viewport. */}
-          <p className="pe-[3.2em] text-[clamp(0.55rem,0.862vw,0.775rem)] leading-relaxed text-slate-400/60">
+          <p className="pe-[3.2em] text-[clamp(0.55rem,0.862vw,0.775rem)] leading-relaxed text-slate-300/80">
             {colophon}
           </p>
         </div>
@@ -2835,7 +2835,7 @@ function ServiceGrid({
               className="mb-[1.1em] w-[clamp(38px,4.9vw,68px)] text-slate-300"
             />
           ) : null}
-          <p className="mb-[0.55em] text-[clamp(0.52rem,0.805vw,0.707rem)] tracking-[0.34em] text-slate-400/70">
+          <p className="mb-[0.55em] text-[clamp(0.52rem,0.805vw,0.707rem)] tracking-[0.34em] text-slate-200/90">
             {roman(from + i + 1)}
           </p>
           <p className="text-[clamp(0.72rem,1.173vw,1.049rem)] leading-tight text-white">
@@ -2964,7 +2964,7 @@ function SecondaryServices({
             />
           ) : null}
           <div>
-            <p className="mb-[0.3em] text-[clamp(0.46rem,0.713vw,0.627rem)] tracking-[0.32em] text-slate-400/60">
+            <p className="mb-[0.3em] text-[clamp(0.46rem,0.713vw,0.627rem)] tracking-[0.32em] text-slate-300/80">
               {roman(from + i + 1)}
             </p>
             <p className="text-[clamp(0.72rem,1.15vw,1.026rem)] leading-tight text-white">
@@ -3085,7 +3085,7 @@ function EngravedPlate({
         }
       />
       <figcaption className={beside ? "pb-[0.4em]" : "mt-[0.9em]"}>
-        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.28em] text-slate-400/55">
+        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.28em] text-slate-300/80">
           {plate.caption.toUpperCase()}
         </p>
         <p className="mt-[0.45em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.06em] text-slate-400/35 italic">
@@ -3117,7 +3117,7 @@ function StepList({ steps, from }: { steps: PageStep[]; from: number }) {
             <Emblem name={step.emblem} className="w-[58%] text-slate-200" />
           </span>
           <div className="pt-[0.15em]">
-            <p className="mb-[0.35em] text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.34em] text-slate-400/60 tabular-nums">
+            <p className="mb-[0.35em] text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.34em] text-slate-300/80 tabular-nums">
               {roman(from + i + 1)}
             </p>
             <p className="text-[clamp(0.78rem,1.242vw,1.117rem)] leading-tight text-white">
@@ -3232,8 +3232,8 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
         {/* 0.18em from xl, down from 0.3: the roles grew to "Lead Generation
             Executive" and "Business Generation Executive", and at 0.3em the
             second broke one word to a line beside a 170px portrait. */}
-        <p className="flex items-baseline gap-[0.8em] text-[clamp(0.5rem,0.74vw,0.66rem)] leading-snug tracking-[0.14em] text-slate-400/75 uppercase xl:tracking-[0.18em]">
-          <span aria-hidden className="tabular-nums text-slate-400/50">
+        <p className="flex items-baseline gap-[0.8em] text-[clamp(0.5rem,0.74vw,0.66rem)] leading-snug tracking-[0.14em] text-slate-200/90 uppercase xl:tracking-[0.18em]">
+          <span aria-hidden className="tabular-nums text-slate-300/80">
             {roman(index + 1)}
           </span>
           {member.role}
@@ -3277,7 +3277,7 @@ function TeamPage({ team }: { team: NonNullable<BookPage["team"]> }) {
           data-ink
           className="hidden min-h-0 flex-col pb-[1.1em] portrait:flex lg:flex"
         >
-          <p className="text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.3em] text-slate-400/60 uppercase">
+          <p className="text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.3em] text-slate-300/80 uppercase">
             {team.principlesTitle}
           </p>
           {/* Two columns, numbered, rather than one run with dots: a run of
@@ -3285,7 +3285,7 @@ function TeamPage({ team }: { team: NonNullable<BookPage["team"]> }) {
           <ol className="mt-[0.7em] grid grid-cols-2 gap-x-[1.2em] gap-y-[0.45em] text-[clamp(0.5rem,0.72vw,0.64rem)] tracking-[0.08em] text-slate-200/85 uppercase xl:tracking-[0.2em]">
             {team.principles.map((principle, i) => (
               <li key={principle} className="flex items-baseline gap-[0.7em]">
-                <span aria-hidden className="text-slate-400/50">
+                <span aria-hidden className="text-slate-300/80">
                   {roman(i + 1)}
                 </span>
                 {principle.replace(/\.$/, "")}
@@ -3470,7 +3470,7 @@ function ContactPage({ page }: { page: BookPage }) {
             <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-300/70 uppercase [@media(max-height:480px)]:hidden">
               {contact.detailsTitle}
             </p>
-            <p className="mt-[0.3em] font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.05vw,0.95rem)] text-slate-400/80 italic lg:max-xl:hidden [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:hidden [@media(max-height:480px)]:hidden">
+            <p className="mt-[0.3em] font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.05vw,0.95rem)] text-slate-200/90 italic lg:max-xl:hidden [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:hidden [@media(max-height:480px)]:hidden">
               To be delivered to Nivlak Technologies
             </p>
           </div>
@@ -3498,7 +3498,7 @@ function ContactPage({ page }: { page: BookPage }) {
             // it at 1024 and 844x390 the address broke to "@gmail / .com".
             className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-[0.8em] gap-y-[0.15em] border-b border-dotted border-white/25 py-[0.55em] last:border-b-0 lg:py-[0.45em] xl:grid-cols-[minmax(0,5.2em)_minmax(0,1fr)_auto] xl:py-[0.85em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.55em] [@media(max-height:480px)]:py-[0.3em]"
           >
-            <dt className="col-span-2 font-[family-name:var(--font-display)] text-[clamp(0.62rem,0.86vw,0.8rem)] text-slate-400/80 italic xl:col-span-1">
+            <dt className="col-span-2 font-[family-name:var(--font-display)] text-[clamp(0.62rem,0.86vw,0.8rem)] text-slate-200/90 italic xl:col-span-1">
               {row.label}
             </dt>
             <dd className="min-w-0 break-words font-[family-name:var(--font-display)] text-[clamp(0.78rem,1.15vw,1.06rem)] text-slate-100">
@@ -3577,7 +3577,7 @@ function ContactVerso({
       className="mt-[2.2em] hidden flex-col gap-[2.4em] portrait:flex lg:flex [@media(max-height:620px)]:hidden"
     >
       <section>
-        <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+        <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-300/80 uppercase">
           {contact.helpTitle}
         </p>
         <ul className="mt-[0.9em] flex flex-wrap gap-[0.55em]">
@@ -3659,7 +3659,7 @@ function HowItWorks({
 }) {
   return (
     <section>
-      <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-400/55 uppercase">
+      <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-300/80 uppercase">
         {next.title}
       </p>
       <div aria-hidden className="mt-[1.3em] flex items-center gap-[0.35em]">
@@ -3770,12 +3770,14 @@ function VersoPage({
           exactly the condition: this page is a front face filling the screen.
           mt-auto drops it at the foot, where a book puts an aside. */}
       {flush && page.facing?.note ? (
-        <div data-ink className="mt-auto mb-[6%] max-w-[42ch]">
+        <div data-ink className="mt-auto mb-[6%] max-w-[42ch] portrait:mb-[10%]">
+          {/* 10% on a phone: the folio drops to 3.5% there, and at 6% the
+              footnote's last line ended 2px above "I — COMPANY" (393x851). */}
           <span
             aria-hidden
             className="mb-[0.9em] block h-px w-[26%] bg-white/15"
           />
-          <p className="text-[clamp(0.62rem,0.966vw,0.866rem)] leading-relaxed text-slate-400/65">
+          <p className="text-[clamp(0.62rem,0.966vw,0.866rem)] leading-relaxed text-slate-200/90">
             <sup className="me-[0.4em] align-super text-[0.7em] tabular-nums">
               1
             </sup>
@@ -3785,7 +3787,7 @@ function VersoPage({
       ) : null}
 
       <p
-        className="absolute bottom-[7%] portrait:bottom-[3.5%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/40 tabular-nums"
+        className="absolute bottom-[7%] portrait:bottom-[3.5%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-300/80 tabular-nums"
         style={{ insetInlineStart: inset }}
       >
         <HomeMark side="left" />
@@ -3810,7 +3812,7 @@ function Terms({ page }: { page: BookPage }) {
       {page.termsTitle ? (
         <p
           data-ink
-          className="mb-[1.3em] text-[clamp(0.6rem,1.035vw,0.855rem)] tracking-[0.35em] text-slate-400/80"
+          className="mb-[1.3em] text-[clamp(0.6rem,1.035vw,0.855rem)] tracking-[0.35em] text-slate-200/90"
         >
           {page.termsTitle.toUpperCase()}
         </p>
@@ -3839,7 +3841,7 @@ function Terms({ page }: { page: BookPage }) {
                   a shade quieter and in the display italic, the way a book
                   sets a gloss under a definition. */}
               {term.detail ? (
-                <p className="mt-[0.35em] font-[family-name:var(--font-display)] text-[clamp(0.74rem,1.12vw,1.02rem)] leading-relaxed text-slate-400/85 italic lg:leading-[1.6]">
+                <p className="mt-[0.35em] font-[family-name:var(--font-display)] text-[clamp(0.74rem,1.12vw,1.02rem)] leading-relaxed text-slate-200/90 italic lg:leading-[1.6]">
                   {term.detail}
                 </p>
               ) : null}
@@ -3850,7 +3852,7 @@ function Terms({ page }: { page: BookPage }) {
       {page.termsFoot ? (
         <p
           data-ink
-          className="mt-[1em] border-t border-white/10 pt-[0.9em] text-[clamp(0.7rem,1.092vw,1.003rem)] tracking-[0.02em] text-slate-400/75"
+          className="mt-[1em] border-t border-white/10 pt-[0.9em] text-[clamp(0.7rem,1.092vw,1.003rem)] tracking-[0.02em] text-slate-200/90"
         >
           {page.termsFoot}
         </p>
@@ -3887,7 +3889,7 @@ function PageFoot({ page }: { page: BookPage }) {
       data-ink
       className="absolute inset-x-0 bottom-[8%] flex justify-start ps-[12%]"
     >
-      <p className="text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-400/45 tabular-nums">
+      <p className="text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-300/80 tabular-nums">
         {roman(page.number)} &mdash; {page.title.toUpperCase()}
       </p>
     </div>
@@ -3955,7 +3957,7 @@ function PageBody({
         <Terms page={page} />
       ) : (
         <div data-ink>
-          <p className="mb-3 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-400/80 tabular-nums">
+          <p className="mb-3 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-200/90 tabular-nums">
             {roman(page.number)} &mdash; {page.title.toUpperCase()}
           </p>
           <h2 className="mb-[0.4em] font-[family-name:var(--font-display)] text-[clamp(1.9rem,4vw,3.9rem)] leading-[1.03] font-light text-white">
@@ -3984,7 +3986,7 @@ function PageBody({
           folio box is empty there and the mark stands on its line alone. */}
       <p
         data-ink
-        className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] min-h-[1em] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-400/40 tabular-nums"
+        className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] min-h-[1em] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-300/80 tabular-nums"
       >
         {page.facing ? roman(page.number) : null}
       </p>

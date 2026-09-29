@@ -3745,7 +3745,13 @@ function ContactPage({ page }: { page: BookPage }) {
             <dt className="font-[family-name:var(--font-display)] text-[clamp(0.62rem,0.86vw,0.8rem)] text-slate-200/90 italic">
               {row.label}
             </dt>
-            <dd className="min-w-0 break-words font-[family-name:var(--font-display)] text-[clamp(0.78rem,1.15vw,1.06rem)] text-slate-100">
+            <dd
+              // LINING figures: the display face defaults to old-style digits,
+              // which rise and fall about the line (3 4 7 9 below, 6 8 above),
+              // and "+91 97873 04869" read as bouncing -- asked for "in a
+              // single line, not up and down". Tabular so digits align too.
+              className="min-w-0 break-words font-[family-name:var(--font-display)] text-[clamp(0.78rem,1.15vw,1.06rem)] text-slate-100 [font-variant-numeric:lining-nums_tabular-nums]"
+            >
               {row.href ? (
                 <a
                   href={row.href}

@@ -95,8 +95,15 @@ const pagesUnits = (turns: number) =>
   LEAD_IN + (turns - 1) * (TURN + GAP) + TURN + TRAIL;
 
 const OPEN = OPEN_VH / VH_PER_UNIT;
-const scrollLength = (turns: number) =>
-  `+=${Math.round(OPEN_VH + pagesUnits(turns) * VH_PER_UNIT)}%`;
+// One page per sheet scrolls HALF as far per unit (asked: "not so much
+// scrolling on mobile"). A phone has ~twice the sheets, and at the desktop
+// cadence the book was ~14 screens of thumb; it is ~7 now. The timeline is
+// unchanged -- only how much scroll a unit costs -- so the turn, the gaps and
+// the reveal keep their proportions, and the drag-to-turn reads its page
+// distance off the trigger at drag time, so it follows on its own.
+const PHONE_SCROLL = 0.5;
+const scrollLength = (turns: number, single = false) =>
+  `+=${Math.round((OPEN_VH + pagesUnits(turns) * VH_PER_UNIT) * (single ? PHONE_SCROLL : 1))}%`;
 
 // Frames requested per batch after the first. Ninety-one at once is ninety-one
 // parallel requests fighting the document for the connection on a cold load; in
@@ -900,7 +907,7 @@ export function Book() {
         scrollTrigger: {
           trigger: section,
           start: "top top",
-          end: scrollLength(turns),
+          end: scrollLength(turns, single),
           // Shorter in portrait: the catch-up that reads as weight under a
           // wheel reads as lag under a finger, and a dragged page that
           // arrives a second late is not the page you are dragging.
@@ -1355,7 +1362,7 @@ export function Book() {
             wrapper is `pointer-events-none` and the two buttons switch it back
             on, so the cover's copy never eats a click meant for the page and
             the buttons stop taking them the moment GSAP hides the block.  */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-stretch portrait:pt-[9vh] portrait:pb-[11vh] portrait:[@media(max-height:700px)]:pb-[calc(5.4vh+2.5rem)] landscape:ps-[7vw] landscape:pe-[4vw]">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-stretch portrait:pt-[9vh] portrait:pb-[calc(10vh+2.6rem)] portrait:[@media(max-height:700px)]:pb-[calc(8vh+2.5rem)] landscape:ps-[7vw] landscape:pe-[4vw]">
           <div
             ref={kickerRef}
             // The hero sits DIRECTLY on the photograph in portrait, with no
@@ -1474,6 +1481,10 @@ export function Book() {
                 - The focus ring is drawn outside the pill, in the headline's
                   blue, because both fills are close to what surrounds them.
 
+                Under 340px wide (a folding phone's 280px cover screen) the type
+                drops to 0.44rem and 0.1em: wrapped to two rows there, the
+                taller group pushed the tagline up onto the book.
+
                 ONE ROW in portrait, and that constraint is unchanged: at
                 0.5rem, 0.18em of tracking and 0.8rem of side padding the pair
                 fits the 338px a 393px phone has, and `flex-wrap` is the
@@ -1484,7 +1495,7 @@ export function Book() {
                 data-nav-item
                 data-index={BOOK_PAGES.length - 1}
                 data-page="last"
-                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.8em] rounded-full border border-white/25 bg-white/[0.06] px-[clamp(1.1rem,1.9vw,1.6rem)] py-[clamp(0.7rem,1.45vh,1rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.26em] text-white uppercase backdrop-blur-md outline-none transition-[background-color,border-color] duration-300 [text-shadow:none] hover:border-white/55 hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-[#9dc0ee] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050b14] portrait:px-[0.8rem] portrait:py-[0.7rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] motion-reduce:transition-none"
+                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.8em] rounded-full border border-white/25 bg-white/[0.06] px-[clamp(1.1rem,1.9vw,1.6rem)] py-[clamp(0.7rem,1.45vh,1rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.26em] text-white uppercase backdrop-blur-md outline-none transition-[background-color,border-color] duration-300 [text-shadow:none] hover:border-white/55 hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-[#9dc0ee] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050b14] portrait:px-[0.8rem] portrait:py-[0.7rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] [@media(max-width:340px)]:text-[0.44rem] [@media(max-width:340px)]:tracking-[0.1em] motion-reduce:transition-none"
               >
                 Begin a project
                 <span
@@ -1498,7 +1509,7 @@ export function Book() {
                 type="button"
                 data-nav-item
                 data-index="0"
-                className="group relative pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] overflow-hidden rounded-full bg-[#dce7f7] py-[clamp(0.35rem,0.8vh,0.55rem)] ps-[clamp(1.1rem,1.9vw,1.6rem)] pe-[clamp(0.35rem,0.5vw,0.5rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] font-medium tracking-[0.26em] text-[#0b1a2e] uppercase shadow-[0_12px_40px_-14px_rgba(157,192,238,0.75)] outline-none transition-[background-color,box-shadow,transform] duration-300 [text-shadow:none] hover:-translate-y-px hover:bg-white hover:shadow-[0_16px_50px_-12px_rgba(157,192,238,0.95)] focus-visible:ring-2 focus-visible:ring-[#9dc0ee] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050b14] active:translate-y-0 portrait:py-[0.51rem] portrait:ps-[0.8rem] portrait:pe-[0.3rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] motion-reduce:transition-none"
+                className="group relative pointer-events-auto inline-flex cursor-pointer items-center gap-[0.9em] overflow-hidden rounded-full bg-[#dce7f7] py-[clamp(0.35rem,0.8vh,0.55rem)] ps-[clamp(1.1rem,1.9vw,1.6rem)] pe-[clamp(0.35rem,0.5vw,0.5rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] font-medium tracking-[0.26em] text-[#0b1a2e] uppercase shadow-[0_12px_40px_-14px_rgba(157,192,238,0.75)] outline-none transition-[background-color,box-shadow,transform] duration-300 [text-shadow:none] hover:-translate-y-px hover:bg-white hover:shadow-[0_16px_50px_-12px_rgba(157,192,238,0.95)] focus-visible:ring-2 focus-visible:ring-[#9dc0ee] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050b14] active:translate-y-0 portrait:py-[0.51rem] portrait:ps-[0.8rem] portrait:pe-[0.3rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] [@media(max-width:340px)]:text-[0.44rem] [@media(max-width:340px)]:tracking-[0.1em] motion-reduce:transition-none"
               >
                 <span
                   aria-hidden
@@ -1545,8 +1556,9 @@ export function Book() {
               reader hears the five once, as a list.
             - Edges fade out through a mask rather than stopping at the window,
               so words arrive rather than pop.
-            - Lifted off the screen's edge (2.4vh, 10-28px) and ruled top and
-              bottom, asked for "slightly up, not fully at the bottom".
+            - Lifted off the screen's edge (6vh, 20-64px) and ruled top and
+              bottom, asked for "slightly up, not fully at the bottom", then
+              "up more".
             - Pauses under the pointer, so it can be read; still under reduced
               motion, where it is centred and shows one copy.
             - Outside `kickerRef` (placed against the screen, like the ribbon)
@@ -1554,7 +1566,7 @@ export function Book() {
         <div
           ref={bandRef}
           data-hero-band
-          className="group/band pointer-events-auto absolute inset-x-0 bottom-[clamp(10px,2.4vh,28px)] z-[2] border-y border-white/10 bg-[linear-gradient(to_top,rgba(5,11,20,0.78),rgba(5,11,20,0.25))] py-[clamp(0.55rem,1.3vh,0.9rem)] [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)] [text-shadow:none]"
+          className="group/band pointer-events-auto absolute inset-x-0 bottom-[clamp(20px,6vh,64px)] z-[2] border-y border-white/10 bg-[linear-gradient(to_top,rgba(5,11,20,0.78),rgba(5,11,20,0.25))] py-[clamp(0.55rem,1.3vh,0.9rem)] [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)] [text-shadow:none]"
         >
           <div className="flex w-max motion-safe:animate-marquee motion-safe:group-hover/band:[animation-play-state:paused] motion-reduce:mx-auto">
             {[0, 1].map((copy) => (

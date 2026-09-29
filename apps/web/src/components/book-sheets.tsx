@@ -2368,7 +2368,7 @@ const WORK_CHAPTER = BOOK_PAGES.findIndex((page) =>
  * A LIVE SITE IN THE PLATE'S PLACE: calioon.com, running, inside the same
  * 16:9 window the other three studies print their plates in.
  *
- * - A browser bar: a pulsing LIVE badge, the address, a DESKTOP / PHONE
+ * - A browser bar: a LIVE badge (the word only), the address, a DESKTOP / PHONE
  *   toggle, reload, and "open in a new tab".
  * - The site is rendered at a real width and SCALED into the window --
  *   1280px for desktop, 390px for phone. Unscaled, a ~420px frame would only
@@ -2465,10 +2465,7 @@ function LivePlate({
           <span className="size-[0.55em] rounded-full bg-white/20" />
         </span>
         <span className="flex shrink-0 items-center gap-[0.45em] rounded-full bg-[#9dc0ee]/12 px-[0.65em] py-[0.2em] font-medium tracking-[0.22em] text-[#cfe0f7] uppercase">
-          <span aria-hidden className="relative flex size-[0.6em]">
-            <span className="absolute inset-0 rounded-full bg-[#6ee7a8] opacity-70 motion-safe:animate-ping" />
-            <span className="relative size-full rounded-full bg-[#6ee7a8]" />
-          </span>
+          {/* The word only: the pulsing green dot was removed on request. */}
           Live
         </span>
         <span className="flex min-w-0 flex-1 items-center gap-[0.4em] truncate rounded-full bg-white/[0.06] px-[0.8em] py-[0.25em] tracking-[0.06em] text-slate-200/90">
@@ -4081,7 +4078,12 @@ function VersoPage({
       >
         {roman(page.number)} &mdash; {page.title.toUpperCase()}
       </p>
-      <FootMark end={endInset} />
+      {/* On a one-page-per-sheet screen the mark takes the RECTO's place
+          (11% in from the edge), so it does not jump sideways at every turn:
+          it sat at the column's end here, which reserves the thumb index and
+          put it 54px left of the recto's at 393x851. The index hangs at
+          mid-height and never reaches this line. */}
+      <FootMark end={flush ? "11%" : endInset} />
     </div>
   );
 }

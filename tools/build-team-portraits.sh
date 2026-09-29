@@ -59,7 +59,15 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$ROOT/apps/web/public/team"
 mkdir -p "$OUT"
 
-# slug | source | crop
+# slug | source | crop | corners (optional: "top" keys from the top two only)
+#
+# CORNERS is for a photograph whose SUBJECT reaches the bottom edge. The key
+# floodfills from all four corners of the full frame, which in the first four
+# sources are studio white. In Naveen's the suit runs off the bottom of the
+# frame, so the bottom two fills started INSIDE the suit and keyed it to the
+# ground -- it printed as the flat grey-blue of the background, which is what
+# read as "not professional dress like the others". Tone was never the cause:
+# a black-point and a gamma were both tried and moved it by under a point.
 PORTRAITS=(
   "laxman|Laxman.jpeg|800x1000+335+0"
   "unni-krishnan-m|Unni Krishnan M.png|933x1166+174+60"
@@ -67,7 +75,7 @@ PORTRAITS=(
   "gokul|Gokul.jpeg|848x1060+141+36"
   # Naveen: head (hair 85 -> chin ~700 of 1410) set to the same 47% of the
   # frame and 5.5% top margin that Gokul's finished plate measures.
-  "naveen|Naveen.png|1046x1308+52+13"
+  "naveen|Naveen.png|1046x1308+52+13|top"
 )
 
 SIZE=360x450      # ~2.5x the ~150px the portraits print at
@@ -88,15 +96,17 @@ trap 'rm -rf "$WORK"' EXIT
 magick xc:"$INK" xc:"$MID" xc:"$PAPER" +append -filter Cubic -resize 256x1! "$WORK/ramp.png"
 
 for entry in "${PORTRAITS[@]}"; do
-  IFS='|' read -r slug src crop <<<"$entry"
+  IFS='|' read -r slug src crop keyfrom <<<"$entry"
   path="$ROOT/$src"
   [ -f "$path" ] || { echo "missing $src at the repo root" >&2; exit 1; }
   read -r w h < <(magick identify -format '%w %h\n' "$path")
   mx=$((w - 1)); my=$((h - 1))
 
   # 1. key, on the full frame (subject white, keyed area black)
-  corners=(-draw "color 0,0 floodfill" -draw "color $mx,0 floodfill"
-           -draw "color 0,$my floodfill" -draw "color $mx,$my floodfill")
+  corners=(-draw "color 0,0 floodfill" -draw "color $mx,0 floodfill")
+  if [ "${keyfrom:-all}" != "top" ]; then
+    corners+=(-draw "color 0,$my floodfill" -draw "color $mx,$my floodfill")
+  fi
   magick "$path" -alpha set -fuzz "$FUZZ" -fill none "${corners[@]}" \
     -alpha extract "$WORK/raw.png"
 
@@ -119,7 +129,8 @@ for entry in "${PORTRAITS[@]}"; do
     -alpha off -blur 0x1.2 "$WORK/key.png"
 
   # 2 + 3. crop both, lay the subject over the ground, resize
-  magick "$path" -crop "$crop" +repage -colorspace gray -auto-level "$WORK/g.png"
+  magick "$path" -crop "$crop" +repage -colorspace gray -auto-level \
+    "$WORK/g.png"
   magick "$WORK/key.png" -crop "$crop" +repage "$WORK/k.png"
   magick "$WORK/g.png" \( +clone -fill "gray($GROUND)" -colorize 100 \) +swap \
     "$WORK/k.png" -compose over -composite -resize "$SIZE" "$WORK/t.png"

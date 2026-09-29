@@ -972,6 +972,28 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   first page ends 11px into its drop folio and 04's colophon 7px into it. So
   does 844x390 on 04 and 05, which is the collapsed landscape layout.
 
+### Phone scroll halved, feet aligned, Naveen keyed properly
+
+- **Phones scroll half as far** (`PHONE_SCROLL = 0.5` in `scrollLength`):
+  ~7.7 screens for the whole book at 393x851, from ~14.4. The timeline is
+  unchanged; only scroll per unit. Desktop stays at 8.8.
+- **Folio and home mark are 1.5x** (mark 27-36px, folio 0.825-1.05rem), and
+  `PAGE_FOOT` is 2rem (1.6 portrait) to clear the taller folio. On a phone
+  the verso's mark takes the RECTO's place (11% in), so it no longer jumps
+  54px sideways at every turn; on a spread each page keeps its own. The
+  recto's folio sits just before its mark, out toward the page's edge.
+- **Cover band lifted to `clamp(20px,6vh,64px)`**; portrait hero padding is
+  band lift + band + gap, which also raised the tagline and buttons. Under
+  340px wide the buttons' type steps down so they stay on one row -- wrapped,
+  they pushed the tagline onto the book on a 280px folding phone.
+- **Cover collision sweep** (45 sizes: phones, folds, tablets both ways,
+  laptops, ultrawides, odd windows): text boxes measured against bright book
+  pixels with the copy hidden. All clear after the fold fix.
+- **Naveen's suit had been keyed as background**: his photo's suit runs off
+  the bottom edge, so the bottom-corner floodfills started inside it.
+  `build-team-portraits.sh` takes a `top` corners option; tone was never the
+  cause. The LIVE badge on 04 lost its green dot (word kept).
+
 ### Cover band, live work, five on the team, and no blink on load
 
 - **The cover's entrance is GSAP, run once, not CSS keyframes.** ScrollTrigger's

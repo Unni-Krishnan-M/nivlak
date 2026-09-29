@@ -4256,7 +4256,10 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
           folio box is empty there and the mark stands on its line alone. */}
       <p
         data-ink
-        className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] min-h-[1em] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-300/80 tabular-nums"
+        // Out toward the page's right edge with the home mark (asked: "move
+        // the roman right too"): it ends where the mark begins -- the mark's
+        // own inset, width and a 0.8em gap -- so the line reads "II [mark]".
+        className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(11%+var(--page-text-inset-end,0px)+clamp(18px,1.5vw,24px)+0.8em)] min-h-[1em] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-300/80 tabular-nums"
       >
         {page.facing ? roman(page.number) : null}
       </p>

@@ -9,7 +9,7 @@ import {
   spreadAt,
 } from "@/components/book-camera";
 import { Emblem } from "@/components/book-emblems";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import {
   BOOK_PAGES,
   BOOK_SPREADS,
@@ -158,8 +158,8 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
   // The opening spread's left-hand page. It has no sheet of its own -- it is
   // the book's own left page with type over it -- so it is laid onto the left
   // rect from the same camera and left there. A full-bleed sheet covers the
-  // whole window, so on a portrait phone there is no left page to print on and
-  // the copy moves inline instead; the two are mutually exclusive.
+  // whole window, so on a portrait phone there is no left page to print on;
+  // there the verso is a sheet of its own (SinglePageSheets).
   const facingPage = stage.querySelector<HTMLElement>("[data-left-page]");
   if (facingPage) {
     facingPage.style.display = fullBleed ? "none" : "";
@@ -171,11 +171,6 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
         height: `${left.height}px`,
       });
     }
-  }
-  for (const inline of stage.querySelectorAll<HTMLElement>(
-    "[data-facing-inline]",
-  )) {
-    inline.style.display = fullBleed ? "" : "none";
   }
 
   // The pages ARE the photograph. Each face shows the region of frame-091 that
@@ -331,6 +326,17 @@ export function paintSheets(
  * passed rather than measured here because <Book> has to know it too: the
  * timeline's length is the number of sheets, so the two must agree.
  */
+/**
+ * Whether the pages are printed one to a sheet (portrait) or as spreads.
+ *
+ * <Book> decides it once with isFullBleed() and renders SinglePageSheets or
+ * SpreadSheets accordingly, so anything below that needs to lay out
+ * differently per mode reads it here instead of guessing from a breakpoint.
+ * A breakpoint is a proxy that disagrees with the real mode on a portrait
+ * tablet: 1024x1366 is `lg` wide and prints one page per sheet.
+ */
+const SingleSheetContext = createContext(false);
+
 export function BookSheets({ single = false }: { single?: boolean }) {
   if (single) return <SinglePageSheets />;
   return <SpreadSheets />;
@@ -351,6 +357,7 @@ export function BookSheets({ single = false }: { single?: boolean }) {
  */
 function SinglePageSheets() {
   return (
+    <SingleSheetContext.Provider value={true}>
     <div
       data-stage
       // pointer-events-none on the STAGE and -auto on what it holds. The stage
@@ -377,7 +384,7 @@ function SinglePageSheets() {
                 {page.kind === "facing" ? (
                   <VersoPage page={spread} flush />
                 ) : (
-                  <PageBody page={spread} inlineFacing={false} />
+                  <PageBody page={spread} />
                 )}
               </PageFace>
             </div>
@@ -403,7 +410,7 @@ function SinglePageSheets() {
                   {page.kind === "facing" ? (
                     <VersoPage page={spread} flush />
                   ) : (
-                    <PageBody page={spread} inlineFacing={false} />
+                    <PageBody page={spread} />
                   )}
                 </div>
                 <PageFoot page={spread} />
@@ -413,6 +420,7 @@ function SinglePageSheets() {
         );
       })}
     </div>
+    </SingleSheetContext.Provider>
   );
 }
 
@@ -432,7 +440,7 @@ function SpreadSheets() {
       {opening?.facing ? (
         <div
           data-left-page
-          className="pointer-events-auto absolute z-[5] overflow-hidden"
+          className="pointer-events-auto absolute z-[5] overflow-hidden [container-type:size]"
           style={{ display: "none" }}
         >
           {/* overflow-hidden is safe HERE and nowhere else in this file: this
@@ -462,7 +470,7 @@ function SpreadSheets() {
             // construction and 05 has 9px under its last row, so three
             // percent off either measure wraps an outcome or a summary onto a
             // line neither page has.
-            className={`flex h-full w-full flex-col justify-start pb-[8%] pe-[9%] ps-[calc(13%+var(--facing-inset-start,0px))] text-slate-200 ${PAGE_SINKAGE}`}
+            className={`flex h-full w-full flex-col justify-start pe-[9%] ps-[calc(13%+var(--facing-inset-start,0px))] text-slate-200 ${PAGE_SINKAGE} ${PAGE_FOOT}`}
           >
             <FacingCopy page={opening} />
 
@@ -471,7 +479,7 @@ function SpreadSheets() {
                 paragraph. mt-auto drops it there however long the text above
                 turns out to be. */}
             {opening.facing?.note ? (
-              <div data-ink className="mt-auto mb-[9%] max-w-[42ch] lg:max-w-none">
+              <div data-ink className="mt-auto max-w-[42ch] lg:max-w-none">
                 <span
                   aria-hidden
                   className="mb-[0.9em] block h-px w-[26%] bg-white/15"
@@ -596,7 +604,7 @@ function PageFace({
       // would also target a copy of every element inside an aria-hidden
       // subtree -- and setting visibility on those fights the 14% wash.
       data-face={side}
-      className="relative h-full w-full bg-no-repeat"
+      className="relative h-full w-full bg-no-repeat [container-type:size]"
       style={{
         // Under the image, not instead of it: the book's own edge colour shows
         // wherever a face reaches past the frame, so the seam reads as part of
@@ -920,6 +928,7 @@ function ChapterHead({
  * other -- consistency here means NOT repeating them.
  */
 function FacingCopy({ page }: { page: BookPage | BookSpread }) {
+  const single = useContext(SingleSheetContext);
   if (!page.facing) return null;
   const { headline, subtitle, intro, epigraph, note, figure } = page.facing;
   const spread = page as Partial<BookSpread>;
@@ -1005,6 +1014,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
   if (plateChapter >= 0) {
     const { verso, versoRows } = stageHalves(
       BOOK_PAGES[plateChapter]?.services,
+      single,
     );
     return (
       <StageRun
@@ -1170,7 +1180,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             {subtitle}
           </p>
         ) : null}
-        <div className="mt-[1em] flex min-h-0 items-start gap-[clamp(0.7em,calc(1.6*var(--page-vw)),1.5em)] portrait:flex-1 portrait:items-stretch portrait:pb-[clamp(20px,3vh,34px)] [@media(max-height:480px)]:mt-[0.5em]">
+        <div className="mt-[1em] flex min-h-0 items-start gap-[clamp(0.7em,calc(1.6*var(--page-vw)),1.5em)] portrait:flex-1 portrait:items-stretch [@media(max-height:480px)]:mt-[0.5em]">
           <PerspectiveIndex services={page.services ?? []} />
           {(page as BookPage).columnPlate ? (
             <PerspectiveColumn plate={(page as BookPage).columnPlate!} />
@@ -1187,41 +1197,13 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
         <ProjectIndex services={page.services ?? []} />
       ) : null}
 
-      {/* The chapter's qualification, on the half-title -- but ONLY below 480px
-          of viewport height, where its twin at the foot of the stage cannot
-          fit. Measured at 844x390: the recto there runs index 26 + plate 172 +
-          category, title, metadata and action, and lands the colophon at y=379
-          in a window whose bottom 45px are already off-screen. The verso at the
-          same size is carrying a head, an epigraph and a subtitle in 390px and
-          has the room, because its engraving has already gone (portrait
-          collapses the spread and the plate is the one thing there carrying no
-          information).
-
-          The line saying these four are studies is the last thing in this
-          chapter that may be dropped for space, which is why it moves pages
-          rather than disappearing. */}
-      {isProjects(page.services) && (page as BookPage).colophon ? (
-        <div
-          data-ink
-          className="mt-[1.6em] hidden [@media(max-height:480px)]:block"
-        >
-          <span
-            aria-hidden
-            className="mb-[0.9em] block h-px w-[26%] bg-white/15"
-          />
-          <p className="text-[clamp(0.55rem,0.862vw,0.775rem)] leading-relaxed text-slate-300/80">
-            {(page as BookPage).colophon}
-          </p>
-        </div>
-      ) : null}
-
       {/* An illustrated catalogue sets its entries full measure and starts
           them straight under the subtitle; an engraved one hangs its lead
           plate off the foot of the page. Both are catalogues, but only the
           second has a blank lower half to hang anything in. */}
       {isIllustrated(page.facing.services) ? null : page.facing
           .services?.[0] ? (
-        <div className="mt-[1.4em] lg:mt-auto lg:mb-[7%]">
+        <div className="mt-[1.4em] lg:mt-auto">
           <LeadService service={page.facing.services[0]} />
           {page.facing.services.length > 1 ? (
             <SecondaryServices
@@ -1367,14 +1349,10 @@ function spreadIsPlates(page: BookPage | BookSpread) {
  * blank -- which is what a book does rather than respacing one page against
  * the other.
  */
-/**
- * Where one stage prints: on both layouts, only on a spread (`lg`), or only
- * below it. See stageHalves() for why a stage can be in two places.
- */
+/** One stage and its number in the run. */
 type StageSlot = {
   service: PageService;
   index: number;
-  at: "both" | "lg" | "below-lg";
 };
 
 /**
@@ -1392,35 +1370,30 @@ type StageSlot = {
  * that now each fill themselves, and the verso's two rows get the air the
  * chapter head used to squeeze out of three.
  *
- * The crossing stage is printed on BOTH pages and each copy is hidden at the
- * other breakpoint, rather than the split being chosen in JS: which layout is
- * showing is a media query, and a JS answer would disagree with it at the
- * boundary on the first paint. `display: none` keeps the hidden copy out of
- * the accessibility tree.
+ * The split follows the SHEET MODE (SingleSheetContext), not a breakpoint.
+ * The crossing stage used to be printed on both pages with each copy hidden
+ * at the other side of `lg`, which kept a duplicate of it in the DOM and was
+ * wrong on a portrait tablet: 1024x1366 is `lg` wide and prints one page per
+ * sheet, so it got the spread's 2/4 on single pages.
  *
- * Derived, so a seventh stage rebalances: four and three below `lg`, three
- * and four on a spread.
+ * Derived, so a seventh stage rebalances: four and three one to a sheet,
+ * three and four on a spread.
  */
-function stageHalves(services: PageService[] | undefined) {
+function stageHalves(services: PageService[] | undefined, single: boolean) {
   const entries = services?.filter((service) => service.stage) ?? [];
   const half = Math.ceil(entries.length / 2);
-  const lgHalf = Math.max(1, half - 1);
-  const verso: StageSlot[] = entries
-    .slice(0, half)
-    .map((service, index) => ({
-      service,
-      index,
-      at: index < lgHalf ? "both" : "below-lg",
-    }));
-  const recto: StageSlot[] = entries.slice(lgHalf).map((service, k) => {
-    const index = lgHalf + k;
-    return { service, index, at: index < half ? "lg" : "both" };
+  const cut = single ? half : Math.max(1, half - 1);
+  const slot = (service: PageService, index: number): StageSlot => ({
+    service,
+    index,
   });
+  const verso = entries.slice(0, cut).map((service, k) => slot(service, k));
+  const recto = entries.slice(cut).map((service, k) => slot(service, cut + k));
   return {
     verso,
     recto,
-    versoRows: lgHalf,
-    rectoRows: entries.length - lgHalf,
+    versoRows: verso.length,
+    rectoRows: recto.length,
   };
 }
 
@@ -1463,10 +1436,8 @@ function stageHalves(services: PageService[] | undefined) {
  * reading as a photograph at all and starts reading as an icon, which would
  * put an engraving's job on a picture that is not one.
  */
-function StageRow({ service, index, at }: StageSlot) {
+function StageRow({ service, index }: StageSlot) {
   const stage = service.stage!;
-  const display =
-    at === "lg" ? "hidden lg:grid" : at === "below-lg" ? "grid lg:hidden" : "grid";
   const number = roman(index + 1);
   return (
     // A GRID of three rows, and the PLATE SPANS THE LOWER TWO -- at every
@@ -1491,7 +1462,7 @@ function StageRow({ service, index, at }: StageSlot) {
     // row-start/row-span are utilities that certainly generate.
     <article
       data-ink
-      className={`${display} grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,calc(1.3*var(--page-vw)),1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em] lg:gap-y-[var(--stage-gap,0.6em)] lg:pt-[var(--stage-pt,1em)]`}
+      className={`grid grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,calc(1.3*var(--page-vw)),1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em] lg:gap-y-[var(--stage-gap,0.6em)] lg:pt-[var(--stage-pt,1em)]`}
     >
       {/* The stage's own line: numeral and name at the leading edge, the plate
           number opposite. The plate number is set right because it belongs to
@@ -1734,7 +1705,7 @@ function StageRun({
       // each, the first one took the entire column and the second was handed
       // zero height: stages 04, 05 and 06 were in the DOM at 0px. Auto rows
       // down there, so the two grids stack at their content height.
-      className={`grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 ${roomy ? "lg:content-start lg:gap-y-[clamp(0.9em,3.2vh,2em)]" : "lg:content-between"} lg:pb-[clamp(24px,3.4vh,40px)] lg:[grid-template-rows:var(--stage-rows)]`}
+      className={`grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 ${roomy ? "lg:content-start lg:gap-y-[clamp(0.9em,3.2vh,2em)]" : "lg:content-between"} lg:[grid-template-rows:var(--stage-rows)]`}
       style={
         {
           ...stageSpacing(roomy),
@@ -1752,9 +1723,8 @@ function StageRun({
           // under its outcome, so the run's bottom padding is the larger one:
           // it is what keeps the last line off the drop folio.
           //
-          // `rows` counts the stages printed on a SPREAD -- the template is
-          // lg-only, and the crossing copy is display:none there on the page
-          // it has left, so it takes no cell.
+          // `rows` is the number of stages this page prints, which
+          // stageHalves() decides per sheet mode.
           "--stage-rows": `${head ? "auto " : ""}repeat(${rows}, auto)`,
         } as React.CSSProperties
       }
@@ -2128,12 +2098,9 @@ function RationalePage({
   rationale: NonNullable<BookPage["rationale"]>;
 }) {
   return (
-    <div // Reserving the drop folio. The call to action is hung off the foot with
-      // mt-auto, so unlike every page that stops short of its own padding this
-      // one lands exactly where the folio is: measured at 1440x900 the buttons
-      // reached 835 against a folio whose top edge is 820. In vh because the
-      // folio is placed in vh.
-      className="flex min-h-0 flex-col gap-[0.75em] portrait:flex-1 portrait:pb-[clamp(20px,3vh,34px)] lg:flex-1 lg:gap-[clamp(0.8em,2.9vh,2.3em)] lg:pb-[clamp(20px,3vh,34px)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:gap-[0.9em] [@media(max-height:480px)]:pt-[6%]">
+    <div // The call to action hangs off the foot with mt-auto; PAGE_FOOT is what
+      // keeps it off the drop folio.
+      className="flex min-h-0 flex-col gap-[0.75em] portrait:flex-1 lg:flex-1 lg:gap-[clamp(0.8em,2.9vh,2.3em)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:gap-[0.9em] [@media(max-height:480px)]:pt-[6%]">
       <div data-ink className="shrink-0">
         {/* On a spread, "WHY IT MATTERS" sits on the verso's "05 PERSPECTIVES"
             line, asked for directly: the same device as 07's GET IN TOUCH --
@@ -2644,12 +2611,11 @@ function ProjectStage({
           Under the plates is the better place regardless: this is a note about
           what the pictures are, and a large photograph of an interface is
           believed the moment it is seen. */}
-      {/* Hidden below 480px of viewport HEIGHT, where the twin of this block
-          on the half-title takes over -- see the note there. It is printed in
-          both places and shown in one; display:none keeps the other out of the
-          accessibility tree, so nothing is announced twice. */}
+      {/* Printed ONCE. It had a twin on the half-title, shown only below
+          480px of viewport height for the landscape phone; that phone now gets
+          the rotate notice (<Book>), so the twin guarded nothing. */}
       {colophon ? (
-        <div data-ink className="pt-[1.6em] [@media(max-height:480px)]:hidden">
+        <div data-ink className="pt-[1.6em]">
           <span
             aria-hidden
             className="mb-[0.9em] block h-px w-[26%] bg-white/15"
@@ -2857,6 +2823,7 @@ function ServiceGrid({
  * the left-hand page.
  */
 function ServicesPage({ page }: { page: BookPage | BookSpread }) {
+  const single = useContext(SingleSheetContext);
   if (!page.services?.length) return null;
   // Where this page's entries sit in the CHAPTER's run: what the spread starts
   // at, plus whatever its own verso already used. On an engraved chapter there
@@ -2873,7 +2840,7 @@ function ServicesPage({ page }: { page: BookPage | BookSpread }) {
   // that the recto knows how many rows the verso reserved. `rows` is the
   // larger of the two counts and is what keeps the two grids on one set of
   // lines when the run is odd.
-  const halves = plates ? stageHalves(page.services) : null;
+  const halves = plates ? stageHalves(page.services, single) : null;
   return (
     <>
       {/* The picture-bearing settings are asked FIRST and isIllustrated LAST.
@@ -3018,7 +2985,7 @@ function EngravedPlate({
       data-ink
       className={
         beside
-          ? "mt-auto mb-[9%] flex items-end gap-[1.4em] pt-[1.6em]"
+          ? "mt-auto flex items-end gap-[1.4em] pt-[1.6em]"
           : // 10% on a spread and not 7%, with the plate a size down to pay
             // for it.
             //
@@ -3053,7 +3020,7 @@ function EngravedPlate({
             // its engraving at portrait for the same reason, and the two
             // remaining figures are still Fig. 1 and Fig. 2 on the spread,
             // where the numbering lives.
-            "mt-auto mb-[7%] hidden w-[clamp(150px,18.5vw,268px)] lg:mb-[10%] lg:block"
+            "mt-auto hidden w-[clamp(150px,18.5vw,268px)] lg:block"
       }
     >
       <div
@@ -3183,7 +3150,7 @@ function TeamRun({
       // A portrait phone prints one page per sheet, so there is one grid on
       // the page and that cannot happen; without the template its two rows
       // sat at the top and left 246px of the page blank.
-      className="grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] portrait:h-full portrait:min-h-0 portrait:flex-1 portrait:pb-[clamp(14px,2vh,24px)] portrait:[grid-template-rows:var(--team-rows)] lg:h-full lg:min-h-0 lg:flex-1 lg:pb-[clamp(14px,2vh,24px)] lg:[grid-template-rows:var(--team-rows)]"
+      className="grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] portrait:h-full portrait:min-h-0 portrait:flex-1 portrait:[grid-template-rows:var(--team-rows)] lg:h-full lg:min-h-0 lg:flex-1 lg:[grid-template-rows:var(--team-rows)]"
       style={
         {
           "--team-rows": `minmax(0, ${TEAM_HEAD_SLOT}fr) repeat(${rows}, minmax(0, 1fr))`,
@@ -3725,6 +3692,23 @@ function HowItWorks({
  */
 const PAGE_SINKAGE = "pt-[8%]";
 
+/**
+ * Where every page's copy STOPS: a fixed gap above its drop folio.
+ *
+ * The folio is placed at 7% of the page's HEIGHT (3.5% in portrait) and the
+ * page's bottom padding used to be 8% of its WIDTH. The two are different
+ * numbers on every page, so any page that filled itself to the foot ran onto
+ * the folio's line -- 04's colophon ended level with "IV", 02's last entry
+ * 2px over "II" at 1280x720 -- and 03, 05, 06 and 01's footnote each carried
+ * a private reservation to make up the difference.
+ *
+ * `cqh` is the page's own height (every face is a size container), so this is
+ * the folio's own offset plus a line and a gap, in the folio's own terms. It
+ * replaced all four reservations. 1.6rem is the folio line (~0.7rem) and its
+ * clearance: at 1440x900 the copy stops at y=811 against a folio at 820.
+ */
+const PAGE_FOOT = "pb-[calc(7cqh+1.6rem)] portrait:pb-[calc(3.5cqh+1.6rem)]";
+
 function VersoPage({
   page,
   flush = false,
@@ -3757,7 +3741,7 @@ function VersoPage({
     : "11%";
   return (
     <div
-      className={`relative flex h-full w-full flex-col justify-start pb-[8%] text-slate-200 ${PAGE_SINKAGE}`}
+      className={`relative flex h-full w-full flex-col justify-start text-slate-200 ${PAGE_SINKAGE} ${PAGE_FOOT}`}
       style={{ paddingInlineStart: inset, paddingInlineEnd: endInset }}
     >
       <FacingCopy page={page} />
@@ -3770,9 +3754,7 @@ function VersoPage({
           exactly the condition: this page is a front face filling the screen.
           mt-auto drops it at the foot, where a book puts an aside. */}
       {flush && page.facing?.note ? (
-        <div data-ink className="mt-auto mb-[6%] max-w-[42ch] portrait:mb-[10%]">
-          {/* 10% on a phone: the folio drops to 3.5% there, and at 6% the
-              footnote's last line ended 2px above "I — COMPANY" (393x851). */}
+        <div data-ink className="mt-auto max-w-[42ch]">
           <span
             aria-hidden
             className="mb-[0.9em] block h-px w-[26%] bg-white/15"
@@ -3896,14 +3878,7 @@ function PageFoot({ page }: { page: BookPage }) {
   );
 }
 
-function PageBody({
-  page,
-  inlineFacing = true,
-}: {
-  page: BookPage | BookSpread;
-  /** Portrait prints the verso as its own sheet, so it is off there. */
-  inlineFacing?: boolean;
-}) {
+function PageBody({ page }: { page: BookPage | BookSpread }) {
   return (
     // --page-index-inset reserves the thumb index. It is measured rather than
     // guessed, and it lives on the recto only, because <BookIndex> is pinned to
@@ -3921,24 +3896,10 @@ function PageBody({
         // Both halves of a spread take the same drop, so their first lines sit
         // on one line across the gutter. See PAGE_SINKAGE.
         page.facing
-          ? `justify-start pb-[8%] ${PAGE_SINKAGE}`
-          : "justify-center py-[8%]"
+          ? `justify-start ${PAGE_SINKAGE} ${PAGE_FOOT}`
+          : `justify-center pt-[8%] ${PAGE_FOOT}`
       }`}
     >
-      {/* Portrait fallback. A full-bleed sheet is the whole window, so there is
-          no facing page to print on and its copy is set above this page's own.
-          layoutSheets decides which of the two is showing; they are never both
-          on screen. */}
-      {page.facing && inlineFacing ? (
-        <div
-          data-facing-inline
-          className="mb-[1.6em]"
-          style={{ display: "none" }}
-        >
-          <FacingCopy page={page} />
-        </div>
-      ) : null}
-
       {page.services?.length ? (
         <ServicesPage page={page} />
       ) : page.steps?.length ? (

@@ -971,6 +971,44 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   first page ends 11px into its drop folio and 04's colophon 7px into it. So
   does 844x390 on 04 and 05, which is the collapsed landscape layout.
 
+### One foot rule, one copy of everything
+
+A precision pass against an external alignment brief. The brief was written
+for a conventional scrolling site (container grid, cards, footer, WebGL hero);
+it was applied INSIDE the book on request, with no footer added and the
+landscape rotate notice kept.
+
+- **Every page stops at `PAGE_FOOT`**: `pb-[calc(7cqh+1.6rem)]`
+  (`portrait:` 3.5cqh). The folio is placed at 7% of the page's HEIGHT and the
+  bottom padding used to be 8% of its WIDTH, so pages that filled to the foot
+  ran onto the folio line (04's colophon level with "IV", 02's last entry 2px
+  over "II" at 1280x720). Every face (`<PageFace>`, `[data-left-page]`) is
+  `container-type: size`, so `cqh` is the page's own height. It REPLACED the
+  private reservations: `<StageRun>`'s and `<TeamRun>`'s vh bottom padding,
+  05's rationale padding, 05's index padding, both footnotes' `mb-[%]`, the
+  engraved plate's `mb-[9%]`/`lg:mb-[10%]` and the lead entry's `lg:mb-[7%]`.
+  At 1440x900 every page's copy now ends at or above y=811 against a folio at
+  820. Do not add a per-page reservation again; if a page overflows, it is
+  over-subscribed and something in it has to give.
+- **No layout twins.** Three blocks were printed twice with one copy
+  `display:none`:
+  - `data-facing-inline`, a hidden copy of the verso inside EVERY recto,
+    toggled by `layoutSheets` when full-bleed. Dead since portrait got its own
+    sheets (`SinglePageSheets`): `SpreadSheets` only renders when not
+    full-bleed, so it could never show. Removed with its loop and the
+    `inlineFacing` prop.
+  - 03's crossing stage, printed on both pages and hidden either side of `lg`.
+    `stageHalves(services, single)` now splits by SHEET MODE, read from
+    `SingleSheetContext` (provided by `SinglePageSheets`). `lg` was a proxy
+    that was wrong on a portrait tablet (1024x1366 is `lg` wide and one page
+    per sheet). `StageSlot.at` is gone.
+  - 04's colophon on the half-title below 480px of height, for the landscape
+    phone that now gets the rotate notice. One copy, on the recto.
+
+  Checked with a text-node scan of `[data-stage]` excluding the mirrored
+  backs: the only repeats left are content (04's index names each project that
+  its stage also titles) and running heads.
+
 ### Wide laptops, landscape phones and label brightness
 
 Found by a full-device audit (every at-rest face, text vs folio / home mark /
@@ -1600,7 +1638,7 @@ at in `pnpm dev`.
   stylesheet.** A full-bleed sheet is the whole screen, so the back of a
   turned sheet swings off to the left and is never at rest — which is why the
   spread's verso used to be printed INLINE above the recto on the same sheet
-  (`data-facing-inline`), two pages of copy on one page of paper. That is what
+  (`data-facing-inline`, since removed), two pages of copy on one page of paper. That is what
   every `lg:`-scoped cut in `book-sheets.tsx` was paying for. Google's own
   reader does the same thing the other way round (US9911221B2: portrait is one
   page, landscape is two either side of a virtual binding), and so does this

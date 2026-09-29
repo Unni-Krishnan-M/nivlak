@@ -48,12 +48,16 @@ export function BookNav() {
             src="/logo-mark.webp"
             alt=""
             aria-hidden="true"
-            width={192}
-            height={192}
+            width={384}
+            height={384}
             draggable={false}
-            className="h-auto w-[clamp(17px,1.5vw,22px)] select-none"
+            // Bigger and sharper (asked: "make the logo clear and bigger"):
+            // 17-22px -> 26-34px, from a 384px mark rebuilt off logo.jpeg with
+            // the circuit's navy outlines keyed through, where the 192px one
+            // went soft at this size and lost the outlines.
+            className="h-auto w-[clamp(26px,2.3vw,34px)] select-none"
           />
-          <span className="-me-[0.3em] text-[clamp(0.58rem,0.75vw,0.7rem)] tracking-[0.4em]">
+          <span className="-me-[0.3em] text-[clamp(0.78rem,1.05vw,0.98rem)] font-medium tracking-[0.36em] text-white">
             NIVLAK
           </span>
         </button>

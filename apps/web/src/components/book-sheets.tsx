@@ -1061,7 +1061,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
                 // the head that overflows first because a chapter opening
                 // cannot be made shorter -- the numeral, the title and the
                 // rule are what say which chapter this is.
-                className="mt-[0.9em] max-w-[42ch] text-[clamp(0.68rem,1.185vw,1.085rem)] leading-relaxed text-balance text-slate-300/80 [@media(max-height:480px)]:hidden"
+                className="mt-[0.9em] max-w-[42ch] text-[clamp(0.68rem,1.185vw,1.085rem)] leading-relaxed text-balance text-slate-300/80 xl:text-[clamp(0.68rem,1.28vw,1.172rem)] [@media(max-height:480px)]:hidden"
               >
                 {subtitle}
               </p>
@@ -1442,6 +1442,12 @@ function stageHalves(services: PageService[] | undefined, single: boolean) {
  */
 function StageRow({ service, index }: StageSlot) {
   const stage = service.stage!;
+  // Type 8% larger from `xl` (asked: "increase the size of fonts" in 03), by
+  // `--stage-type` on <StageRun>: every page-vw term and maximum x1.08. Not
+  // below xl: at 1024x768 the recto's text column is ~232px and the bigger
+  // type wrapped its four stages 48px past the folio. Minimums kept, so the
+  // phone pages, already trimmed to fit, are unchanged. 12% was tried first
+  // and overflowed 1440x900 by 94px.
   const number = roman(index + 1);
   return (
     // A GRID of three rows, and the PLATE SPANS THE LOWER TWO -- at every
@@ -1476,15 +1482,15 @@ function StageRow({ service, index }: StageSlot) {
         <h3 className="flex min-w-0 items-baseline gap-[0.6em]">
           <span
             aria-hidden
-            className="shrink-0 font-[family-name:var(--font-display)] text-[length:clamp(0.72rem,calc(1.254*var(--page-vw)),1.176rem)] leading-none font-light text-[#dce7f7]/80 tabular-nums"
+            className="shrink-0 font-[family-name:var(--font-display)] text-[length:clamp(0.72rem,calc(1.254*var(--page-vw)*var(--stage-type,1)),calc(1.176rem*var(--stage-type,1)))] leading-none font-light text-[#dce7f7]/80 tabular-nums"
           >
             {number}
           </span>
-          <span className="truncate text-[length:clamp(0.52rem,calc(0.885*var(--page-vw)),0.784rem)] tracking-[0.28em] text-white uppercase">
+          <span className="truncate text-[length:clamp(0.52rem,calc(0.885*var(--page-vw)*var(--stage-type,1)),calc(0.784rem*var(--stage-type,1)))] tracking-[0.28em] text-white uppercase">
             {service.title}
           </span>
         </h3>
-        <p className="shrink-0 text-[length:clamp(0.44rem,calc(0.717*var(--page-vw)),0.638rem)] tracking-[0.26em] text-slate-300/80">
+        <p className="shrink-0 text-[length:clamp(0.44rem,calc(0.717*var(--page-vw)*var(--stage-type,1)),calc(0.638rem*var(--stage-type,1)))] tracking-[0.26em] text-slate-300/80">
           PLATE {stage.figure}
         </p>
       </div>
@@ -1527,7 +1533,7 @@ function StageRow({ service, index }: StageSlot) {
       />
 
       <div className="col-start-2 row-start-2 flex min-w-0 flex-col lg:contents">
-        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[length:clamp(0.8rem,calc(1.434*var(--page-vw)),1.299rem)] leading-tight font-light lg:col-start-2 lg:row-start-2 lg:leading-snug text-balance text-[#dce7f7]">
+        <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[length:clamp(0.8rem,calc(1.434*var(--page-vw)*var(--stage-type,1)),calc(1.299rem*var(--stage-type,1)))] leading-tight font-light lg:col-start-2 lg:row-start-2 lg:leading-snug text-balance text-[#dce7f7]">
           {stage.headline}
         </h4>
         {/* What happens here -- the brief's KEY ACTIVITIES. A `ul` because it
@@ -1543,7 +1549,7 @@ function StageRow({ service, index }: StageSlot) {
             Dropped below `lg`, and it is the last thing that goes: what a
             stage PRODUCES survives it, because the deliverable and the outcome
             are the two lines a client is deciding on. */}
-        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] lg:col-span-2 lg:col-start-1 lg:row-start-3 lg:mt-0 lg:pt-[0.1em] text-[length:clamp(0.53rem,calc(0.885*var(--page-vw)),0.818rem)] leading-relaxed text-slate-300/60 lg:flex">
+        <ul className="mt-auto hidden shrink-0 flex-wrap items-baseline gap-x-[0.6em] gap-y-[0.15em] pt-[0.5em] lg:col-span-2 lg:col-start-1 lg:row-start-3 lg:mt-0 lg:pt-[0.1em] text-[length:clamp(0.53rem,calc(0.885*var(--page-vw)*var(--stage-type,1)),calc(0.818rem*var(--stage-type,1)))] leading-relaxed text-slate-300/60 lg:flex">
           {stage.work.map((item, k) => (
             <li key={item} className="flex items-baseline gap-[0.55em]">
               {k > 0 ? (
@@ -1564,16 +1570,16 @@ function StageRow({ service, index }: StageSlot) {
           on the same baselines from stage to stage, because the grid puts them
           there and not the ruling. */}
       <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] gap-y-[0.15em] border-t border-white/18 pt-[0.3em] lg:col-span-2 lg:col-start-1 lg:row-start-4 lg:gap-y-[var(--stage-dl-gap,0.5em)] lg:pt-[var(--stage-dl-pt,0.75em)]">
-        <dt className="text-[length:clamp(0.44rem,calc(0.717*var(--page-vw)),0.638rem)] tracking-[0.24em] text-slate-200/90">
+        <dt className="text-[length:clamp(0.44rem,calc(0.717*var(--page-vw)*var(--stage-type,1)),calc(0.638rem*var(--stage-type,1)))] tracking-[0.24em] text-slate-200/90">
           DELIVERABLE
         </dt>
-        <dd className="text-[length:clamp(0.62rem,calc(1.064*var(--page-vw)),0.986rem)] leading-tight text-white lg:leading-snug">
+        <dd className="text-[length:clamp(0.62rem,calc(1.064*var(--page-vw)*var(--stage-type,1)),calc(0.986rem*var(--stage-type,1)))] leading-tight text-white lg:leading-snug">
           {stage.deliverable}
         </dd>
-        <dt className="text-[length:clamp(0.44rem,calc(0.717*var(--page-vw)),0.638rem)] tracking-[0.24em] text-slate-200/90">
+        <dt className="text-[length:clamp(0.44rem,calc(0.717*var(--page-vw)*var(--stage-type,1)),calc(0.638rem*var(--stage-type,1)))] tracking-[0.24em] text-slate-200/90">
           OUTCOME
         </dt>
-        <dd className="text-[length:clamp(0.58rem,calc(0.963*var(--page-vw)),0.885rem)] leading-snug text-slate-300/75 lg:leading-normal">
+        <dd className="text-[length:clamp(0.58rem,calc(0.963*var(--page-vw)*var(--stage-type,1)),calc(0.885rem*var(--stage-type,1)))] leading-snug text-slate-300/75 lg:leading-normal">
           {stage.outcome}
         </dd>
       </dl>
@@ -1635,7 +1641,7 @@ function ArcArrow() {
 function stageSpacing(roomy: boolean) {
   const u = roomy
     ? "clamp(1.2em, 6vh - 24px, 1.9em)"
-    : "clamp(0.35em, min(7vh - 47px, 2.4vw - 18.6px), 1.15em)";
+    : "clamp(0.35em, min(7vh - 52px, 2.4vw - 23.6px), 1.15em)";
   const [gap, dlPt, dlGap] = roomy ? [0.68, 0.58, 0.42] : [0.6, 0.75, 0.5];
   return {
     "--stage-pt": u,
@@ -1709,7 +1715,7 @@ function StageRun({
       // each, the first one took the entire column and the second was handed
       // zero height: stages 04, 05 and 06 were in the DOM at 0px. Auto rows
       // down there, so the two grids stack at their content height.
-      className={`grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 ${roomy ? "lg:content-start lg:gap-y-[clamp(0.9em,3.2vh,2em)]" : "lg:content-between"} lg:[grid-template-rows:var(--stage-rows)]`}
+      className={`xl:[--stage-type:1.08] grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 ${roomy ? "lg:content-start lg:gap-y-[clamp(0.9em,3.2vh,2em)]" : "lg:content-between"} lg:[grid-template-rows:var(--stage-rows)]`}
       style={
         {
           ...stageSpacing(roomy),
@@ -2973,6 +2979,8 @@ function ServiceEntry({
   service: PageService;
   index: number;
 }) {
+  // Set ~12% smaller than it was (asked: "decrease the font size" in 02):
+  // label, title and body, every term of each clamp.
   const plateOnTheRight = index % 2 === 1;
   return (
     <div
@@ -2983,14 +2991,14 @@ function ServiceEntry({
     >
       {service.image ? <ServicePlate image={service.image} /> : null}
       <div className="min-w-0 flex-1">
-        <p className="mb-[0.5em] text-[clamp(0.54rem,0.86vw,0.76rem)] tracking-[0.34em] text-slate-300/75">
+        <p className="mb-[0.5em] text-[clamp(0.5rem,0.76vw,0.67rem)] tracking-[0.34em] text-slate-300/75">
           {roman(index + 1)}
         </p>
-        <p className="font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.85vw,1.72rem)] leading-tight font-normal text-balance text-white">
+        <p className="font-[family-name:var(--font-display)] text-[clamp(0.94rem,1.63vw,1.51rem)] leading-tight font-normal text-balance text-white">
           {service.title}
         </p>
         {service.body ? (
-          <p className="mt-[0.55em] text-[clamp(0.72rem,1.14vw,1.04rem)] leading-relaxed text-slate-300/85">
+          <p className="mt-[0.55em] text-[clamp(0.66rem,1vw,0.92rem)] leading-relaxed text-slate-300/85">
             {service.body}
           </p>
         ) : null}

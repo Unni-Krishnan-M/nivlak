@@ -4259,10 +4259,13 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] min-h-[1em] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-300/80 tabular-nums"
       >
         {page.facing ? roman(page.number) : null}
-        {/* The home mark, just AFTER the folio on the same line, in the
-            margin past the column's end (asked: "right of the page number"). */}
-        <HomeMark side="right" />
       </p>
+      {/* The home mark, on the folio's line but out toward the page's RIGHT
+          edge (asked: move it right). 11% of the page from the VISIBLE edge
+          (`--page-text-inset-end`), not less: at 4.5% it sat on the white
+          page-stack at 1366x768 and 1920x1080. The thumb index shares this
+          margin but hangs at mid-height, never this low. */}
+      <FootMark end="calc(11% + var(--page-text-inset-end, 0px))" />
     </div>
   );
 }

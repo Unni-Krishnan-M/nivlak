@@ -173,8 +173,12 @@ export function Book() {
     const drop = ribbon
       ? gsap.fromTo(
           ribbon,
-          { yPercent: -105 },
-          { yPercent: 0, duration: 1.1, ease: "back.out(1.3)", delay: 0.35 },
+          // `y` is zeroed as well as yPercent: GSAP reads the markup's
+          // starting `-translate-y-[105%]` into its own `y` (as -187px at
+          // 1440x900) and a tween of yPercent alone left it there -- the
+          // ribbon finished its drop still hidden above the head bar.
+          { yPercent: -105, y: 0 },
+          { yPercent: 0, y: 0, duration: 1.1, ease: "back.out(1.3)", delay: 0.35 },
         )
       : null;
     return () => {

@@ -140,6 +140,41 @@ export function Book() {
   // inside the hero block (see where it is rendered). It fades in the same
   // tween as `kickerRef`, as a second target, not in a second tween.
   const cueRef = useRef<HTMLDivElement>(null);
+  // The cover's moving category band. Its own ref because it is laid against
+  // the SCREEN's foot, outside the hero column; faded by the same tween.
+  const bandRef = useRef<HTMLDivElement>(null);
+
+  // THE COVER'S ENTRANCE, run ONCE by GSAP and not by CSS keyframes.
+  //
+  // It was `animate-hero-rise` on each line and `animate-ribbon-drop` on the
+  // ribbon. ScrollTrigger's refresh takes the pinned section out of its
+  // spacer and puts it back -- measured on load at ~520ms and ~690ms -- and
+  // re-inserting an element RESTARTS its CSS animations, so the lines rose,
+  // snapped back to invisible and rose again: the "blinks three times on
+  // refresh". A tween is not restarted by a DOM move. Until it runs the lines
+  // are `motion-safe:opacity-0` in the markup, so the server HTML does not
+  // flash them first; under reduced motion they are simply there.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const lines = document.querySelectorAll<HTMLElement>("[data-rise]");
+    const rise = gsap.fromTo(
+      lines,
+      { opacity: 0, y: 14 },
+      { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.09, delay: 0.05 },
+    );
+    const ribbon = document.querySelector<HTMLElement>("[data-ribbon-drop]");
+    const drop = ribbon
+      ? gsap.fromTo(
+          ribbon,
+          { yPercent: -105 },
+          { yPercent: 0, duration: 1.1, ease: "back.out(1.3)", delay: 0.35 },
+        )
+      : null;
+    return () => {
+      rise.kill();
+      drop?.kill();
+    };
+  }, []);
 
   const imagesRef = useRef<(HTMLImageElement | null)[]>([]);
   // Highest frame index that is decoded and safe to draw. The playhead is
@@ -237,7 +272,9 @@ export function Book() {
   //
   // The floor is the old 16 -- 360x640 cut 03's third stage off at 18 -- and
   // the cap keeps a 12.9" tablet from setting a phone layout at poster size.
-  const [rootPx, setRootPx] = useState<number | null>(null);
+  // The root size itself is now CSS (apps/web/src/index.css), so it is in
+  // effect from the FIRST paint -- see the note there. This effect only
+  // decides `single`, one page per sheet or spreads.
   useEffect(() => {
     // Re-decided on a WIDTH change only (a rotation, a resized desktop
     // window), never on a height-only resize. On a phone the address bar
@@ -263,13 +300,6 @@ export function Book() {
       lastWidth = w;
       lastHeight = h;
       const full = isFullBleed(w, h);
-      setRootPx(
-        full
-          ? Math.round(
-              Math.min(28, Math.max(16, 19 * Math.min(w / 393, h / 851))) * 2,
-            ) / 2
-          : null,
-      );
       return setSingle(full);
     };
     sync();
@@ -311,14 +341,6 @@ export function Book() {
   //
   // ScrollTrigger has to be told: the pin's spacing is measured from a layout
   // that just changed.
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.fontSize = rootPx ? `${rootPx}px` : "";
-    ScrollTrigger.refresh();
-    return () => {
-      root.style.fontSize = "";
-    };
-  }, [rootPx]);
 
   // Highest contiguous index present in imagesRef. Derived, never reset: the
   // ref survives a remount (and StrictMode's double invoke), so resetting would
@@ -475,6 +497,7 @@ export function Book() {
           if (!img) continue;
           ctx.globalAlpha = layer.alpha;
           ctx.drawImage(img, layer.x, layer.y, layer.width, layer.height);
+          if (canvas.dataset.ready !== "true") canvas.dataset.ready = "true";
           // Same alpha as the frame it belongs to, so the 49 -> 50 cross-fade
           // takes the shade out with the matte instead of popping it.
           if (layer.index <= MATTE_LAST) {
@@ -551,7 +574,7 @@ export function Book() {
       const runningHead =
         section.querySelector<HTMLElement>("[data-running-head]");
       const thumbIndex = section.querySelector<HTMLElement>("[data-book-index]");
-      let goTo = (_index: number) => {};
+      let goTo = (_index: number, _last?: boolean) => {};
       // Every nav item carries a CHAPTER, which is what the running head and
       // the thumb index deal in. There was a second currency until 03 stopped
       // paginating: its process index carried a SPREAD, because its six
@@ -562,7 +585,11 @@ export function Book() {
       // the seek that served them are all gone, and a nav item is one thing.
       const onNavClick = (event: Event) => {
         const el = (event.currentTarget ?? event.target) as HTMLElement;
-        goTo(Number(el.dataset.index));
+        // `data-page="last"` asks for the chapter's LAST sheet rather than
+        // where it opens: the cover's "Begin a project" goes straight to 07's
+        // recto (Email us / Call us), which on a phone is the second of that
+        // chapter's two pages.
+        goTo(Number(el.dataset.index), el.dataset.page === "last");
       };
       for (const el of navItems) el.addEventListener("click", onNavClick);
       const dropNav = () => {
@@ -608,12 +635,20 @@ export function Book() {
         const plateKey = `${group}Plate`;
         const count = new Set(buttons.map((el) => el.dataset[group])).size;
 
+        // The phone carousel's tracks. `--slide` moves them by whole plates;
+        // a spread has no track transform and ignores it.
+        const tracks = [
+          ...document.querySelectorAll<HTMLElement>(`[data-${group}-track]`),
+        ];
         let current = 0;
         const show = (index: number) => {
           // Hover fires on every entry into a row; the server render already
           // marks entry 0 current, so the same index is always a no-op.
           if (index === current) return;
           current = index;
+          for (const track of tracks) {
+            track.style.setProperty("--slide", String(index));
+          }
           for (const el of buttons) {
             const on = Number(el.dataset[group]) === index;
             el.dataset.current = String(on);
@@ -697,12 +732,43 @@ export function Book() {
         const stages = [
           ...document.querySelectorAll<HTMLElement>(`[data-${group}-stage]`),
         ];
-        let drag: { id: number; x: number } | null = null;
+        // CAROUSEL (one page per sheet, `data-carousel`): the track follows
+        // the finger and, on release, goes to the next or previous project
+        // past 20% of the plate's width or springs back under it. The ends
+        // resist (a third of the movement) instead of wrapping, so a reader
+        // can feel there is nothing further. A spread keeps the stepping
+        // drag below, where the plates crossfade in place.
+        let drag: {
+          id: number;
+          x: number;
+          x0: number;
+          carousel: boolean;
+          width: number;
+        } | null = null;
+        const setDrag = (px: number) => {
+          for (const track of tracks) {
+            track.style.setProperty("--drag", `${px}px`);
+          }
+        };
         const onDown = (event: Event) => {
           const e = event as PointerEvent;
           if (e.pointerType === "mouse" && e.button !== 0) return;
+          // A press on a CONTROL inside the plate is not a drag. 04's live
+          // plate carries a browser bar (desktop / phone, reload, open), and
+          // capturing the pointer here retargeted its pointerup to the stage,
+          // so those buttons never received their click -- the phone toggle
+          // "did not work" under a real mouse.
+          if ((e.target as Element | null)?.closest("button, a, input, iframe")) {
+            return;
+          }
           const stage = e.currentTarget as HTMLElement;
-          drag = { id: e.pointerId, x: e.clientX };
+          drag = {
+            id: e.pointerId,
+            x: e.clientX,
+            x0: e.clientX,
+            carousel: stage.dataset.carousel === "true",
+            width: stage.getBoundingClientRect().width || 1,
+          };
           // Capture keeps the drag alive once the cursor leaves the plate.
           // Guarded: it throws when the pointer is no longer active, which a
           // synthetic event and some browsers both manage, and a drag that
@@ -715,6 +781,14 @@ export function Book() {
         const onMove = (event: Event) => {
           const e = event as PointerEvent;
           if (!drag || e.pointerId !== drag.id) return;
+          if (drag.carousel) {
+            let dx = e.clientX - drag.x0;
+            if ((current === 0 && dx > 0) || (current === count - 1 && dx < 0)) {
+              dx /= 3;
+            }
+            setDrag(dx);
+            return;
+          }
           const dx = e.clientX - drag.x;
           if (Math.abs(dx) < STEP) return;
           const steps = Math.trunc(dx / STEP);
@@ -731,6 +805,13 @@ export function Book() {
             }
           } catch {}
           stage.dataset.dragging = "false";
+          if (drag.carousel) {
+            const dx = e.clientX - drag.x0;
+            const threshold = drag.width * 0.2;
+            if (dx < -threshold && current < count - 1) show(current + 1);
+            else if (dx > threshold && current > 0) show(current - 1);
+            setDrag(0);
+          }
           drag = null;
         };
 
@@ -779,7 +860,7 @@ export function Book() {
         // Park the book open and let <BookPageColumn> below carry the copy.
         scroll.u = 1;
         draw();
-        gsap.set([kickerRef.current, cueRef.current], { autoAlpha: 1, y: 0 });
+        gsap.set([kickerRef.current, cueRef.current, bandRef.current], { autoAlpha: 1, y: 0 });
         // Reduced motion has no spread and no fore-edge -- it is an ordinary
         // scrolling column -- so the head bar stays and the thumb index, which
         // only makes sense on an open book, is not shown at all.
@@ -855,7 +936,7 @@ export function Book() {
       // starts opening so the reveal gets a clean, text-free stage.
       if (kickerRef.current) {
         tl.to(
-          [kickerRef.current, cueRef.current].filter(Boolean),
+          [kickerRef.current, cueRef.current, bandRef.current].filter(Boolean),
           { autoAlpha: 0, y: -16, duration: 0.1 * OPEN },
           0.05 * OPEN,
         );
@@ -989,8 +1070,16 @@ export function Book() {
           overwrite: true,
         });
       };
-      const seek = (chapter: number) =>
-        seekSpread(chapter < 0 ? -1 : (firstSheetOfChapter[chapter] ?? 0));
+      const lastSheetOf = (chapter: number) =>
+        chapterOfSheet.lastIndexOf(chapter);
+      const seek = (chapter: number, last = false) =>
+        seekSpread(
+          chapter < 0
+            ? -1
+            : last
+              ? Math.max(0, lastSheetOf(chapter))
+              : (firstSheetOfChapter[chapter] ?? 0),
+        );
       // contextSafe is optional in the hook's types, so fall back to the bare
       // function rather than asserting it is there.
       goTo = contextSafe ? contextSafe(seek) : seek;
@@ -1165,6 +1254,11 @@ export function Book() {
         // keeps ONE tab lit across both, instead of the index going dark on the
         // continuation because no tab has that spread's number.
         const chapter = current < 0 ? -1 : (chapterOfSheet[current] ?? -1);
+        // Announced for anything on a page that should only wake up when its
+        // chapter is open -- 04's live site loads here rather than on the
+        // cover. An event rather than a prop because the sheets are rendered
+        // once and this runs outside React.
+        window.dispatchEvent(new CustomEvent("book:chapter", { detail: chapter }));
         for (const el of navItems) {
           const index = Number(el.dataset.index);
           if (index >= 0) el.dataset.current = String(index === chapter);
@@ -1236,7 +1330,12 @@ export function Book() {
       >
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 h-full w-full"
+          // Fades up ONCE, when its first frame is drawn (draw() sets
+          // data-ready). It used to go from the letterbox colour to the full
+          // photograph in one frame ~0.9-1.1s after load, the last of the
+          // three "blinks" a refresh showed. The section behind it is the
+          // same letterbox colour, so hidden it is invisible, not a hole.
+          className="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-700 ease-out data-[ready=true]:opacity-100 motion-reduce:transition-none"
           role="img"
           aria-label="A navy book embossed with the Nivlak logo opening on a slate plinth until its spread fills the frame"
         />
@@ -1256,7 +1355,7 @@ export function Book() {
             wrapper is `pointer-events-none` and the two buttons switch it back
             on, so the cover's copy never eats a click meant for the page and
             the buttons stop taking them the moment GSAP hides the block.  */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-stretch portrait:pt-[9vh] portrait:pb-[11vh] portrait:[@media(max-height:700px)]:pb-[5vh] landscape:ps-[7vw] landscape:pe-[4vw]">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-stretch portrait:pt-[9vh] portrait:pb-[11vh] portrait:[@media(max-height:700px)]:pb-[calc(3vh+2.5rem)] landscape:ps-[7vw] landscape:pe-[4vw]">
           <div
             ref={kickerRef}
             // The hero sits DIRECTLY on the photograph in portrait, with no
@@ -1296,7 +1395,7 @@ export function Book() {
                   both were removed on request. Flush left it starts on the
                   same edge as the headline under it; in portrait it is
                   centred over the title like everything else there. */}
-              <p className="text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.42em] text-slate-300/85 uppercase motion-safe:animate-hero-rise">
+              <p data-rise className="text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.42em] text-slate-300/85 uppercase motion-safe:opacity-0">
                 Nivlak Technologies
               </p>
             {/* THE COVER IS LEADED, asked for as "line spacing in all". Every
@@ -1317,7 +1416,7 @@ export function Book() {
                 nothing more, measured at 365px at 393x851, where the block ran
                 414 at the landscape sizes. The alternative was cropping the
                 plate, which is the one thing the first screen is for. */}
-            <h1 className="mt-[3.6vh] font-[family-name:var(--font-display)] text-[clamp(2.1rem,5.2vw,4.6rem)] leading-[1.12] font-light text-white portrait:mt-[2.4vh] portrait:text-[clamp(1.7rem,8vw,2.4rem)] motion-safe:animate-hero-rise motion-safe:[animation-delay:90ms]">
+            <h1 data-rise className="mt-[3.6vh] font-[family-name:var(--font-display)] text-[clamp(2.1rem,5.2vw,4.6rem)] leading-[1.12] font-light text-white portrait:mt-[2.4vh] portrait:text-[clamp(1.7rem,8vw,2.4rem)] motion-safe:opacity-0">
               The Story
               {/* The blue line, in the display ITALIC so the two lines read as
                   a title and its turn rather than one sentence in two colours.
@@ -1340,7 +1439,7 @@ export function Book() {
 
             {/* ...and everything a reader can ACT on goes under the book. */}
             <div className="portrait:w-full">
-            <p className="mt-[4vh] leading-[1.7] text-[clamp(0.78rem,1.15vw,1.05rem)] tracking-[0.12em] text-slate-300/85 portrait:mt-[1.6vh] motion-safe:animate-hero-rise motion-safe:[animation-delay:180ms]">
+            <p data-rise className="mt-[4vh] leading-[1.7] text-[clamp(0.78rem,1.15vw,1.05rem)] tracking-[0.12em] text-slate-300/85 portrait:mt-[1.6vh] motion-safe:opacity-0">
               Technology built around your business.
             </p>
 
@@ -1379,7 +1478,22 @@ export function Book() {
                 0.5rem, 0.18em of tracking and 0.8rem of side padding the pair
                 fits the 338px a 393px phone has, and `flex-wrap` is the
                 backstop for narrower ones. */}
-            <div className="mt-[5vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)] portrait:mt-[3.2vh] portrait:justify-center portrait:gap-[0.5rem] motion-safe:animate-hero-rise motion-safe:[animation-delay:270ms]">
+            <div data-rise className="mt-[5vh] flex flex-wrap items-center gap-[clamp(0.6rem,1.1vw,1rem)] portrait:mt-[3.2vh] portrait:justify-center portrait:gap-[0.5rem] motion-safe:opacity-0">
+              <button
+                type="button"
+                data-nav-item
+                data-index={BOOK_PAGES.length - 1}
+                data-page="last"
+                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.8em] rounded-full border border-white/25 bg-white/[0.06] px-[clamp(1.1rem,1.9vw,1.6rem)] py-[clamp(0.7rem,1.45vh,1rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.26em] text-white uppercase backdrop-blur-md outline-none transition-[background-color,border-color] duration-300 [text-shadow:none] hover:border-white/55 hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-[#9dc0ee] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050b14] portrait:px-[0.8rem] portrait:py-[0.7rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] motion-reduce:transition-none"
+              >
+                Begin a project
+                <span
+                  aria-hidden
+                  className="text-[#9dc0ee] transition-transform duration-300 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
+                >
+                  &rarr;
+                </span>
+              </button>
               <button
                 type="button"
                 data-nav-item
@@ -1410,43 +1524,67 @@ export function Book() {
                   </svg>
                 </span>
               </button>
-              <button
-                type="button"
-                data-nav-item
-                data-index={BOOK_PAGES.length - 1}
-                className="group pointer-events-auto inline-flex cursor-pointer items-center gap-[0.8em] rounded-full border border-white/25 bg-white/[0.06] px-[clamp(1.1rem,1.9vw,1.6rem)] py-[clamp(0.7rem,1.45vh,1rem)] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.26em] text-white uppercase backdrop-blur-md outline-none transition-[background-color,border-color] duration-300 [text-shadow:none] hover:border-white/55 hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-[#9dc0ee] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050b14] portrait:px-[0.8rem] portrait:py-[0.7rem] portrait:text-[0.5rem] portrait:tracking-[0.18em] motion-reduce:transition-none"
+            </div>
+
+
+            </div>
+          </div>
+        </div>
+
+        {/* THE CATEGORY BAND: 02's five categories as a slow ticker along the
+            cover's foot, full width, asked for as a "moving nav bar" at the
+            edge of the hero between the copy and the book. It replaced a
+            static row under the buttons that was landscape-only; the band
+            shows on phones too, because it sits in the foot padding the title
+            block already leaves (portrait pb 11vh).
+
+            - Each copy is the five words six times over (~4500px), so it is
+              wider than a 3440px ultrawide window and the band never runs
+              dry. The track holds two copies and moves by half (`marquee`),
+              so the loop has no seam. The second copy is aria-hidden: a screen
+              reader hears the five once, as a list.
+            - Edges fade out through a mask rather than stopping at the window,
+              so words arrive rather than pop.
+            - Pauses under the pointer, so it can be read; still under reduced
+              motion, where it is centred and shows one copy.
+            - Outside `kickerRef` (placed against the screen, like the ribbon)
+              and faded by the same tween before the book opens. */}
+        <div
+          ref={bandRef}
+          data-hero-band
+          className="group/band pointer-events-auto absolute inset-x-0 bottom-0 z-[2] border-t border-white/10 bg-[linear-gradient(to_top,rgba(5,11,20,0.78),rgba(5,11,20,0.25))] py-[clamp(0.55rem,1.3vh,0.9rem)] [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)] [text-shadow:none]"
+        >
+          <div className="flex w-max motion-safe:animate-marquee motion-safe:group-hover/band:[animation-play-state:paused] motion-reduce:mx-auto">
+            {[0, 1].map((copy) => (
+              <ul
+                key={copy}
+                aria-hidden={copy === 1 || undefined}
+                aria-label={copy === 0 ? "What we build" : undefined}
+                className={`flex shrink-0 items-center text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.34em] text-slate-300/85 uppercase ${copy === 1 ? "motion-reduce:hidden" : ""}`}
               >
-                Begin a project
-                <span
-                  aria-hidden
-                  className="text-[#9dc0ee] transition-transform duration-300 group-hover:translate-x-[0.25em] motion-reduce:transition-none"
-                >
-                  &rarr;
-                </span>
-              </button>
-            </div>
-
-            {/* What the studio makes, in 02's own five categories, so the
-                cover says what is behind it before a reader commits to eight
-                viewports of scroll. Landscape only: in portrait the block
-                under the plate has no room left under the buttons. */}
-            <ul className="mt-[4.6vh] flex flex-wrap items-center gap-x-[1.1em] gap-y-[0.7em] text-[clamp(0.52rem,0.72vw,0.66rem)] tracking-[0.24em] text-slate-400/85 uppercase portrait:hidden motion-safe:animate-hero-rise motion-safe:[animation-delay:360ms]">
-              {["Web", "Mobile", "SaaS", "AI automation", "Branding"].map(
-                (label, k) => (
-                  <li key={label} className="flex items-center gap-[1.1em]">
-                    {k > 0 ? (
-                      <span
-                        aria-hidden
-                        className="size-[3px] rounded-full bg-[#9dc0ee]/60"
-                      />
-                    ) : null}
-                    {label}
+                {Array.from({ length: 6 }, () => [
+                  "Web",
+                  "Mobile",
+                  "SaaS",
+                  "AI automation",
+                  "Branding",
+                ])
+                  .flat()
+                  .map((label, k) => (
+                  <li
+                    key={`${label}-${k}`}
+                    aria-hidden={k >= 5 || undefined}
+                    className={`flex items-center ${k >= 5 ? "motion-reduce:hidden" : ""}`}
+                  >
+                    <span className="px-[1.6em]">{label}</span>
+                    <span
+                      aria-hidden
+                      className="size-[4px] rotate-45 bg-[#9dc0ee]/70"
+                    />
                   </li>
-                ),
-              )}
-            </ul>
-
-            </div>
+                ))}
+              </ul>
+            ))}
           </div>
         </div>
 
@@ -1490,7 +1628,7 @@ export function Book() {
           aria-hidden
           className="pointer-events-none absolute top-[var(--head-rule-y,calc(5.1vh+clamp(17px,1.5vw,22px)))] right-[6vw] overflow-hidden px-[10px] pb-[10px] portrait:right-[5vw]"
         >
-          <div className="motion-safe:animate-ribbon-drop motion-safe:[animation-delay:350ms]">
+          <div data-ribbon-drop className="motion-safe:-translate-y-[105%]">
             <div className="origin-top [filter:drop-shadow(0_6px_8px_rgba(3,9,18,0.65))] motion-safe:animate-ribbon-sway motion-safe:[animation-delay:1.45s]">
               <div
                 // Satin: darker at both edges, a highlight just off centre.

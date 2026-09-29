@@ -105,7 +105,11 @@ export function BookIndex() {
   return (
     <div
       data-book-index
-      className="absolute end-0 top-1/2 z-[100] -translate-y-1/2 pe-[clamp(0.9rem,2vw,2rem)]"
+      // Hidden in the MARKUP, not only by GSAP: it belongs to the open book,
+      // and in the server HTML it printed I-VII over the cover for ~0.5s
+      // until <Book> set it to autoAlpha 0. GSAP's inline style overrides
+      // these classes when the pages arrive.
+      className="invisible absolute end-0 top-1/2 z-[100] -translate-y-1/2 pe-[clamp(0.9rem,2vw,2rem)] opacity-0"
     >
       <ul className="flex flex-col items-end gap-[clamp(0.5rem,1.3vh,0.9rem)]">
         {BOOK_PAGES.map((page, index) => (

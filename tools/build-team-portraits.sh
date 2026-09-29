@@ -65,6 +65,9 @@ PORTRAITS=(
   "unni-krishnan-m|Unni Krishnan M.png|933x1166+174+60"
   "ashok|Ashok.jpeg|667x833+217+90"
   "gokul|Gokul.jpeg|848x1060+141+36"
+  # Naveen: head (hair 85 -> chin ~700 of 1410) set to the same 47% of the
+  # frame and 5.5% top margin that Gokul's finished plate measures.
+  "naveen|Naveen.png|1046x1308+52+13"
 )
 
 SIZE=360x450      # ~2.5x the ~150px the portraits print at

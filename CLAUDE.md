@@ -561,8 +561,9 @@ Consequences worth knowing before touching it:
   offers. Give any of these four a specific identity — a name, a thing that
   exists — and the overlap goes. It is recorded above the chapter in
   `book-pages.content.ts` so that nobody has to rediscover it.
-- **`status` is required, and the page says it four times.** None of these is
-  delivered client work. It prints on the label line under the head, at the
+- **`status` is required, and the page says it four times.** Three of these
+  are studies; the Web Application is calioon.com, live client work (see
+  "Cover band, live work…" above). It prints on the label line under the head, at the
   size 03 sets a stage's subject; the plate number beside it puts the picture
   in a numbered series rather than presenting it as a record; the colophon says
   it again in a sentence; and `cta` says it once more by being an enquiry
@@ -970,6 +971,60 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
 - **Two pages are still tight at 320x568 and neither is from this pass**: 02's
   first page ends 11px into its drop folio and 04's colophon 7px into it. So
   does 844x390 on 04 and 05, which is the collapsed landscape layout.
+
+### Cover band, live work, five on the team, and no blink on load
+
+- **The cover's entrance is GSAP, run once, not CSS keyframes.** ScrollTrigger's
+  refresh takes the pinned section out of its spacer and puts it back (twice on
+  load, ~520ms and ~690ms), and re-inserting an element RESTARTS its CSS
+  animations -- the hero lines rose, snapped invisible and rose again: "blinks
+  three times on refresh". Lines carry `data-rise` + `motion-safe:opacity-0`,
+  the ribbon `data-ribbon-drop`; a one-shot effect in `<Book>` tweens them.
+  **Never put a CSS entrance animation inside the pinned section.**
+- **The phone's root font is CSS** (`apps/web/src/index.css`,
+  `clamp(16px, min(4.8346vw, 2.2327svh), 28px)` in portrait) -- the same
+  19px x min(w/393, h/851) the JS used to set after hydration, which made
+  every phone load snap 16px -> 19px. `svh` replaces the 180px address-bar
+  guard. The `rootPx` state is gone.
+- **The canvas fades up once** (`data-ready`, set in `draw()` on its first
+  frame) instead of popping; **`<BookIndex>` starts `invisible opacity-0` in
+  the markup** because the server HTML printed I-VII over the cover.
+- **Cover band** (`data-hero-band`, `bandRef`): 02's five categories as a
+  full-width ticker along the cover's foot, phones too, faded with the hero.
+  Each copy is six repeats (~4500px) so a 3440px window never runs dry;
+  pauses under the pointer; static under reduced motion.
+- **"Begin a project" comes first** (styles unchanged) and carries
+  `data-page="last"`: `<Book>`'s seek goes to the chapter's LAST sheet, i.e.
+  07's recto (Email us / Call us), which on a phone is the second page.
+- **The home mark is on the RIGHT of every page**: a verso's at the right end
+  of its folio line (`<FootMark end>`), a recto's just after its folio.
+- **02's entries share the page with `space-around`** under a head that takes
+  only its own height. Equal `1fr` rows centred each entry in a slot and left
+  ~130px under "Five ways in".
+- **01's N / I / V are a column of their own** (1em of the letter's size); a
+  1.4em-of-body column let a 50px N run into "Novel". NOTE: 01's footnote
+  still says "Noble, Intelligent, Vision" against the recto's "Novel Ideas,
+  Intelligent Engineering, Visionary Impact" -- flagged, not changed.
+- **06 has five people and no principles.** Naveen (Sales Executive) was added
+  (`tools/build-team-portraits.sh`, crop set to Gokul's 47% head / 5.5% top);
+  the leadership principles and the founding belief were removed on request.
+  `teamHalves()` cuts SLOTS (head counts as one, all `1fr`): head + 2 | 3.
+  The portrait page drop is `max(8%, 2.35rem)` so a page whose first line runs
+  full measure clears the running head.
+- **07's contact rows are label | value | actions at every size** (a subgrid,
+  label column = widest label). The email breaks at a `<wbr>` before "@".
+- **04's Web Application is calioon.com, live** (`project.live`,
+  `<LivePlate>`): browser bar with LIVE badge, desktop/phone toggle (rendered
+  at 1280 or 390 and scaled into the 16:9 window), reload, open-in-tab; the
+  old plate is the shimmer loading state and the 12s fallback; it loads on
+  `book:chapter` (dispatched by `syncNav`) for 04 only; sandboxed; behind
+  "Tap to use the live site" on coarse pointers. Its status is "Client work ·
+  Live" and the colophon was corrected to say so -- the old line said none of
+  the four was client work.
+- **04's index says it is an index** (hint by input type, row highlight and
+  accent bar) and **one page per sheet the plates are a swipe carousel**
+  (`data-carousel`, `data-project-track`, `--slide`/`--drag`, 20% threshold,
+  resisting ends, dots that are `data-project` buttons).
 
 ### One foot rule, one copy of everything
 

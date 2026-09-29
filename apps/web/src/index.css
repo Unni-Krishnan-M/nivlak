@@ -1,1 +1,21 @@
 @import "@nivlak/ui/globals.css";
+
+/*
+ * PHONE AND PORTRAIT-TABLET TYPE: the root size scales with the screen,
+ * 19px x min(width/393, height/851), clamped 16-28 -- 393x851 19, 360x740
+ * 16.5, 820x1180 26.3, 1024x1366 28. Every size in the book is
+ * clamp(rem, vw, rem), and in portrait the rem floor is the term that renders,
+ * so this one number sets the page's type.
+ *
+ * It is CSS and not JavaScript on purpose. <Book> used to compute it after
+ * hydration, so a phone painted at 16px and then snapped to 19 about a second
+ * after load -- the last of the "blinks three times on refresh". Here it is in
+ * effect from the first paint. `svh` (the small viewport) is what keeps it
+ * still when the address bar shows and hides; the JS version needed a 180px
+ * resize guard for that.
+ */
+@media (orientation: portrait) {
+  html {
+    font-size: clamp(16px, min(4.8346vw, 2.2327svh), 28px);
+  }
+}

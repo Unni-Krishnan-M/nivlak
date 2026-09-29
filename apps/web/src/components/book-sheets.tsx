@@ -9,12 +9,11 @@ import {
   spreadAt,
 } from "@/components/book-camera";
 import { Emblem } from "@/components/book-emblems";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   BOOK_PAGES,
   BOOK_SPREADS,
   MOBILE_PAGES,
-  PAGE_SLOTS,
   type BookPage,
   type BookSpread,
   type PageFigure,
@@ -502,9 +501,9 @@ function SpreadSheets() {
             data-ink
             className="absolute bottom-[7%] portrait:bottom-[3.5%] start-[calc(13%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.92vw,0.798rem)] tracking-[0.35em] text-slate-300/80"
           >
-            <HomeMark side="left" />
             NIVLAK
           </p>
+          <FootMark end="9%" />
         </div>
       ) : null}
 
@@ -659,23 +658,25 @@ function PageFace({
  * scroll mechanism to keep in step.
  */
 /**
- * The right page's home mark: at the BOTTOM LEFT of the page, just before the
- * text column's start (`start-[11%]` is PageBody's own `ps-[11%]`), on the
- * folio's line -- the same place the left page's mark sits relative to its
- * page. Asked for in turn: in the corner, then "in equal line on both sides",
- * then "on the left side, like the left page". The box carries the folio's
- * `bottom`, type size and line box (an invisible zero-width glyph), so the
- * mark is centred on exactly the line the folios and the left mark sit on.
+ * A LEFT page's home mark: at the RIGHT END of its folio line, its right edge
+ * flush with the text column's end. Asked for on every page ("the Nivlak logo
+ * under all sections should be on the right, on both pages"); a right page
+ * carries it just after its folio instead (see PageBody).
+ *
+ * The box carries the folio's `bottom`, type size and line box (an invisible
+ * zero-width glyph), so the mark is centred on the line the folio sits on;
+ * `end` is the column's end inset, passed in because it differs per page.
  */
-function CornerMark({ className = "" }: { className?: string }) {
+function FootMark({ end }: { end: string }) {
   return (
     <span
-      className={`absolute bottom-[7%] start-[11%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] portrait:bottom-[3.5%] ${className}`}
+      className="absolute bottom-[7%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] portrait:bottom-[3.5%]"
+      style={{ insetInlineEnd: end }}
     >
       <span aria-hidden className="invisible">
         &#8203;
       </span>
-      <span className="absolute end-full top-1/2 me-[0.8em] size-[clamp(18px,1.5vw,24px)] -translate-y-1/2">
+      <span className="absolute end-0 top-1/2 size-[clamp(18px,1.5vw,24px)] -translate-y-1/2">
         <HomeMark side="corner" />
       </span>
     </span>
@@ -2206,6 +2207,24 @@ function ProjectIndex({ services }: { services: PageService[] }) {
           the metadata, the action and the colophon through each other at the
           foot. One row of short labels is 30px and navigates just as well --
           it is also exactly what the brief draws for mobile. */}
+      {/* SAY THAT IT IS AN INDEX. Asked for: a reader moving the mouse down
+          these four rows did not know the plate opposite was changing under
+          it. The hint names the gesture for the input the reader has --
+          pointing on a mouse, tapping on touch -- and every row lights with
+          an accent bar under the pointer, the current one keeping it. */}
+      <p className="mb-[0.8em] flex items-center gap-[0.6em] text-[clamp(0.46rem,0.7vw,0.62rem)] tracking-[0.26em] text-[#9dc0ee]/90 uppercase">
+        <span aria-hidden className="h-px w-[1.6em] bg-[#9dc0ee]/60" />
+        <span className="[@media(hover:none)]:hidden">
+          Point at a project — the plate on the right changes
+        </span>
+        <span className="hidden [@media(hover:none)]:inline">
+          Tap a project, then swipe through them on the next page
+        </span>
+      </p>
+      {/* The rows' padding follows the viewport HEIGHT (capped at the old
+          1.05em from ~1000px tall): the hint above cost the page ~25px, and
+          at 1280x720, 1366x768 and 1440x768 the last row then ran 9-19px into
+          the folio. */}
       <ul className="m-0 flex list-none flex-wrap items-baseline gap-x-[clamp(0.7em,3.2vw,1.4em)] gap-y-[0.5em] p-0 pb-[0.7em] portrait:grid portrait:min-h-0 portrait:flex-1 portrait:gap-0 portrait:pb-0 portrait:[grid-template-rows:repeat(var(--project-rows),minmax(0,1fr))] lg:block lg:gap-0 lg:pb-0"
         style={
           { "--project-rows": entries.length } as React.CSSProperties
@@ -2227,8 +2246,14 @@ function ProjectIndex({ services }: { services: PageService[] }) {
               // needed 335px of a 284px column and MOBILE ran 51px past the
               // page. A border costs nothing and says the same thing. flex-wrap
               // on the list is the backstop for a narrower phone still.
-              className="group flex items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-200/90 transition-colors duration-200 outline-none hover:text-slate-200 focus-visible:text-white data-[current=true]:border-current data-[current=true]:text-slate-100 portrait:w-full portrait:gap-[0.9em] portrait:border-b-0 portrait:pb-0 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[1.05em] lg:pb-[1.05em] motion-reduce:transition-none"
+              className="group relative flex cursor-pointer items-baseline gap-[0.5em] border-b-2 border-transparent pb-[0.3em] text-start text-slate-200/90 transition-colors duration-200 outline-none hover:text-white focus-visible:text-white lg:hover:bg-white/[0.04] lg:data-[current=true]:bg-white/[0.06] data-[current=true]:border-current data-[current=true]:text-slate-100 portrait:w-full portrait:gap-[0.9em] portrait:border-b-0 portrait:pb-0 lg:w-full lg:gap-[0.9em] lg:border-b-0 lg:py-[clamp(0.55em,calc(2.6vh-8px),1.05em)] motion-reduce:transition-none"
             >
+              {/* The accent bar: in the margin just before the row, so the
+                  row's text does not move when it lights. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-[22%] -start-[0.7em] hidden w-[2px] origin-center scale-y-0 bg-[#9dc0ee] transition-transform duration-200 group-hover:scale-y-100 group-data-[current=true]:scale-y-100 portrait:block lg:block motion-reduce:transition-none"
+              />
               <span className="shrink-0 text-[clamp(0.44rem,0.69vw,0.627rem)] tracking-[0.24em] tabular-nums opacity-70">
                 {roman(service.project!.number)}
               </span>
@@ -2331,6 +2356,222 @@ function ProjectHeadIndex({ entries }: { entries: PageService[] }) {
   );
 }
 
+/** The chapter whose entries are projects, i.e. 04 -- where the live plate is. */
+const WORK_CHAPTER = BOOK_PAGES.findIndex((page) =>
+  page.services?.some((service) => service.project),
+);
+
+/**
+ * A LIVE SITE IN THE PLATE'S PLACE: calioon.com, running, inside the same
+ * 16:9 window the other three studies print their plates in.
+ *
+ * - A browser bar: a pulsing LIVE badge, the address, a DESKTOP / PHONE
+ *   toggle, reload, and "open in a new tab".
+ * - The site is rendered at a real width and SCALED into the window --
+ *   1280px for desktop, 390px for phone. Unscaled, a ~420px frame would only
+ *   ever show the site's own mobile layout.
+ * - No plate image (asked for: only the live site). Loading is a shimmer on
+ *   the window's navy; if the frame has not loaded after 12s a link out is
+ *   shown. `onError` never fires for a frame, so a timeout is the only signal.
+ * - It loads when chapter 04 is OPEN (<Book> announces `book:chapter`), not
+ *   on the cover: the sheets are all in the DOM from the first paint, so a
+ *   plain `loading="lazy"` would still fetch it behind the hero.
+ * - On touch screens it sits behind "Tap to use the live site" until tapped,
+ *   because a live frame swallows every touch -- the phone carousel could
+ *   not be swiped across it, nor the book scrolled.
+ * - Sandboxed: scripts, forms and popups, but it cannot navigate this page.
+ */
+function LivePlate({
+  live,
+  image,
+  index,
+  className,
+}: {
+  live: NonNullable<PageService["project"]>["live"] & object;
+  image: PageFigure;
+  index: number;
+  className: string;
+}) {
+  const [active, setActive] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [phone, setPhone] = useState(false);
+  const [reload, setReload] = useState(0);
+  const [coarse, setCoarse] = useState(false);
+  const [armed, setArmed] = useState(false);
+  const [box, setBox] = useState({ w: 0, h: 0 });
+  const viewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Reduced motion reads the book as a plain column with no chapter events.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setActive(true);
+    }
+    setCoarse(window.matchMedia("(pointer: coarse)").matches);
+    const onChapter = (event: Event) => {
+      if ((event as CustomEvent<number>).detail === WORK_CHAPTER) setActive(true);
+    };
+    window.addEventListener("book:chapter", onChapter);
+    return () => window.removeEventListener("book:chapter", onChapter);
+  }, []);
+
+  useEffect(() => {
+    const el = viewRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry!.contentRect;
+      setBox({ w: width, h: height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!active || loaded) return;
+    setFailed(false);
+    const t = window.setTimeout(() => setFailed(true), 12000);
+    return () => window.clearTimeout(t);
+  }, [active, loaded, reload]);
+
+  // The frame's own size and the scale that fits it into the window.
+  const DESK_W = 1280;
+  const PHONE_W = 390;
+  const PHONE_H = 780;
+  const scale = phone
+    ? box.h > 0 ? box.h / PHONE_H : 1
+    : box.w > 0 ? box.w / DESK_W : 1;
+  const frameW = phone ? PHONE_W : DESK_W;
+  const frameH = phone ? PHONE_H : box.h > 0 ? box.h / scale : 720;
+  const left = phone ? Math.max(0, (box.w - PHONE_W * scale) / 2) : 0;
+
+  const barButton =
+    "grid size-[1.9em] place-items-center rounded-full text-slate-300/85 transition-colors duration-200 outline-none hover:bg-white/10 hover:text-white focus-visible:ring-1 focus-visible:ring-[#9dc0ee] aria-pressed:bg-white/12 aria-pressed:text-white motion-reduce:transition-none";
+
+  return (
+    <div
+      data-project-plate={index}
+      data-current={index === 0 ? "true" : "false"}
+      data-live-plate
+      className={`flex flex-col bg-[#0b1728] ${className}`}
+    >
+      {/* The browser bar. */}
+      <div className="flex h-[clamp(24px,2.3vw,32px)] shrink-0 items-center gap-[0.5em] border-b border-white/10 bg-[#0e1c31] px-[0.7em] text-[clamp(0.44rem,0.66vw,0.6rem)]">
+        <span aria-hidden className="flex gap-[0.35em] max-sm:hidden">
+          <span className="size-[0.55em] rounded-full bg-white/20" />
+          <span className="size-[0.55em] rounded-full bg-white/20" />
+          <span className="size-[0.55em] rounded-full bg-white/20" />
+        </span>
+        <span className="flex shrink-0 items-center gap-[0.45em] rounded-full bg-[#9dc0ee]/12 px-[0.65em] py-[0.2em] font-medium tracking-[0.22em] text-[#cfe0f7] uppercase">
+          <span aria-hidden className="relative flex size-[0.6em]">
+            <span className="absolute inset-0 rounded-full bg-[#6ee7a8] opacity-70 motion-safe:animate-ping" />
+            <span className="relative size-full rounded-full bg-[#6ee7a8]" />
+          </span>
+          Live
+        </span>
+        <span className="flex min-w-0 flex-1 items-center gap-[0.4em] truncate rounded-full bg-white/[0.06] px-[0.8em] py-[0.25em] tracking-[0.06em] text-slate-200/90">
+          <svg aria-hidden viewBox="0 0 12 12" className="size-[0.9em] shrink-0" fill="none" stroke="currentColor" strokeWidth="1.2">
+            <rect x="2.5" y="5.5" width="7" height="5" rx="1" />
+            <path d="M4 5.5V4a2 2 0 0 1 4 0v1.5" />
+          </svg>
+          {live.host}
+        </span>
+        <span role="group" aria-label="Preview width" className="flex shrink-0 items-center">
+          <button type="button" aria-pressed={!phone} aria-label="Desktop view" onClick={() => setPhone(false)} className={barButton}>
+            <svg aria-hidden viewBox="0 0 16 16" className="size-[1.1em]" fill="none" stroke="currentColor" strokeWidth="1.3">
+              <rect x="1.5" y="2.5" width="13" height="8.5" rx="1" />
+              <path d="M5.5 14h5M8 11v3" />
+            </svg>
+          </button>
+          <button type="button" aria-pressed={phone} aria-label="Phone view" onClick={() => setPhone(true)} className={barButton}>
+            <svg aria-hidden viewBox="0 0 16 16" className="size-[1.1em]" fill="none" stroke="currentColor" strokeWidth="1.3">
+              <rect x="4.5" y="1.5" width="7" height="13" rx="1.4" />
+              <path d="M7.2 12.3h1.6" />
+            </svg>
+          </button>
+        </span>
+        <button
+          type="button"
+          aria-label="Reload the live site"
+          onClick={() => {
+            setLoaded(false);
+            setActive(true);
+            setReload((n) => n + 1);
+          }}
+          className={barButton}
+        >
+          <svg aria-hidden viewBox="0 0 16 16" className="size-[1.05em]" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+            <path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3" />
+          </svg>
+        </button>
+        <a
+          href={live.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Open ${live.host} in a new tab`}
+          className={barButton}
+        >
+          <svg aria-hidden viewBox="0 0 16 16" className="size-[1.05em]" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+            <path d="M9 2.5h4.5V7M13.5 2.5 7 9M11.5 9.5v4h-9v-9h4" />
+          </svg>
+        </a>
+      </div>
+
+      {/* The viewport. */}
+      <div ref={viewRef} className="relative min-h-0 flex-1 overflow-hidden">
+        {/* No picture behind it: asked for "only the live web, not the
+            image". While it loads the window is the plate's own navy with a
+            shimmer across it; if it never loads, a link out takes its place. */}
+        {!loaded && !failed ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,transparent_30%,rgba(220,231,247,0.14)_50%,transparent_70%)] bg-[length:250%_100%] motion-safe:animate-[live-shimmer_1.6s_linear_infinite]"
+          />
+        ) : null}
+        {active ? (
+          <iframe
+            key={`${reload}-${phone ? "p" : "d"}`}
+            src={live.url}
+            title={`${live.host} — the live site`}
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            referrerPolicy="strict-origin-when-cross-origin"
+            onLoad={() => {
+              setLoaded(true);
+              setFailed(false);
+            }}
+            className={`absolute top-0 origin-top-left border-0 bg-white transition-opacity duration-500 motion-reduce:transition-none ${loaded ? "opacity-100" : "opacity-0"} ${phone ? "rounded-[18px] ring-1 ring-white/25" : ""} ${coarse && !armed ? "pointer-events-none" : ""}`}
+            style={{
+              left,
+              width: frameW,
+              height: frameH,
+              transform: `scale(${scale})`,
+            }}
+          />
+        ) : null}
+        {failed && !loaded ? (
+          <a
+            href={live.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute inset-0 m-auto h-fit w-fit rounded-full border border-white/20 bg-[#0b1728]/85 px-[0.9em] py-[0.4em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.22em] text-slate-100 uppercase"
+          >
+            Live preview unavailable · Open {live.host} ↗
+          </a>
+        ) : null}
+        {coarse && !armed && loaded ? (
+          <button
+            type="button"
+            onClick={() => setArmed(true)}
+            className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-[0.5em] bg-gradient-to-t from-[#0b1728]/90 to-transparent pt-[2.5em] pb-[0.8em] text-[0.55rem] tracking-[0.24em] text-slate-100 uppercase"
+          >
+            Tap to use the live site
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 /**
  * The WORK stage: one 16:9 window, and the letterpress of whichever of the
  * four projects the index has chosen.
@@ -2393,6 +2634,10 @@ function ProjectStage({
   services: PageService[];
   colophon?: string;
 }) {
+  // One page per sheet: the plates become a SWIPE CAROUSEL (a track that
+  // follows the finger, springs to the next or back, dots under it). On a
+  // spread they stay stacked and crossfade under the index's hover.
+  const single = useContext(SingleSheetContext);
   const entries = services.filter((service) => service.project);
   if (!entries.length) return null;
   // Every stacked copy carries this. data-project-panel is what <Book> drives:
@@ -2476,25 +2721,59 @@ function ProjectStage({
           reaches the handler. */}
       <div
         data-project-stage
-        className="group/stage relative mt-[0.75em] grid w-full shrink-0 cursor-grab touch-pan-y overflow-hidden border border-white/12 select-none data-[dragging=true]:cursor-grabbing lg:mt-[0.9em]"
+        data-carousel={single ? "true" : "false"}
+        className="group/stage relative mt-[0.75em] w-full shrink-0 cursor-grab touch-pan-y overflow-hidden border border-white/12 select-none data-[dragging=true]:cursor-grabbing lg:mt-[0.9em]"
         style={{ aspectRatio: "16 / 9" }}
       >
-        {entries.map((service, i) => (
-          <img
-            key={service.title}
-            data-project-plate={i}
-            data-current={i === 0 ? "true" : "false"}
-            src={service.image!.src}
-            alt={service.image!.alt}
-            // The first plate is the one on screen when the spread arrives, so
-            // it is the only one worth fetching eagerly; the other three are
-            // behind a click that has not happened.
-            loading={i === 0 ? "eager" : "lazy"}
-            decoding="async"
-            draggable={false}
-            className="[grid-area:1/1] h-full w-full object-cover object-center transition-opacity duration-300 ease-out select-none data-[current=false]:opacity-0 motion-reduce:transition-none"
-          />
-        ))}
+        {/* The track. On a spread every plate shares one grid cell and the
+            current one is opaque; one page to a sheet, they sit side by side
+            and the track moves by whole plates (`--slide`, set by <Book>),
+            following the finger while it is down (`--drag`). */}
+        <div
+          data-project-track
+          className={
+            single
+              ? "flex h-full w-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-data-[dragging=true]/stage:transition-none motion-reduce:transition-none"
+              : "grid h-full w-full"
+          }
+          style={
+            single
+              ? {
+                  transform:
+                    "translateX(calc(var(--slide, 0) * -100% + var(--drag, 0px)))",
+                }
+              : undefined
+          }
+        >
+          {entries.map((service, i) => {
+            const plateClass = single
+              ? "h-full w-full shrink-0"
+              : "[grid-area:1/1] h-full w-full transition-opacity duration-300 ease-out data-[current=false]:pointer-events-none data-[current=false]:opacity-0 motion-reduce:transition-none";
+            return service.project!.live ? (
+              <LivePlate
+                key={service.title}
+                live={service.project!.live}
+                image={service.image!}
+                index={i}
+                className={plateClass}
+              />
+            ) : (
+              <img
+                key={service.title}
+                data-project-plate={i}
+                data-current={i === 0 ? "true" : "false"}
+                src={service.image!.src}
+                alt={service.image!.alt}
+                // The first plate is the one on screen when the spread arrives,
+                // so it is the only one worth fetching eagerly.
+                loading={i === 0 ? "eager" : "lazy"}
+                decoding="async"
+                draggable={false}
+                className={`object-cover object-center select-none ${plateClass}`}
+              />
+            );
+          })}
+        </div>
         {/* The affordance. A drag nobody knows about is not a feature. It
             sits in the plate's own corner, fades while a drag is under way,
             and is decoration to a screen reader, which has the index.
@@ -2504,13 +2783,37 @@ function ProjectStage({
             the column is a plain list and nothing drags. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute right-[0.9em] bottom-[0.9em] hidden items-center gap-[0.5em] bg-[#0b1728]/75 px-[0.7em] py-[0.35em] motion-reduce:hidden sm:flex text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.24em] text-slate-200 uppercase transition-opacity duration-300 group-data-[dragging=true]/stage:opacity-0 motion-reduce:transition-none"
+          className="pointer-events-none absolute right-[0.9em] bottom-[0.9em] hidden items-center gap-[0.5em] bg-[#0b1728]/75 px-[0.7em] py-[0.35em] motion-reduce:hidden sm:flex text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.24em] text-slate-200 uppercase transition-opacity duration-300 group-data-[dragging=true]/stage:opacity-0 group-has-[[data-live-plate][data-current=true]]/stage:hidden motion-reduce:transition-none"
         >
           <span>&larr;</span>
           Drag to browse
           <span>&rarr;</span>
         </span>
       </div>
+
+      {/* Where you are in the carousel, and a way to jump: one page per sheet
+          only. They are the index's own buttons (data-project), so <Book>
+          keeps them in step with everything else it drives. */}
+      {single ? (
+        <nav
+          aria-label="Project slides"
+          className="mt-[0.7em] flex shrink-0 items-center justify-center gap-[0.55em]"
+        >
+          {entries.map((service, i) => (
+            <button
+              key={service.title}
+              type="button"
+              data-project={i}
+              data-current={i === 0 ? "true" : "false"}
+              aria-current={i === 0 ? "true" : undefined}
+              aria-label={`${service.project!.number} ${service.project!.category}`}
+              className="group grid h-[1.6rem] min-w-[1.6rem] cursor-pointer place-items-center outline-none"
+            >
+              <span className="block h-[6px] w-[6px] rounded-full bg-white/30 transition-all duration-300 group-focus-visible:ring-1 group-focus-visible:ring-white group-data-[current=true]:w-[22px] group-data-[current=true]:bg-[#dce7f7] motion-reduce:transition-none" />
+            </button>
+          ))}
+        </nav>
+      ) : null}
 
       {/* The letterpress. grid-rows-1 makes the single row fill the flexed
           container rather than sit at its content height, which is what gives
@@ -2674,7 +2977,7 @@ function ServiceEntry({
   return (
     <div
       data-ink
-      className={`flex min-h-0 items-center gap-[clamp(1em,2.4vw,2.4em)] self-center ${
+      className={`flex min-h-0 items-center gap-[clamp(1em,2.4vw,2.4em)] ${
         plateOnTheRight ? "flex-row-reverse" : ""
       }`}
     >
@@ -2750,24 +3053,30 @@ function ServiceEntries({
   /** The chapter head, when this page opens a chapter. It takes slot 1. */
   head?: React.ReactNode;
 }) {
-  // A grid of PAGE_SLOTS equal rows filling the page, NOT a flex column with a
-  // gap. The gap version packed the entries against the top and left a third of
-  // every page blank at the foot -- and because a chapter opening spends its
-  // first slot on the head, the verso's entries then sat at different heights
-  // from the recto's, so nothing lined up across the gutter. On equal rows they
-  // line up by construction and the page fills itself.
-  return (
-    <div
-      className="grid h-full min-h-0 flex-1"
-      // Auto-placement does the offsetting: with a head present it takes row 1
-      // and the entries follow into rows 2 and 3; without one they start at row
-      // 1. No explicit row numbers, so adding a slot changes one constant.
-      style={{ gridTemplateRows: `repeat(${PAGE_SLOTS}, minmax(0, 1fr))` }}
-    >
-      {head}
+  // The head takes the height it needs and the entries SHARE THE REST with
+  // `space-around`: half a gap above the first, a full gap between them.
+  //
+  // It was a grid of PAGE_SLOTS equal rows, head included, with each entry
+  // centred in its row. The head needs ~130px of a ~245px slot and entry I
+  // then floated mid-way down the next, so the chapter opened on ~130px of
+  // nothing under its epigraph -- on a laptop and on a phone alike (asked:
+  // "decrease the space after 'Five ways in'"). What the equal rows bought
+  // was entry II on the same line as entry V across the gutter, which two
+  // entries of different lengths never visibly delivered.
+  //
+  // Still a column that FILLS the page, not a gap-packed list: the older
+  // version packed entries at the top and left a third of the page blank.
+  const entries = (
+    <div className="flex min-h-0 flex-1 flex-col justify-around">
       {services.map((service, i) => (
         <ServiceEntry key={service.title} service={service} index={from + i} />
       ))}
+    </div>
+  );
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      {head}
+      {entries}
     </div>
   );
 }
@@ -3101,7 +3410,7 @@ function StepList({ steps, from }: { steps: PageStep[]; from: number }) {
 }
 
 /**
- * THE TEAM SPREAD: four people, two to a page, portrait left and words right.
+ * THE TEAM SPREAD: the people, portrait left and words right.
  *
  * It borrows the process spread's shared grid -- a head slot and then equal
  * rows, the same template on both pages -- so member 01 sits on exactly the
@@ -3109,18 +3418,24 @@ function StepList({ steps, from }: { steps: PageStep[]; from: number }) {
  * the larger half, so an odd team leaves the recto's last row blank rather
  * than respacing one page against the other.
  */
-// Under 1, where 03's is 1.11: this verso's head is a chapter head and ONE
-// line of subtitle, and at 1.1 it left ~90px of blank above member 01 while
-// the portraits went short. At 0.82 the head fills its slot and the rows are
-// the tallest part of the page, which is what a spread of faces wants.
-const TEAM_HEAD_SLOT = 0.82;
-
+/**
+ * The run cut across the gutter as SLOTS, the chapter head counting as one.
+ *
+ * Every slot is one equal row on both pages, so every portrait is one size
+ * and the verso's rows II-III sit on the recto's rows II-III. Five members
+ * are head + 2 on the verso and 3 on the recto; four would be head + 2 and 2,
+ * leaving the recto's last row empty rather than respacing one page.
+ *
+ * The recto used to spend its first slot on the leadership principles and
+ * the founding belief, removed on request when Naveen joined -- which is
+ * what lets it carry three people.
+ */
 function teamHalves(members: PageMember[]) {
-  const cut = Math.ceil(members.length / 2);
+  const rows = Math.ceil((members.length + 1) / 2);
   return {
-    verso: members.slice(0, cut),
-    recto: members.slice(cut),
-    rows: cut,
+    verso: members.slice(0, rows - 1),
+    recto: members.slice(rows - 1),
+    rows,
   };
 }
 
@@ -3153,7 +3468,7 @@ function TeamRun({
       className="grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] portrait:h-full portrait:min-h-0 portrait:flex-1 portrait:[grid-template-rows:var(--team-rows)] lg:h-full lg:min-h-0 lg:flex-1 lg:[grid-template-rows:var(--team-rows)]"
       style={
         {
-          "--team-rows": `minmax(0, ${TEAM_HEAD_SLOT}fr) repeat(${rows}, minmax(0, 1fr))`,
+          "--team-rows": `repeat(${rows}, minmax(0, 1fr))`,
         } as React.CSSProperties
       }
     >
@@ -3222,50 +3537,10 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
   );
 }
 
-/**
- * The team spread's recto: the principles as a running line and the studio's
- * founding belief in the head slot, then the second half of the members.
- */
+/** The team spread's recto: the second part of the run, no head. */
 function TeamPage({ team }: { team: NonNullable<BookPage["team"]> }) {
   const { recto, verso, rows } = teamHalves(team.members);
-  return (
-    <TeamRun
-      members={recto}
-      from={verso.length}
-      rows={rows}
-      head={
-        // Hidden below lg, like 03's arc and note: there the spread is one
-        // column and this would print between member 02 and member 03.
-        // Printed in portrait for the reason given in <ContactVerso>: this
-        // page carries two members and had a 422px hole under them at
-        // 393x851. Still out on a small landscape phone, where the spread is
-        // one column and this would sit between member 02 and member 03.
-        <div
-          data-ink
-          className="hidden min-h-0 flex-col pb-[1.1em] portrait:flex lg:flex"
-        >
-          <p className="text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.3em] text-slate-300/80 uppercase">
-            {team.principlesTitle}
-          </p>
-          {/* Two columns, numbered, rather than one run with dots: a run of
-              five wrapped at 434px and started two lines with a stray "·". */}
-          <ol className="mt-[0.7em] grid grid-cols-2 gap-x-[1.2em] gap-y-[0.45em] text-[clamp(0.5rem,0.72vw,0.64rem)] tracking-[0.08em] text-slate-200/85 uppercase xl:tracking-[0.2em]">
-            {team.principles.map((principle, i) => (
-              <li key={principle} className="flex items-baseline gap-[0.7em]">
-                <span aria-hidden className="text-slate-300/80">
-                  {roman(i + 1)}
-                </span>
-                {principle.replace(/\.$/, "")}
-              </li>
-            ))}
-          </ol>
-          <p className="mt-auto max-w-[40ch] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-slate-300/75 italic">
-            {team.belief}
-          </p>
-        </div>
-      }
-    />
-  );
+  return <TeamRun members={recto} from={verso.length} rows={rows} />;
 }
 
 /**
@@ -3457,15 +3732,17 @@ function ContactPage({ page }: { page: BookPage }) {
             </span>
           </div>
         </div>
-      <dl className="relative mt-[0.5em] [@media(max-height:480px)]:mt-0">
+      <dl className="relative mt-[0.5em] grid grid-cols-[max-content_minmax(0,1fr)_auto] gap-x-[0.8em] [@media(max-height:480px)]:mt-0">
         {contact.rows.map((row) => (
           <div
             key={row.value}
-            // The label sits ABOVE the value below xl and BESIDE it from xl. Beside
-            // it at 1024 and 844x390 the address broke to "@gmail / .com".
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-[0.8em] gap-y-[0.15em] border-b border-dotted border-white/25 py-[0.55em] last:border-b-0 lg:py-[0.45em] xl:grid-cols-[minmax(0,5.2em)_minmax(0,1fr)_auto] xl:py-[0.85em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.55em] [@media(max-height:480px)]:py-[0.3em]"
+            // LABEL BESIDE ITS VALUE at every size ("Phone  +91 ..." on one line,
+            // asked for on phones, where the label used to sit above). The rows
+            // are a SUBGRID of the list, so the label column is as wide as the
+            // widest label ("Location") and every value starts on one line.
+            className="col-span-3 grid grid-cols-subgrid items-center border-b border-dotted border-white/25 py-[0.55em] last:border-b-0 lg:py-[0.45em] xl:py-[0.85em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.55em] [@media(max-height:480px)]:py-[0.3em]"
           >
-            <dt className="col-span-2 font-[family-name:var(--font-display)] text-[clamp(0.62rem,0.86vw,0.8rem)] text-slate-200/90 italic xl:col-span-1">
+            <dt className="font-[family-name:var(--font-display)] text-[clamp(0.62rem,0.86vw,0.8rem)] text-slate-200/90 italic">
               {row.label}
             </dt>
             <dd className="min-w-0 break-words font-[family-name:var(--font-display)] text-[clamp(0.78rem,1.15vw,1.06rem)] text-slate-100">
@@ -3477,7 +3754,19 @@ function ContactPage({ page }: { page: BookPage }) {
                     : {})}
                   className="underline decoration-white/0 underline-offset-4 transition-colors duration-300 outline-none hover:decoration-white/60 focus-visible:decoration-white motion-reduce:transition-none"
                 >
-                  {row.value}
+                  {/* A break opportunity before the "@": beside its label on a
+                      phone the address needs ~150px of a ~95px column, and
+                      without it the browser split it mid-word
+                      ("nivlak.work@gm / ail.com"). */}
+                  {row.value.includes("@") ? (
+                    <>
+                      {row.value.slice(0, row.value.indexOf("@"))}
+                      <wbr />
+                      {row.value.slice(row.value.indexOf("@"))}
+                    </>
+                  ) : (
+                    row.value
+                  )}
                 </a>
               ) : (
                 row.value
@@ -3690,7 +3979,13 @@ function HowItWorks({
  * continuation 23px MORE room than it had, so this cannot be the change that
  * overflows one when the catalogue grows back to two.
  */
-const PAGE_SINKAGE = "pt-[8%]";
+// In portrait the drop is at LEAST the running head (<BookRunningHead>, pinned
+// top-right, ~1.85rem tall) plus a hair (2.1rem: 40px against its 35 at
+// 393x851; 2.35 pushed 03's phone verso 1px into its folio). 8% of a phone's width is 26-31px
+// against a 26-35px running head, so a page whose first line runs the full
+// measure -- 06's recto once it lost its head -- printed its rule under
+// "VI -- TEAM". From ~800px wide the 8% is the larger and nothing moves.
+const PAGE_SINKAGE = "pt-[8%] portrait:pt-[max(8%,2.1rem)]";
 
 /**
  * Where every page's copy STOPS: a fixed gap above its drop folio.
@@ -3707,7 +4002,10 @@ const PAGE_SINKAGE = "pt-[8%]";
  * replaced all four reservations. 1.6rem is the folio line (~0.7rem) and its
  * clearance: at 1440x900 the copy stops at y=811 against a folio at 820.
  */
-const PAGE_FOOT = "pb-[calc(7cqh+1.6rem)] portrait:pb-[calc(3.5cqh+1.6rem)]";
+// Portrait's gap is 1.2rem, not 1.6: the folio line and half a line. 03's
+// phone verso (a chapter head and three stages) ended 1px into its folio at
+// 390x844 with the full 1.6 plus the running-head drop.
+const PAGE_FOOT = "pb-[calc(7cqh+1.6rem)] portrait:pb-[calc(3.5cqh+1.2rem)]";
 
 function VersoPage({
   page,
@@ -3772,9 +4070,9 @@ function VersoPage({
         className="absolute bottom-[7%] portrait:bottom-[3.5%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-300/80 tabular-nums"
         style={{ insetInlineStart: inset }}
       >
-        <HomeMark side="left" />
         {roman(page.number)} &mdash; {page.title.toUpperCase()}
       </p>
+      <FootMark end={endInset} />
     </div>
   );
 }
@@ -3804,12 +4102,17 @@ function Terms({ page }: { page: BookPage }) {
           <div
             key={term.letter}
             data-ink
-            className="grid grid-cols-[1.4em_1fr] gap-x-[0.8em] border-t border-white/10 py-[0.7em] lg:py-[clamp(0.45em,calc(4.6vh-27.8px),0.85em)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.45em]"
+            className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-[clamp(0.9em,1.6vw,1.5em)] border-t border-white/10 py-[0.7em] lg:py-[clamp(0.45em,calc(4.6vh-27.8px),0.85em)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.45em]"
           >
             {/* The letter is the artwork on this page -- same silver as the
                 lit page edge in the frame, so it reads as pressed into the
                 paper rather than typed onto it. */}
-            <dt className="font-[family-name:var(--font-display)] text-[clamp(1.6rem,3.45vw,3.192rem)] leading-none font-light text-[#dce7f7]">
+            {/* THE LETTER BESIDE ITS WORD: its own column, one width for all
+                three (1em of the letter's own size, centred), so N, I and V
+                sit in one column and "Novel", "Intelligent" and "Visionary"
+                start on one line beside them. The column was 1.4em of the
+                BODY size -- 22px -- and a 50px N ran straight into "Novel". */}
+            <dt className="w-[1em] text-center font-[family-name:var(--font-display)] text-[clamp(1.6rem,3.45vw,3.192rem)] leading-none font-light text-[#dce7f7]">
               {term.letter}
             </dt>
             <dd>
@@ -3950,18 +4253,10 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(10%+var(--page-text-inset-end,0px)+var(--page-index-inset,0px))] min-h-[1em] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-300/80 tabular-nums"
       >
         {page.facing ? roman(page.number) : null}
+        {/* The home mark, just AFTER the folio on the same line, in the
+            margin past the column's end (asked: "right of the page number"). */}
+        <HomeMark side="right" />
       </p>
-      {/* The right page's home mark sits IN ITS BOTTOM CORNER, asked for
-          ("move it still to the corner"): past the folio, toward the page's
-          outer edge and a little below the folio's line. Inset from the
-          VISIBLE edge (`--page-text-inset-end` is the part of a wide spread's
-          page that runs off the window), so it stays on the paper at every
-          width and never lands on the window edge; bottom 5% keeps it above
-          the paper's foot, which sits ~3.6% up the sheet element. 11% and not
-          less: the sheet's edge is the photographed page's, fore-edge stack
-          included, and at 4.5% the mark sat ON the white page-stack at
-          1366x768 and 1920x1080, where the whole book fits the window. */}
-      <CornerMark />
     </div>
   );
 }

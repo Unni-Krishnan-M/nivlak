@@ -161,6 +161,13 @@ export type PageProject = {
    * something a reader can open, that entry alone can say so.
    */
   cta: { label: string; chapter: number };
+  /**
+   * A LIVE site shown in the plate's place: the running product in an
+   * iframe, with a browser bar, a desktop / phone toggle and the plate image
+   * as its loading state and fallback. Only for work that is real and live --
+   * a concept has nothing to show running.
+   */
+  live?: { url: string; host: string };
 };
 
 /**
@@ -471,11 +478,6 @@ export type BookPage = {
    * rows a page, on one shared grid so the rows line up across the gutter.
    */
   team?: {
-    /** The recto's head slot: the studio's founding belief... */
-    belief: string;
-    /** ...under a running line of the leadership principles. */
-    principlesTitle: string;
-    principles: string[];
     members: PageMember[];
   };
   /**
@@ -955,7 +957,10 @@ export const BOOK_PAGES: BookPage[] = [
       // meant to help you choose.
     },
     colophon:
-      "All four are Nivlak Lab studies — our own concepts, built in-house. None is delivered client work, and the line under each plate says so.",
+      // Was "All four are Nivlak Lab studies ... None is delivered client
+      // work", which stopped being true when the Web Application plate became
+      // calioon.com, live. Rewritten to stay true, and nothing else changed.
+      "The Web Application is calioon.com — live client work you can use on this page. The other three are Nivlak Lab studies: our own concepts, built in-house. The line under each plate says which.",
     services: [
       {
         title: "Digital Platforms, Engineered.",
@@ -969,10 +974,11 @@ export const BOOK_PAGES: BookPage[] = [
           number: "01",
           label: "Web",
           category: "Web Application",
-          status: "Nivlak Lab · Concept",
+          status: "Client work · Live",
           services: ["Strategy", "UX/UI", "Engineering", "Deployment"],
           platform: "Web",
           cta: { label: "Enquire about this", chapter: 6 },
+          live: { url: "https://calioon.com/", host: "calioon.com" },
         },
       },
       {
@@ -1206,21 +1212,11 @@ export const BOOK_PAGES: BookPage[] = [
       subtitle: "The people you meet when you work with Nivlak.",
     },
     team: {
-      // Laxman's bio used to open the recto in two paragraphs. The first is
-      // the STUDIO's belief rather than one person's, so it heads the page
-      // here; the second is condensed into Laxman's own row below.
-      belief:
-        "Nivlak Technologies was founded with a simple belief: technology should create opportunities, solve meaningful problems, and leave a lasting impact.",
-      principlesTitle: "Leadership Principles",
-      principles: [
-        "Think Long-Term.",
-        "Build With Purpose.",
-        "Lead With Integrity.",
-        "Never Stop Learning.",
-        "Create Lasting Value.",
-      ],
+      // The leadership principles and the founding belief headed the recto
+      // until Naveen joined; both were removed on request, and the recto
+      // carries three people instead.
       // ONLY the names and roles were given. Laxman's words come from the
-      // founder bio this chapter carried before; the other three members'
+      // founder bio this chapter carried before; the other four members'
       // sentences are written from their ROLE and nothing
       // else -- no credentials, no results, no history. Replace them with
       // each person's own words when there are some.
@@ -1248,6 +1244,12 @@ export const BOOK_PAGES: BookPage[] = [
           role: "Business Generation Executive",
           portrait: "/team/gokul.webp",
           line: "Turns first conversations into new business, and keeps clients close from enquiry to launch.",
+        },
+        {
+          name: "Naveen",
+          role: "Sales Executive",
+          portrait: "/team/naveen.webp",
+          line: "Talks with businesses about what they need, and helps them find the right way to work with Nivlak.",
         },
       ],
     },

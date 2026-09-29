@@ -499,7 +499,7 @@ function SpreadSheets() {
               the same value twice. */}
           <p
             data-ink
-            className="absolute bottom-[7%] portrait:bottom-[3.5%] start-[calc(13%+var(--facing-inset-start,0px))] text-[clamp(0.55rem,0.92vw,0.798rem)] tracking-[0.35em] text-slate-300/80"
+            className="absolute bottom-[7%] portrait:bottom-[3.5%] start-[calc(13%+var(--facing-inset-start,0px))] text-[clamp(0.825rem,1.38vw,1.2rem)] tracking-[0.35em] text-slate-300/80"
           >
             NIVLAK
           </p>
@@ -667,16 +667,19 @@ function PageFace({
  * zero-width glyph), so the mark is centred on the line the folio sits on;
  * `end` is the column's end inset, passed in because it differs per page.
  */
+// The mark and every folio are 1.5x what they were (asked: "increase the size
+// of the logo and the roman letter"): mark 18-24px -> 27-36px, folio type
+// 0.55-0.7rem -> 0.825-1.05rem. Same line, same place.
 function FootMark({ end }: { end: string }) {
   return (
     <span
-      className="absolute bottom-[7%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] portrait:bottom-[3.5%]"
+      className="absolute bottom-[7%] text-[clamp(0.825rem,1.2vw,1.05rem)] tracking-[0.3em] portrait:bottom-[3.5%]"
       style={{ insetInlineEnd: end }}
     >
       <span aria-hidden className="invisible">
         &#8203;
       </span>
-      <span className="absolute end-0 top-1/2 size-[clamp(18px,1.5vw,24px)] -translate-y-1/2">
+      <span className="absolute end-0 top-1/2 size-[clamp(27px,2.25vw,36px)] -translate-y-1/2">
         <HomeMark side="corner" />
       </span>
     </span>
@@ -703,7 +706,7 @@ function HomeMark({ side }: { side: "left" | "right" | "corner" }) {
       data-index={-1}
       aria-label="Back to the cover"
       title="Back to the cover"
-      className={`pointer-events-auto absolute grid size-[clamp(18px,1.5vw,24px)] cursor-pointer place-items-center rounded-full opacity-60 outline-none transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-[#dce7f7] motion-reduce:transition-none ${
+      className={`pointer-events-auto absolute grid size-[clamp(27px,2.25vw,36px)] cursor-pointer place-items-center rounded-full opacity-60 outline-none transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-[#dce7f7] motion-reduce:transition-none ${
         side === "left"
           ? "end-full top-1/2 me-[0.8em] -translate-y-1/2"
           : side === "right"
@@ -1463,7 +1466,7 @@ function StageRow({ service, index }: StageSlot) {
     // row-start/row-span are utilities that certainly generate.
     <article
       data-ink
-      className={`grid grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,calc(1.3*var(--page-vw)),1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.55em] lg:gap-y-[var(--stage-gap,0.6em)] lg:pt-[var(--stage-pt,1em)]`}
+      className={`grid grid-cols-[auto_minmax(0,1fr)] content-start gap-x-[clamp(0.6em,calc(1.3*var(--page-vw)),1em)] gap-y-[0.3em] border-t border-white/12 pt-[0.45em] lg:gap-y-[var(--stage-gap,0.6em)] lg:pt-[var(--stage-pt,1em)]`}
     >
       {/* The stage's own line: numeral and name at the leading edge, the plate
           number opposite. The plate number is set right because it belongs to
@@ -1560,7 +1563,7 @@ function StageRow({ service, index }: StageSlot) {
           which is most of what made it read as a grid. The two lines still sit
           on the same baselines from stage to stage, because the grid puts them
           there and not the ruling. */}
-      <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] gap-y-[0.15em] border-t border-white/18 pt-[0.4em] lg:col-span-2 lg:col-start-1 lg:row-start-4 lg:gap-y-[var(--stage-dl-gap,0.5em)] lg:pt-[var(--stage-dl-pt,0.75em)]">
+      <dl className="col-start-2 row-start-3 grid grid-cols-[auto_1fr] gap-x-[1em] gap-y-[0.15em] border-t border-white/18 pt-[0.3em] lg:col-span-2 lg:col-start-1 lg:row-start-4 lg:gap-y-[var(--stage-dl-gap,0.5em)] lg:pt-[var(--stage-dl-pt,0.75em)]">
         <dt className="text-[length:clamp(0.44rem,calc(0.717*var(--page-vw)),0.638rem)] tracking-[0.24em] text-slate-200/90">
           DELIVERABLE
         </dt>
@@ -4008,10 +4011,10 @@ const PAGE_SINKAGE = "pt-[8%] portrait:pt-[max(8%,2.1rem)]";
  * replaced all four reservations. 1.6rem is the folio line (~0.7rem) and its
  * clearance: at 1440x900 the copy stops at y=811 against a folio at 820.
  */
-// Portrait's gap is 1.2rem, not 1.6: the folio line and half a line. 03's
-// phone verso (a chapter head and three stages) ended 1px into its folio at
-// 390x844 with the full 1.6 plus the running-head drop.
-const PAGE_FOOT = "pb-[calc(7cqh+1.6rem)] portrait:pb-[calc(3.5cqh+1.2rem)]";
+// 2rem (1.6 in portrait): the folio line and a gap, re-measured when the
+// folios went up 1.5x -- at the old 1.6 the bigger folio grew up into the
+// last line of a page that fills to its foot.
+const PAGE_FOOT = "pb-[calc(7cqh+2rem)] portrait:pb-[calc(3.5cqh+1.6rem)]";
 
 function VersoPage({
   page,
@@ -4073,7 +4076,7 @@ function VersoPage({
       ) : null}
 
       <p
-        className="absolute bottom-[7%] portrait:bottom-[3.5%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-300/80 tabular-nums"
+        className="absolute bottom-[7%] portrait:bottom-[3.5%] text-[clamp(0.825rem,1.2vw,1.05rem)] tracking-[0.35em] text-slate-300/80 tabular-nums portrait:tracking-[0.16em]"
         style={{ insetInlineStart: inset }}
       >
         {roman(page.number)} &mdash; {page.title.toUpperCase()}
@@ -4259,7 +4262,7 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         // Out toward the page's right edge with the home mark (asked: "move
         // the roman right too"): it ends where the mark begins -- the mark's
         // own inset, width and a 0.8em gap -- so the line reads "II [mark]".
-        className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(11%+var(--page-text-inset-end,0px)+clamp(18px,1.5vw,24px)+0.8em)] min-h-[1em] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] text-slate-300/80 tabular-nums"
+        className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(11%+var(--page-text-inset-end,0px)+clamp(27px,2.25vw,36px)+0.8em)] min-h-[1em] text-[clamp(0.825rem,1.2vw,1.05rem)] tracking-[0.3em] text-slate-300/80 tabular-nums"
       >
         {page.facing ? roman(page.number) : null}
       </p>

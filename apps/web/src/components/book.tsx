@@ -1355,7 +1355,7 @@ export function Book() {
             wrapper is `pointer-events-none` and the two buttons switch it back
             on, so the cover's copy never eats a click meant for the page and
             the buttons stop taking them the moment GSAP hides the block.  */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-stretch portrait:pt-[9vh] portrait:pb-[11vh] portrait:[@media(max-height:700px)]:pb-[calc(3vh+2.5rem)] landscape:ps-[7vw] landscape:pe-[4vw]">
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center px-[7vw] text-left portrait:justify-stretch portrait:pt-[9vh] portrait:pb-[11vh] portrait:[@media(max-height:700px)]:pb-[calc(5.4vh+2.5rem)] landscape:ps-[7vw] landscape:pe-[4vw]">
           <div
             ref={kickerRef}
             // The hero sits DIRECTLY on the photograph in portrait, with no
@@ -1545,6 +1545,8 @@ export function Book() {
               reader hears the five once, as a list.
             - Edges fade out through a mask rather than stopping at the window,
               so words arrive rather than pop.
+            - Lifted off the screen's edge (2.4vh, 10-28px) and ruled top and
+              bottom, asked for "slightly up, not fully at the bottom".
             - Pauses under the pointer, so it can be read; still under reduced
               motion, where it is centred and shows one copy.
             - Outside `kickerRef` (placed against the screen, like the ribbon)
@@ -1552,7 +1554,7 @@ export function Book() {
         <div
           ref={bandRef}
           data-hero-band
-          className="group/band pointer-events-auto absolute inset-x-0 bottom-0 z-[2] border-t border-white/10 bg-[linear-gradient(to_top,rgba(5,11,20,0.78),rgba(5,11,20,0.25))] py-[clamp(0.55rem,1.3vh,0.9rem)] [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)] [text-shadow:none]"
+          className="group/band pointer-events-auto absolute inset-x-0 bottom-[clamp(10px,2.4vh,28px)] z-[2] border-y border-white/10 bg-[linear-gradient(to_top,rgba(5,11,20,0.78),rgba(5,11,20,0.25))] py-[clamp(0.55rem,1.3vh,0.9rem)] [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)] [text-shadow:none]"
         >
           <div className="flex w-max motion-safe:animate-marquee motion-safe:group-hover/band:[animation-play-state:paused] motion-reduce:mx-auto">
             {[0, 1].map((copy) => (

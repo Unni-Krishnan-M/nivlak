@@ -1104,9 +1104,10 @@ it, because there was no photograph. `founder` is gone from `BookPage`;
 - **Below 480px of viewport height** the portrait drops to 56px and the
   member's sentence is not printed: at 844x390 a row has ~90px and needs 130
   with it. Role, name and focus words stay.
-- **Focus words** were rewritten on request: Laxman "Leadership ·
-  Innovation · Growth", Unni "Engineering · Design · Delivery"; Unni's line
-  no longer calls Nivlak a "studio".
+- **No focus words** — the three-word run under each name was removed on
+  request; a row is role, name, sentence. Roles as given: Ashok "Lead
+  Generation Executive", Gokul "Business Generation Executive", each with a
+  sentence written to that role.
 - **Only names and roles were given.** Laxman's focus words and sentence come
   from the old bio. Unni's, Ashok's and Gokul's are written from their ROLE and
   nothing else, and say so in a comment above the data — replace them with
@@ -1185,8 +1186,8 @@ Asked for as four separate things and verified by two subagents across
   `<Terms>` is wrapped in a centred flex column now and every `py`/`mt` in it
   came down; no line spacing changed.
 - **01 is written for a client reading it once**, in plain words: the
-  headline "We Turn Ideas into Software.", a lead ("Nivlak is a small
-  software team from India.") that says who we are and what we make, a second
+  headline "We Turn Ideas into Software.", a lead ("Nivlak is a
+  software team from India." — "small" removed on request) that says who we are and what we make, a second
   paragraph (`intro.more`) that says what working with us looks like, and a
   signature ("— The Nivlak team", `intro.signature`) set like a signed
   foreword. The subtitle went: it repeated the paragraph under it, and
@@ -1378,7 +1379,7 @@ the first screen said `NIVLAK TECHNOLOGIES` and nothing else.
   Pills instead of hairline boxes: a solid primary in the paper colour
   (`#dce7f7`, navy type, a hover sheen, the arrow in its own disc) and a
   frosted-glass secondary. The second headline line is the display italic.
-  An eyebrow says "Software studio" and a landscape-only row lists 02's five
+  The eyebrow is "Nivlak Technologies" alone ("· Software studio" was removed on request) and a landscape-only row lists 02's five
   categories. The lines rise in on load (`animate-hero-rise` in
   `packages/ui/src/styles/globals.css`), `motion-safe:`.
 - **The scroll cue is a bookmark ribbon** hanging from under the head rule,

@@ -15,8 +15,6 @@ export type PageMember = {
   role: string;
   /** A path under public/ -- built by tools/build-team-portraits.sh. */
   portrait: string;
-  /** Three words, set as a run under the name. */
-  focus: string[];
   /** One sentence about what this person does for a client. */
   line: string;
 };
@@ -555,7 +553,7 @@ export const BOOK_PAGES: BookPage[] = [
       // cross-refers.
       note: "Nivlak comes from NIV: Noble, Intelligent, Vision. See the facing page.",
       intro: {
-        lead: "Nivlak is a small software team from India.",
+        lead: "Nivlak is a software team from India.",
         body: "We build websites, mobile apps, online software and AI tools that help businesses work better and grow.",
         more: "Tell us your idea. We plan it with you, build it, launch it, and stay to look after it. You always talk to the people doing the work, with nobody in between.",
         signature: "The Nivlak team",
@@ -1223,7 +1221,7 @@ export const BOOK_PAGES: BookPage[] = [
       ],
       // ONLY the names and roles were given. Laxman's words come from the
       // founder bio this chapter carried before; the other three members'
-      // focus words and sentences are written from their ROLE and nothing
+      // sentences are written from their ROLE and nothing
       // else -- no credentials, no results, no history. Replace them with
       // each person's own words when there are some.
       members: [
@@ -1231,29 +1229,25 @@ export const BOOK_PAGES: BookPage[] = [
           name: "Laxman S",
           role: "Founder & CEO",
           portrait: "/team/laxman.webp",
-          focus: ["Leadership", "Innovation", "Growth"],
           line: "Leads Nivlak with a long-term vision of building intelligent digital products that help businesses grow with confidence.",
         },
         {
           name: "Unni Krishnan M",
           role: "Co-Founder",
           portrait: "/team/unni-krishnan-m.webp",
-          focus: ["Engineering", "Design", "Delivery"],
           line: "Builds Nivlak alongside Laxman, shaping what Nivlak takes on and how it gets delivered.",
         },
         {
           name: "Ashok",
-          role: "Sales & Marketing",
+          role: "Lead Generation Executive",
           portrait: "/team/ashok.webp",
-          focus: ["Clients", "Outreach", "Growth"],
-          line: "Often the first conversation with Nivlak: understanding what you need and finding the right place to start.",
+          line: "Finds the businesses Nivlak can help and starts the first conversation with them.",
         },
         {
           name: "Gokul",
-          role: "Sales & Marketing",
+          role: "Business Generation Executive",
           portrait: "/team/gokul.webp",
-          focus: ["Brand", "Story", "Client care"],
-          line: "Tells the Nivlak story and keeps clients close, from the first enquiry to the launch.",
+          line: "Turns first conversations into new business, and keeps clients close from enquiry to launch.",
         },
       ],
     },

@@ -1284,20 +1284,13 @@ export function Book() {
             className="max-w-[min(92vw,41rem)] portrait:flex portrait:h-full portrait:max-w-none portrait:flex-col portrait:items-center portrait:justify-between portrait:text-center"
           >
             <div className="portrait:w-full">
-              {/* The eyebrow. It was led in by a short hairline in the
-                  headline's blue, removed on request: flush left it starts on
-                  the same edge as the headline under it. The second half says what the company IS, which the cover did not
-                  say anywhere -- in 01's words ("Nivlak is a small software
-                  team from India."). Dropped in portrait, where the title block
-                  sits over the plate and has no width for it. */}
-              <p className="flex items-center gap-[0.9em] text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.42em] text-slate-300/85 uppercase portrait:justify-center motion-safe:animate-hero-rise">
+              {/* The eyebrow: the company's name and nothing else. It was led
+                  in by a short hairline and followed by "· Software studio";
+                  both were removed on request. Flush left it starts on the
+                  same edge as the headline under it; in portrait it is
+                  centred over the title like everything else there. */}
+              <p className="text-[clamp(0.55rem,0.78vw,0.72rem)] tracking-[0.42em] text-slate-300/85 uppercase motion-safe:animate-hero-rise">
                 Nivlak Technologies
-                <span aria-hidden className="text-[#9dc0ee]/70 portrait:hidden">
-                  &middot;
-                </span>
-                <span className="text-slate-400/80 portrait:hidden">
-                  Software studio
-                </span>
               </p>
             {/* THE COVER IS LEADED, asked for as "line spacing in all". Every
                 gap in the column went up by about half -- headline 2.2 -> 3.6vh,

@@ -650,6 +650,30 @@ function PageFace({
  * which <Book>'s seek maps to scroll position 0, so there is no second
  * scroll mechanism to keep in step.
  */
+/**
+ * The right page's home mark: at the BOTTOM LEFT of the page, just before the
+ * text column's start (`start-[11%]` is PageBody's own `ps-[11%]`), on the
+ * folio's line -- the same place the left page's mark sits relative to its
+ * page. Asked for in turn: in the corner, then "in equal line on both sides",
+ * then "on the left side, like the left page". The box carries the folio's
+ * `bottom`, type size and line box (an invisible zero-width glyph), so the
+ * mark is centred on exactly the line the folios and the left mark sit on.
+ */
+function CornerMark({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={`absolute bottom-[7%] start-[11%] text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.3em] portrait:bottom-[3.5%] ${className}`}
+    >
+      <span aria-hidden className="invisible">
+        &#8203;
+      </span>
+      <span className="absolute end-full top-1/2 me-[0.8em] size-[clamp(18px,1.5vw,24px)] -translate-y-1/2">
+        <HomeMark side="corner" />
+      </span>
+    </span>
+  );
+}
+
 function HomeMark({ side }: { side: "left" | "right" | "corner" }) {
   return (
     // ON THE PAGE, BESIDE ITS FOLIO: left of it on a left page, right of it
@@ -788,7 +812,10 @@ function Figure({
             <p className="text-[clamp(0.66rem,1.035vw,0.935rem)] leading-none text-slate-200">
               {step.label}
             </p>
-            <p className="mt-[0.45em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.16em] text-slate-400/55">
+            {/* On a phone each column is ~62px and the tracked notes ran into
+                each other ("free call clear price every week..."): they wrap
+                inside their own column there, with less tracking. */}
+            <p className="mt-[0.45em] text-[clamp(0.52rem,0.828vw,0.73rem)] leading-snug tracking-[0.16em] text-balance text-slate-400/55 portrait:px-[0.2em] portrait:tracking-[0.06em]">
               {step.note}
             </p>
           </div>
@@ -3202,7 +3229,10 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
         />
       </figure>
       <div className="flex min-w-0 flex-col justify-center">
-        <p className="flex items-baseline gap-[0.8em] text-[clamp(0.5rem,0.74vw,0.66rem)] tracking-[0.14em] text-slate-400/75 uppercase xl:tracking-[0.3em]">
+        {/* 0.18em from xl, down from 0.3: the roles grew to "Lead Generation
+            Executive" and "Business Generation Executive", and at 0.3em the
+            second broke one word to a line beside a 170px portrait. */}
+        <p className="flex items-baseline gap-[0.8em] text-[clamp(0.5rem,0.74vw,0.66rem)] leading-snug tracking-[0.14em] text-slate-400/75 uppercase xl:tracking-[0.18em]">
           <span aria-hidden className="tabular-nums text-slate-400/50">
             {roman(index + 1)}
           </span>
@@ -3211,26 +3241,13 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
         <h3 className="mt-[0.35em] font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.9vw,1.75rem)] leading-[1.1] font-light text-white">
           {member.name}
         </h3>
-        <ul className="mt-[0.55em] flex flex-wrap items-center gap-x-[0.55em] gap-y-[0.2em] text-[clamp(0.56rem,0.82vw,0.74rem)] tracking-[0.08em] text-[#dce7f7]/85">
-          {/* The dot trails its word rather than leading the next, so a run
-              that wraps (it does at 1024) ends a line with one instead of
-              starting a line with one. */}
-          {member.focus.map((word, i) => (
-            <li key={word} className="flex items-center gap-[0.55em]">
-              {word}
-              {i < member.focus.length - 1 ? (
-                <span aria-hidden className="text-slate-400/45">
-                  ·
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
         {/* Dropped below 480px of viewport HEIGHT. At 844x390 the sheet shows
             about 330px under a chapter head of 150, which is 90 a row, and a
-            row with its sentence is 130: Unni's printed off the foot. Role,
-            name and focus are the facts; the sentence elaborates them. */}
-        <p className="mt-[0.6em] max-w-[40ch] text-[clamp(0.64rem,0.98vw,0.9rem)] leading-relaxed text-slate-300/75 [@media(max-height:480px)]:hidden">
+            row with its sentence is 130: Unni's printed off the foot. Role
+            and name are the facts; the sentence elaborates them. The focus
+            words that sat between name and sentence were removed on request,
+            and the sentence moved up a little to keep the row's rhythm. */}
+        <p className="mt-[0.8em] max-w-[40ch] text-[clamp(0.64rem,0.98vw,0.9rem)] leading-relaxed text-slate-300/75 [@media(max-height:480px)]:hidden">
           {member.line}
         </p>
       </div>
@@ -3467,7 +3484,7 @@ function ContactPage({ page }: { page: BookPage }) {
                 className="h-auto w-[60%] opacity-80 select-none"
               />
             </span>
-            <span className="absolute top-[18%] right-[88%] grid size-[clamp(40px,3.6vw,52px)] -rotate-12 place-items-center rounded-full border border-double border-[#dce7f7]/40 [border-width:3px] text-center font-[family-name:var(--font-display)] text-[clamp(0.3rem,0.42vw,0.42rem)] leading-tight tracking-[0.04em] text-[#dce7f7]/65 uppercase [@media(max-height:480px)]:hidden">
+            <span className="absolute top-[18%] right-[88%] grid size-[clamp(40px,3.6vw,52px)] portrait:hidden -rotate-12 place-items-center rounded-full border border-double border-[#dce7f7]/40 [border-width:3px] text-center font-[family-name:var(--font-display)] text-[clamp(0.3rem,0.42vw,0.42rem)] leading-tight tracking-[0.04em] text-[#dce7f7]/65 uppercase [@media(max-height:480px)]:hidden">
               Nagercoil
               <br />· India ·
             </span>
@@ -3659,7 +3676,9 @@ function HowItWorks({
             <p className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.6vw,1.45rem)] leading-none font-light text-[#dce7f7]/75 tabular-nums">
               {roman(i + 1)}
             </p>
-            <p className="mt-[0.55em] text-[clamp(0.52rem,0.8vw,0.72rem)] tracking-[0.22em] text-white uppercase">
+            {/* 0.08em on a phone: at 0.22em "REACH OUT" and "WE REVIEW" broke
+                one word to a line in a ~95px column. */}
+            <p className="mt-[0.55em] text-[clamp(0.52rem,0.8vw,0.72rem)] tracking-[0.22em] whitespace-nowrap text-white uppercase portrait:tracking-[0.08em]">
               {step.title}
             </p>
             <p className="mt-[0.45em] text-[clamp(0.6rem,0.92vw,0.84rem)] leading-relaxed text-slate-300/70">
@@ -3979,9 +3998,7 @@ function PageBody({
           less: the sheet's edge is the photographed page's, fore-edge stack
           included, and at 4.5% the mark sat ON the white page-stack at
           1366x768 and 1920x1080, where the whole book fits the window. */}
-      <span className="absolute end-[calc(11%+var(--page-text-inset-end,0px))] bottom-[5%] portrait:end-[6%] portrait:bottom-[2.6%] size-[clamp(18px,1.5vw,24px)]">
-        <HomeMark side="corner" />
-      </span>
+      <CornerMark />
     </div>
   );
 }

@@ -1326,8 +1326,20 @@ export function Book() {
           instead. */}
       <section
         ref={sectionRef}
-        className="relative h-svh w-full overflow-hidden [--page-vw:min(1vw,1.4vh)]"
-        /* --page-vw is 1vw on tall windows and follows the HEIGHT on anything
+        className="relative h-svh w-full overflow-hidden [--page-vw:min(1vw,1.4vh)] [--pu:min(1vw,1.6cqh)]"
+        /* --pu is THE PAGE UNIT every size on a page is set in: 1vw where the
+           window is 16:10 or narrower, and 1.6% of the PAGE's own height
+           (cqh -- every face is a size container) where it is wider. Sizes
+           used to be plain vw while the page is sized by the window's
+           HEIGHT, so on a wide, short browser window -- a 1920x1080 laptop
+           at 125% is ~1536x730 once the browser's own bars are gone -- the
+           page shrank and the type did not: 01's figure ran into its
+           footnote, 04's colophon into its facts, 07's timeline off the
+           foot. 1.6 is 1440x900's aspect, where the book was set, so
+           there the unit is exactly 1vw; phones and portrait tablets are
+           always the 1vw side, and unchanged.
+
+           --page-vw is 1vw on tall windows and follows the HEIGHT on anything
            wider than 1.4:1. 03 and 05 fill their pages to the pixel and size
            their type with it: in plain vw, 03's last stage ran 100px off the
            recto at 1440x900 and 1280x800, and off the foot at 1280x720 and

@@ -1229,7 +1229,7 @@ export const BOOK_PAGES: BookPage[] = [
         },
         {
           name: "Unni Krishnan M",
-          role: "Co-Founder",
+          role: "Director of Technology",
           portrait: "/team/unni-krishnan-m.webp",
           line: "Builds Nivlak alongside Laxman, shaping what Nivlak takes on and how it gets delivered.",
         },

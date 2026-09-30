@@ -268,6 +268,19 @@ export function layoutSheets(section: HTMLElement, tier: Tier | null) {
   // is the difference, floored at zero: a page whose own margin already clears
   // the index asks for nothing.
   const indexEl = section.querySelector<HTMLElement>("[data-book-index]");
+  // WHERE THE INDEX SITS AGAINST THE PAPER. On a wide, short window the book
+  // stands between dark margins and the index is pinned in the right one --
+  // but its titles (APPROACH, PERSPECTIVES) are wider than that margin, so
+  // they printed across the book's white page-stack (1536x730, a laptop at
+  // 125%). If the margin holds the numerals but not the titles, the titles
+  // go and the numerals stay; if there is no margin the paper runs under the
+  // index and the titles sit on the page as before (1440x900).
+  if (indexEl) {
+    delete section.dataset.indexRoom;
+    const full = width - indexEl.getBoundingClientRect().left;
+    const margin = width - Math.min(width, sheetRect.x + sheetRect.width);
+    if (margin > 24 && margin < full + 12) section.dataset.indexRoom = "numerals";
+  }
   const indexWidth = indexEl ? width - indexEl.getBoundingClientRect().left : 0;
   // Air between the last character and the notch. At 0 they touch and the type
   // reads as running into the tabs even though it no longer overlaps them.
@@ -483,7 +496,7 @@ function SpreadSheets() {
                   aria-hidden
                   className="mb-[0.9em] block h-px w-[26%] bg-white/15"
                 />
-                <p className="text-[clamp(0.62rem,0.966vw,0.866rem)] leading-relaxed text-slate-200/90">
+                <p className="text-[length:clamp(0.62rem,calc(0.966*var(--pu)),0.866rem)] leading-relaxed text-slate-200/90">
                   <sup className="me-[0.4em] align-super text-[0.7em] tabular-nums">
                     1
                   </sup>
@@ -499,7 +512,7 @@ function SpreadSheets() {
               the same value twice. */}
           <p
             data-ink
-            className="absolute bottom-[7%] portrait:bottom-[3.5%] start-[calc(13%+var(--facing-inset-start,0px))] text-[clamp(0.825rem,1.38vw,1.2rem)] tracking-[0.35em] text-slate-300/80"
+            className="absolute bottom-[7%] portrait:bottom-[3.5%] start-[calc(13%+var(--facing-inset-start,0px))] text-[length:clamp(0.825rem,calc(1.38*var(--pu)),1.2rem)] tracking-[0.35em] text-slate-300/80"
           >
             NIVLAK
           </p>
@@ -673,13 +686,13 @@ function PageFace({
 function FootMark({ end }: { end: string }) {
   return (
     <span
-      className="absolute bottom-[7%] text-[clamp(0.825rem,1.2vw,1.05rem)] tracking-[0.3em] portrait:bottom-[3.5%]"
+      className="absolute bottom-[7%] text-[length:clamp(0.825rem,calc(1.2*var(--pu)),1.05rem)] tracking-[0.3em] portrait:bottom-[3.5%]"
       style={{ insetInlineEnd: end }}
     >
       <span aria-hidden className="invisible">
         &#8203;
       </span>
-      <span className="absolute end-0 top-1/2 size-[clamp(27px,2.25vw,36px)] -translate-y-1/2">
+      <span className="absolute end-0 top-1/2 size-[clamp(27px,calc(2.25*var(--pu)),36px)] -translate-y-1/2">
         <HomeMark side="corner" />
       </span>
     </span>
@@ -706,7 +719,7 @@ function HomeMark({ side }: { side: "left" | "right" | "corner" }) {
       data-index={-1}
       aria-label="Back to the cover"
       title="Back to the cover"
-      className={`pointer-events-auto absolute grid size-[clamp(27px,2.25vw,36px)] cursor-pointer place-items-center rounded-full opacity-60 outline-none transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-[#dce7f7] motion-reduce:transition-none ${
+      className={`pointer-events-auto absolute grid size-[clamp(27px,calc(2.25*var(--pu)),36px)] cursor-pointer place-items-center rounded-full opacity-60 outline-none transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-[#dce7f7] motion-reduce:transition-none ${
         side === "left"
           ? "end-full top-1/2 me-[0.8em] -translate-y-1/2"
           : side === "right"
@@ -821,19 +834,19 @@ function Figure({
       >
         {figure.steps.map((step) => (
           <div key={step.label} className="text-center">
-            <p className="text-[clamp(0.66rem,1.035vw,0.935rem)] leading-none text-slate-200">
+            <p className="text-[length:clamp(0.66rem,calc(1.035*var(--pu)),0.935rem)] leading-none text-slate-200">
               {step.label}
             </p>
             {/* On a phone each column is ~62px and the tracked notes ran into
                 each other ("free call clear price every week..."): they wrap
                 inside their own column there, with less tracking. */}
-            <p className="mt-[0.45em] text-[clamp(0.52rem,0.828vw,0.73rem)] leading-snug tracking-[0.16em] text-balance text-slate-300/80 portrait:px-[0.2em] portrait:tracking-[0.06em]">
+            <p className="mt-[0.45em] text-[length:clamp(0.52rem,calc(0.828*var(--pu)),0.73rem)] leading-snug tracking-[0.16em] text-balance text-slate-300/80 portrait:px-[0.2em] portrait:tracking-[0.06em]">
               {step.note}
             </p>
           </div>
         ))}
       </div>
-      <figcaption className="mt-[1.3em] text-[clamp(0.52rem,0.851vw,0.73rem)] tracking-[0.26em] text-slate-300/80">
+      <figcaption className="mt-[1.3em] text-[length:clamp(0.52rem,calc(0.851*var(--pu)),0.73rem)] tracking-[0.26em] text-slate-300/80">
         {figure.caption.toUpperCase()}
       </figcaption>
     </figure>
@@ -892,7 +905,7 @@ function ChapterHead({
       <div className="flex items-baseline gap-[0.7em]">
         <span
           aria-hidden
-          className="font-[family-name:var(--font-display)] text-[clamp(2.2rem,4.4vw,4.4rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
+          className="font-[family-name:var(--font-display)] text-[length:clamp(2.2rem,calc(4.4*var(--pu)),4.4rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
         >
           {roman(page.number)}
         </span>
@@ -900,20 +913,20 @@ function ChapterHead({
             the rest of the book's tracked labels -- asked for directly: at
             slate-400/80 and regular weight it read as a caption, and it is the
             one word that says which chapter this is. */}
-        <span className="text-[clamp(0.6rem,0.9vw,0.76rem)] leading-none font-semibold tracking-[0.4em] text-[#c9d9ef]">
+        <span className="text-[length:clamp(0.6rem,calc(0.9*var(--pu)),0.76rem)] leading-none font-semibold tracking-[0.4em] text-[#c9d9ef]">
           {page.title.toUpperCase()}
         </span>
       </div>
       {/* More air between "01 COMPANY" and the headline on the chapter that
           opens the book (the one with an intro), asked for there. Not every
           chapter: 03 and 05 fill their spreads to the pixel. */}
-      <h2 className={`${page.facing && "intro" in page.facing && page.facing.intro ? "mt-[0.6em]" : "mt-[0.3em]"} font-[family-name:var(--font-display)] text-[clamp(1.5rem,3vw,3rem)] leading-[1.03] font-light text-balance text-white`}>
+      <h2 className={`${page.facing && "intro" in page.facing && page.facing.intro ? "mt-[0.6em]" : "mt-[0.3em]"} font-[family-name:var(--font-display)] text-[length:clamp(1.5rem,calc(3*var(--pu)),3rem)] leading-[1.03] font-light text-balance text-white`}>
         {headline}
       </h2>
       {/* The rule that closes a chapter head. */}
       <span aria-hidden className="mt-[0.45em] block h-px w-full bg-white/18" />
       {epigraph ? (
-        <p className="mt-[0.7em] font-[family-name:var(--font-display)] text-[clamp(0.8rem,1.1vw,1.05rem)] leading-snug text-slate-300/75 italic">
+        <p className="mt-[0.7em] font-[family-name:var(--font-display)] text-[length:clamp(0.8rem,calc(1.1*var(--pu)),1.05rem)] leading-snug text-slate-300/75 italic">
           {epigraph}
         </p>
       ) : null}
@@ -991,7 +1004,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             {subtitle ? (
               <p
                 data-ink
-                className="mt-[0.9em] max-w-[42ch] text-[clamp(0.68rem,1.058vw,0.969rem)] leading-relaxed text-balance text-slate-300/80 [@media(max-height:480px)]:hidden"
+                className="mt-[0.9em] max-w-[42ch] text-[length:clamp(0.68rem,calc(1.058*var(--pu)),0.969rem)] leading-relaxed text-balance text-slate-300/80 [@media(max-height:480px)]:hidden"
               >
                 {subtitle}
               </p>
@@ -1061,7 +1074,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
                 // the head that overflows first because a chapter opening
                 // cannot be made shorter -- the numeral, the title and the
                 // rule are what say which chapter this is.
-                className="mt-[0.9em] max-w-[42ch] text-[clamp(0.68rem,1.185vw,1.085rem)] leading-relaxed text-balance text-slate-300/80 xl:text-[clamp(0.68rem,1.28vw,1.172rem)] [@media(max-height:480px)]:hidden"
+                className="mt-[0.9em] max-w-[42ch] text-[length:clamp(0.68rem,calc(1.185*var(--pu)),1.085rem)] leading-relaxed text-balance text-slate-300/80 xl:text-[length:clamp(0.68rem,calc(1.28*var(--pu)),1.172rem)] [@media(max-height:480px)]:hidden"
               >
                 {subtitle}
               </p>
@@ -1087,7 +1100,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       {subtitle && !isPerspective(page.services) ? (
         <p
           data-ink
-          className="mt-[1em] max-w-[30ch] text-[clamp(0.82rem,1.357vw,1.197rem)] leading-relaxed text-balance text-slate-300/85"
+          className="mt-[1em] max-w-[30ch] text-[length:clamp(0.82rem,calc(1.357*var(--pu)),1.197rem)] leading-relaxed text-balance text-slate-300/85"
         >
           {subtitle}
         </p>
@@ -1112,7 +1125,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
         // printed as a 25px small capital.
         <p
           data-ink
-          className="mt-[1.6em] max-w-[44ch] text-[clamp(0.76rem,1.173vw,1.072rem)] leading-relaxed text-pretty lg:max-w-none lg:leading-[1.95] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-relaxed text-slate-300/75 first-letter:float-left first-letter:me-[0.08em] first-letter:mt-[0.04em] first-letter:text-[3.4em] first-letter:leading-[0.82] first-letter:font-light first-letter:text-[#dce7f7] max-lg:supports-[initial-letter:2]:first-letter:float-none max-lg:supports-[initial-letter:2]:first-letter:m-0 max-lg:supports-[initial-letter:2]:first-letter:me-[0.14em] max-lg:supports-[initial-letter:2]:first-letter:text-[1em] max-lg:supports-[initial-letter:2]:first-letter:leading-none max-lg:supports-[initial-letter:2]:first-letter:[initial-letter:2] max-lg:supports-[initial-letter:2]:first-letter:[-webkit-initial-letter:2] lg:first-letter:me-[0.12em] lg:first-letter:text-[length:var(--dc-size)] lg:first-letter:leading-[0.72] lg:first-letter:mt-[var(--dc-drop)] lg:first-letter:[font-variant-caps:normal] lg:first-letter:tracking-normal lg:[--dc-size:3.7em] lg:[--dc-drop:0.17em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:[--dc-size:3.2em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:[--dc-drop:0.2em]"
+          className="mt-[1.6em] max-w-[44ch] text-[length:clamp(0.76rem,calc(1.173*var(--pu)),1.072rem)] leading-relaxed text-pretty lg:max-w-none lg:leading-[1.95] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:leading-relaxed text-slate-300/75 first-letter:float-left first-letter:me-[0.08em] first-letter:mt-[0.04em] first-letter:text-[3.4em] first-letter:leading-[0.82] first-letter:font-light first-letter:text-[#dce7f7] max-lg:supports-[initial-letter:2]:first-letter:float-none max-lg:supports-[initial-letter:2]:first-letter:m-0 max-lg:supports-[initial-letter:2]:first-letter:me-[0.14em] max-lg:supports-[initial-letter:2]:first-letter:text-[1em] max-lg:supports-[initial-letter:2]:first-letter:leading-none max-lg:supports-[initial-letter:2]:first-letter:[initial-letter:2] max-lg:supports-[initial-letter:2]:first-letter:[-webkit-initial-letter:2] lg:first-letter:me-[0.12em] lg:first-letter:text-[length:var(--dc-size)] lg:first-letter:leading-[0.72] lg:first-letter:mt-[var(--dc-drop)] lg:first-letter:[font-variant-caps:normal] lg:first-letter:tracking-normal lg:[--dc-size:3.7em] lg:[--dc-drop:0.17em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:[--dc-size:3.2em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:[--dc-drop:0.2em]"
         >
           <span className="[font-variant-caps:all-small-caps] tracking-[0.08em] text-slate-200">
             {intro.lead}
@@ -1139,7 +1152,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       {intro?.more ? (
         <p
           data-ink
-          className="mt-[0.8em] max-w-[44ch] text-[clamp(0.76rem,1.173vw,1.072rem)] leading-relaxed text-pretty text-slate-300/75 lg:mt-[1.2em] lg:max-w-none lg:leading-[1.95] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:mt-[0.8em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-relaxed"
+          className="mt-[0.8em] max-w-[44ch] text-[length:clamp(0.76rem,calc(1.173*var(--pu)),1.072rem)] leading-relaxed text-pretty text-slate-300/75 lg:mt-[1.2em] lg:max-w-none lg:leading-[1.95] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:mt-[0.8em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:leading-relaxed"
         >
           {intro.more}
         </p>
@@ -1147,7 +1160,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
       {intro?.signature ? (
         <p
           data-ink
-          className="mt-[0.6em] max-w-[44ch] text-end font-[family-name:var(--font-display)] lg:max-w-none text-[clamp(0.85rem,1.3vw,1.2rem)] text-slate-200/85 italic"
+          className="mt-[0.6em] max-w-[44ch] text-end font-[family-name:var(--font-display)] lg:max-w-none text-[length:clamp(0.85rem,calc(1.3*var(--pu)),1.2rem)] text-slate-200/85 italic"
         >
           &mdash; {intro.signature}
         </p>
@@ -1180,7 +1193,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
             at 390x844 the whole spread is on one sheet and this is 90px of it,
             and the headline above says it in six words. */}
         {subtitle ? (
-          <p className="mt-[1em] hidden max-w-[52ch] text-[length:clamp(0.7rem,calc(1.14*var(--page-vw)),1.04rem)] leading-[1.75] text-slate-300/80 portrait:block lg:block [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-normal">
+          <p className="mt-[1em] hidden max-w-[52ch] text-[length:clamp(0.7rem,calc(1.14*var(--page-vw)),1.04rem)] leading-[1.75] text-slate-300/80 portrait:block lg:block [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:leading-normal">
             {subtitle}
           </p>
         ) : null}
@@ -1257,17 +1270,17 @@ function LeadService({ service }: { service: PageService }) {
         {service.emblem ? (
           <Emblem
             name={service.emblem}
-            className="w-[clamp(70px,8.8vw,126px)] shrink-0 text-slate-200"
+            className="w-[clamp(70px,calc(8.8*var(--pu)),126px)] shrink-0 text-slate-200"
           />
         ) : null}
         <div className="pt-[0.2em]">
-          <p className="mb-[0.55em] text-[clamp(0.5rem,0.805vw,0.707rem)] tracking-[0.34em] text-slate-300/80">
+          <p className="mb-[0.55em] text-[length:clamp(0.5rem,calc(0.805*var(--pu)),0.707rem)] tracking-[0.34em] text-slate-300/80">
             PLATE {roman(1)}
           </p>
-          <p className="font-[family-name:var(--font-display)] text-[clamp(1.1rem,2.012vw,1.824rem)] leading-tight font-light text-white">
+          <p className="font-[family-name:var(--font-display)] text-[length:clamp(1.1rem,calc(2.012*var(--pu)),1.824rem)] leading-tight font-light text-white">
             {service.title}
           </p>
-          <p className="mt-[0.5em] max-w-[30ch] text-[clamp(0.7rem,1.104vw,1.003rem)] leading-relaxed text-slate-300/75">
+          <p className="mt-[0.5em] max-w-[30ch] text-[length:clamp(0.7rem,calc(1.104*var(--pu)),1.003rem)] leading-relaxed text-slate-300/75">
             {service.body}
           </p>
         </div>
@@ -1687,6 +1700,12 @@ function StageRun({
    */
   roomy?: boolean;
 }) {
+  // One page per sheet takes NONE of the spread's grid: on a portrait iPad
+  // (1024x1366 is `lg` wide) the spread's template and roomy spacing,
+  // under the phone's 28px root, made three stages 1080px tall on a 1191px
+  // run and the chapter head's row collapsed to 0 -- the title printed
+  // under stage I. Stacked at their own height, like a phone, they fit.
+  const single = useContext(SingleSheetContext);
   if (!slots.length) return null;
   return (
     <div
@@ -1715,10 +1734,14 @@ function StageRun({
       // each, the first one took the entire column and the second was handed
       // zero height: stages 04, 05 and 06 were in the DOM at 0px. Auto rows
       // down there, so the two grids stack at their content height.
-      className={`xl:[--stage-type:1.08] grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 ${roomy ? "lg:content-start lg:gap-y-[clamp(0.9em,3.2vh,2em)]" : "lg:content-between"} lg:[grid-template-rows:var(--stage-rows)]`}
+      className={
+        single
+          ? "grid gap-y-[clamp(0.25em,0.5vh,1em)]"
+          : `xl:[--stage-type:1.08] grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 ${roomy ? "lg:content-start lg:gap-y-[clamp(0.9em,3.2vh,2em)]" : "lg:content-between"} lg:[grid-template-rows:var(--stage-rows)]`
+      }
       style={
         {
-          ...stageSpacing(roomy),
+          ...(single ? {} : stageSpacing(roomy)),
           // Every track is `auto` and `content-between` shares out what is
           // left, so the spare falls BETWEEN rows, equally, instead of under
           // each one. It was a shared 1.11fr head and equal 1fr rows while
@@ -1852,7 +1875,7 @@ function PerspectiveIndex({ services }: { services: PageService[] }) {
           return (
             <li
               key={service.title}
-              className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,calc(1.1*var(--page-vw)),0.95em)] border-b border-white/10 py-[0.34em] portrait:min-h-0 portrait:content-center lg:py-[0.55em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.4em] [@media(max-height:480px)]:py-[0.18em]"
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[clamp(0.6em,calc(1.1*var(--page-vw)),0.95em)] border-b border-white/10 py-[0.34em] portrait:min-h-0 portrait:content-center lg:py-[0.55em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:py-[0.4em] [@media(max-height:480px)]:py-[0.18em]"
             >
               <span
                 aria-hidden
@@ -1865,7 +1888,7 @@ function PerspectiveIndex({ services }: { services: PageService[] }) {
                   {service.title}
                 </span>
                 {service.perspective ? (
-                  <span className="mt-[0.3em] block text-[length:clamp(0.6rem,calc(0.98*var(--page-vw)),0.88rem)] leading-snug text-slate-300/65 lg:leading-[1.9] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-snug">
+                  <span className="mt-[0.3em] block text-[length:clamp(0.6rem,calc(0.98*var(--page-vw)),0.88rem)] leading-snug text-slate-300/65 lg:leading-[1.9] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:leading-snug">
                     {service.perspective.summary}
                   </span>
                 ) : null}
@@ -1917,7 +1940,7 @@ function PerspectiveColumn({ plate }: { plate: PageMask }) {
       // rule printed through the drop folio at 820. It sets on one line now
       // at 1280 and up; below that two rows wrap, as they always did, and the
       // page has 36px to spare there.
-      className="hidden w-[clamp(88px,11.7vw,170px)] shrink-0 self-stretch lg:block lg:-mr-[clamp(0px,3.3vw,48px)]"
+      className="hidden w-[clamp(88px,calc(11.7*var(--pu)),170px)] shrink-0 self-stretch lg:block lg:-mr-[clamp(0px,calc(3.3*var(--pu)),48px)]"
     />
   );
 }
@@ -1963,7 +1986,7 @@ function IdeaFlow({
             <p className="text-[length:clamp(0.5rem,calc(0.78*var(--page-vw)),0.7rem)] tracking-[0.22em] text-white uppercase">
               {node.label}
             </p>
-            <p className="mt-[0.4em] text-[length:clamp(0.56rem,calc(0.9*var(--page-vw)),0.8rem)] leading-snug text-slate-300/65 lg:leading-[2.7] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-[1.7]">
+            <p className="mt-[0.4em] text-[length:clamp(0.56rem,calc(0.9*var(--page-vw)),0.8rem)] leading-snug text-slate-300/65 lg:leading-[2.7] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:leading-[1.7]">
               {node.note}
             </p>
           </li>
@@ -2018,7 +2041,7 @@ function Benefits({
                   stay at every size: three of them are still the answer to
                   "what do I get", where the sentence under each elaborates a
                   heading that is already printed. */}
-              <span className="mt-[0.25em] hidden text-[length:clamp(0.54rem,calc(0.86*var(--page-vw)),0.78rem)] leading-snug text-slate-300/60 portrait:block lg:block lg:leading-[2.6] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-[1.6]">
+              <span className="mt-[0.25em] hidden text-[length:clamp(0.54rem,calc(0.86*var(--page-vw)),0.78rem)] leading-snug text-slate-300/60 portrait:block lg:block lg:leading-[2.6] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:leading-[1.6]">
                 {item.body}
               </span>
             </span>
@@ -2110,7 +2133,7 @@ function RationalePage({
   return (
     <div // The call to action hangs off the foot with mt-auto; PAGE_FOOT is what
       // keeps it off the drop folio.
-      className="flex min-h-0 flex-col gap-[0.75em] portrait:flex-1 lg:flex-1 lg:gap-[clamp(0.8em,2.9vh,2.3em)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:gap-[0.9em] [@media(max-height:480px)]:pt-[6%]">
+      className="flex min-h-0 flex-col gap-[0.75em] portrait:flex-1 lg:flex-1 lg:gap-[clamp(0.8em,2.9vh,2.3em)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:gap-[0.9em] [@media(max-height:480px)]:pt-[6%]">
       <div data-ink className="shrink-0">
         {/* On a spread, "WHY IT MATTERS" sits on the verso's "05 PERSPECTIVES"
             line, asked for directly: the same device as 07's GET IN TOUCH --
@@ -2221,7 +2244,7 @@ function ProjectIndex({ services }: { services: PageService[] }) {
           it. The hint names the gesture for the input the reader has --
           pointing on a mouse, tapping on touch -- and every row lights with
           an accent bar under the pointer, the current one keeping it. */}
-      <p className="mb-[0.8em] flex items-center gap-[0.6em] text-[clamp(0.46rem,0.7vw,0.62rem)] tracking-[0.26em] text-[#9dc0ee]/90 uppercase">
+      <p className="mb-[0.8em] flex items-center gap-[0.6em] text-[length:clamp(0.46rem,calc(0.7*var(--pu)),0.62rem)] tracking-[0.26em] text-[#9dc0ee]/90 uppercase">
         <span aria-hidden className="h-px w-[1.6em] bg-[#9dc0ee]/60" />
         <span className="[@media(hover:none)]:hidden">
           Point at a project — the plate on the right changes
@@ -2234,7 +2257,7 @@ function ProjectIndex({ services }: { services: PageService[] }) {
           1.05em from ~1000px tall): the hint above cost the page ~25px, and
           at 1280x720, 1366x768 and 1440x768 the last row then ran 9-19px into
           the folio. */}
-      <ul className="m-0 flex list-none flex-wrap items-baseline gap-x-[clamp(0.7em,3.2vw,1.4em)] gap-y-[0.5em] p-0 pb-[0.7em] portrait:grid portrait:min-h-0 portrait:flex-1 portrait:gap-0 portrait:pb-0 portrait:[grid-template-rows:repeat(var(--project-rows),minmax(0,1fr))] lg:block lg:gap-0 lg:pb-0"
+      <ul className="m-0 flex list-none flex-wrap items-baseline gap-x-[clamp(0.7em,calc(3.2*var(--pu)),1.4em)] gap-y-[0.5em] p-0 pb-[0.7em] portrait:grid portrait:min-h-0 portrait:flex-1 portrait:gap-0 portrait:pb-0 portrait:[grid-template-rows:repeat(var(--project-rows),minmax(0,1fr))] lg:block lg:gap-0 lg:pb-0"
         style={
           { "--project-rows": entries.length } as React.CSSProperties
         }
@@ -2263,22 +2286,22 @@ function ProjectIndex({ services }: { services: PageService[] }) {
                 aria-hidden
                 className="pointer-events-none absolute inset-y-[22%] -start-[0.7em] hidden w-[2px] origin-center scale-y-0 bg-[#9dc0ee] transition-transform duration-200 group-hover:scale-y-100 group-data-[current=true]:scale-y-100 portrait:block lg:block motion-reduce:transition-none"
               />
-              <span className="shrink-0 text-[clamp(0.44rem,0.69vw,0.627rem)] tracking-[0.24em] tabular-nums opacity-70">
+              <span className="shrink-0 text-[length:clamp(0.44rem,calc(0.69*var(--pu)),0.627rem)] tracking-[0.24em] tabular-nums opacity-70">
                 {roman(service.project!.number)}
               </span>
 
               {/* The short label, below `lg` only. WEB / AI / SAAS / MOBILE --
                   four words that fit one line at 390px. */}
-              <span className="text-[clamp(0.52rem,2.76vw,0.752rem)] tracking-[0.22em] uppercase portrait:hidden lg:hidden">
+              <span className="text-[length:clamp(0.52rem,calc(2.76*var(--pu)),0.752rem)] tracking-[0.22em] uppercase portrait:hidden lg:hidden">
                 {service.project!.label}
               </span>
 
               {/* The named row, on the full spread only. */}
               <span className="hidden min-w-0 flex-1 portrait:block lg:block">
-                <span className="block text-[clamp(0.54rem,0.86vw,0.75rem)] tracking-[0.26em] uppercase">
+                <span className="block text-[length:clamp(0.54rem,calc(0.86*var(--pu)),0.75rem)] tracking-[0.26em] uppercase">
                   {service.project!.category}
                 </span>
-                <span className="mt-[0.4em] block font-[family-name:var(--font-display)] text-[clamp(0.92rem,1.45vw,1.34rem)] leading-[1.2] font-light text-balance text-slate-200/90 group-data-[current=true]:text-white">
+                <span className="mt-[0.4em] block font-[family-name:var(--font-display)] text-[length:clamp(0.92rem,calc(1.45*var(--pu)),1.34rem)] leading-[1.2] font-light text-balance text-slate-200/90 group-data-[current=true]:text-white">
                   {service.title}
                 </span>
               </span>
@@ -2335,7 +2358,7 @@ function ProjectHeadIndex({ entries }: { entries: PageService[] }) {
   return (
     <nav
       aria-label="Project index"
-      className="hidden shrink-0 items-baseline gap-[clamp(0.5rem,1vw,0.9rem)] lg:flex"
+      className="hidden shrink-0 items-baseline gap-[clamp(0.5rem,calc(1*var(--pu)),0.9rem)] lg:flex"
     >
       {entries.map((service, i) => (
         <button
@@ -2349,7 +2372,7 @@ function ProjectHeadIndex({ entries }: { entries: PageService[] }) {
           aria-label={`${service.project!.number} ${service.project!.category}`}
           className="group flex cursor-pointer flex-col items-center gap-[0.45em] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
         >
-          <span className="text-[clamp(0.46rem,0.69vw,0.627rem)] tracking-[0.2em] text-slate-300/80 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
+          <span className="text-[length:clamp(0.46rem,calc(0.69*var(--pu)),0.627rem)] tracking-[0.2em] text-slate-300/80 tabular-nums transition-colors duration-300 group-hover:text-slate-200 group-data-[current=true]:text-white motion-reduce:transition-none">
             {roman(service.project!.number)}
           </span>
           {/* The notch, cut deeper where you are. Driven by data-current
@@ -2464,7 +2487,7 @@ function LivePlate({
       className={`flex flex-col bg-[#0b1728] ${className}`}
     >
       {/* The browser bar. */}
-      <div className="flex h-[clamp(24px,2.3vw,32px)] shrink-0 items-center gap-[0.5em] border-b border-white/10 bg-[#0e1c31] px-[0.7em] text-[clamp(0.44rem,0.66vw,0.6rem)]">
+      <div className="flex h-[clamp(24px,calc(2.3*var(--pu)),32px)] shrink-0 items-center gap-[0.5em] border-b border-white/10 bg-[#0e1c31] px-[0.7em] text-[length:clamp(0.44rem,calc(0.66*var(--pu)),0.6rem)]">
         <span aria-hidden className="flex gap-[0.35em] max-sm:hidden">
           <span className="size-[0.55em] rounded-full bg-white/20" />
           <span className="size-[0.55em] rounded-full bg-white/20" />
@@ -2559,7 +2582,7 @@ function LivePlate({
             href={live.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute inset-0 m-auto h-fit w-fit rounded-full border border-white/20 bg-[#0b1728]/85 px-[0.9em] py-[0.4em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.22em] text-slate-100 uppercase"
+            className="absolute inset-0 m-auto h-fit w-fit rounded-full border border-white/20 bg-[#0b1728]/85 px-[0.9em] py-[0.4em] text-[length:clamp(0.44rem,calc(0.62*var(--pu)),0.56rem)] tracking-[0.22em] text-slate-100 uppercase"
           >
             Live preview unavailable · Open {live.host} ↗
           </a>
@@ -2675,11 +2698,11 @@ function ProjectStage({
             >
               <span
                 aria-hidden
-                className="font-[family-name:var(--font-display)] text-[clamp(1.7rem,3.91vw,3.648rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
+                className="font-[family-name:var(--font-display)] text-[length:clamp(1.7rem,calc(3.91*var(--pu)),3.648rem)] leading-[0.8] font-light text-[#dce7f7]/85 tabular-nums"
               >
                 {roman(service.project!.number)}
               </span>
-              <h3 className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.955vw,1.767rem)] leading-none font-light text-white">
+              <h3 className="font-[family-name:var(--font-display)] text-[length:clamp(1rem,calc(1.955*var(--pu)),1.767rem)] leading-none font-light text-white">
                 {service.project!.category}
               </h3>
             </div>
@@ -2704,13 +2727,13 @@ function ProjectStage({
             aria-hidden={i === 0 ? undefined : "true"}
             className={`flex items-baseline justify-between gap-[1em] ${stacked}`}
           >
-            <p className="text-[clamp(0.54rem,0.84vw,0.74rem)] tracking-[0.34em] text-slate-300/80 uppercase">
+            <p className="text-[length:clamp(0.54rem,calc(0.84*var(--pu)),0.74rem)] tracking-[0.34em] text-slate-300/80 uppercase">
               {service.project!.status}
             </p>
             {/* Roman, like every other illustration in this book, and
                 restarting at I for this chapter: 03's six are its own series.
                 Arabic here would read as a pointer to a chapter number. */}
-            <p className="shrink-0 text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-300/80">
+            <p className="shrink-0 text-[length:clamp(0.5rem,calc(0.759*var(--pu)),0.661rem)] tracking-[0.3em] text-slate-300/80">
               PLATE {roman(i + 1)}
             </p>
           </div>
@@ -2728,7 +2751,12 @@ function ProjectStage({
       <div
         data-project-stage
         data-carousel={single ? "true" : "false"}
-        className="group/stage relative mt-[0.75em] w-full shrink-0 cursor-grab touch-pan-y overflow-hidden border border-white/12 select-none data-[dragging=true]:cursor-grabbing lg:mt-[0.9em]"
+        // Capped by the PAGE's height as well as the column's width: 16:9
+        // of the column alone grew with the window on a wide, short screen
+        // (the thumb index moves off the page there and the column widens) --
+        // 264px of a 730px page at 1536x730 against 236 of 900 at 1440x900,
+        // which pushed the colophon over PLATFORM and ACTION.
+        className="group/stage relative mt-[0.75em] w-full shrink-0 cursor-grab touch-pan-y overflow-hidden border border-white/12 select-none data-[dragging=true]:cursor-grabbing lg:mt-[0.9em] lg:max-w-[44cqh]"
         style={{ aspectRatio: "16 / 9" }}
       >
         {/* The track. On a spread every plate shares one grid cell and the
@@ -2789,7 +2817,7 @@ function ProjectStage({
             the column is a plain list and nothing drags. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute right-[0.9em] bottom-[0.9em] hidden items-center gap-[0.5em] bg-[#0b1728]/75 px-[0.7em] py-[0.35em] motion-reduce:hidden sm:flex text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.24em] text-slate-200 uppercase transition-opacity duration-300 group-data-[dragging=true]/stage:opacity-0 group-has-[[data-live-plate][data-current=true]]/stage:hidden motion-reduce:transition-none"
+          className="pointer-events-none absolute right-[0.9em] bottom-[0.9em] hidden items-center gap-[0.5em] bg-[#0b1728]/75 px-[0.7em] py-[0.35em] motion-reduce:hidden sm:flex text-[length:clamp(0.44rem,calc(0.62*var(--pu)),0.56rem)] tracking-[0.24em] text-slate-200 uppercase transition-opacity duration-300 group-data-[dragging=true]/stage:opacity-0 group-has-[[data-live-plate][data-current=true]]/stage:hidden motion-reduce:transition-none"
         >
           <span>&larr;</span>
           Drag to browse
@@ -2835,7 +2863,7 @@ function ProjectStage({
               aria-hidden={i === 0 ? undefined : "true"}
               className={`flex flex-col ${stacked}`}
             >
-              <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.863vw,1.71rem)] leading-tight font-light text-balance text-[#dce7f7]">
+              <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[length:clamp(1.05rem,calc(1.863*var(--pu)),1.71rem)] leading-tight font-light text-balance text-[#dce7f7]">
                 {service.title}
               </h4>
               {/* The description goes below 480px of viewport HEIGHT and
@@ -2846,7 +2874,7 @@ function ProjectStage({
                   ~100px short of the sheet with this paragraph in.
                   Everything that is a FACT -- status, the work, the platform
                   -- stays at every size. */}
-              <p className="mt-[0.55em] max-w-[46ch] shrink-0 text-[clamp(0.74rem,1.196vw,1.083rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
+              <p className="mt-[0.55em] max-w-[46ch] shrink-0 text-[length:clamp(0.74rem,calc(1.196*var(--pu)),1.083rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
                 {service.body}
               </p>
               {/* What the work is. A `ul` because it is a list and a screen
@@ -2856,7 +2884,7 @@ function ProjectStage({
                   bullets, for 03's reason: four bullets down a
                   column would be the most prominent thing on a page whose
                   picture is the point. */}
-              <ul className="mt-[0.95em] flex shrink-0 flex-wrap items-baseline gap-x-[0.75em] gap-y-[0.25em] text-[clamp(0.64rem,1.012vw,0.912rem)] leading-relaxed text-slate-300/65">
+              <ul className="mt-[0.95em] flex shrink-0 flex-wrap items-baseline gap-x-[0.75em] gap-y-[0.25em] text-[length:clamp(0.64rem,calc(1.012*var(--pu)),0.912rem)] leading-relaxed text-slate-300/65">
                 {/* The dot TRAILS its word rather than leading the next: at
                     1024 the run wrapped as "Strategy · UX/UI · Engineering"
                     then "· Deployment", starting a line with a separator. */}
@@ -2877,13 +2905,13 @@ function ProjectStage({
                   only at lg: on the stacked portrait sheet there is no page
                   foot to drop to, only the next block. */}
               <dl className="mt-[1em] grid shrink-0 grid-cols-[auto_1fr] items-baseline gap-x-[1.2em] pt-[0.6em] lg:mt-auto lg:pt-[1.2em]">
-                <dt className="border-t border-white/18 pt-[0.6em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-200/90">
+                <dt className="border-t border-white/18 pt-[0.6em] text-[length:clamp(0.5rem,calc(0.759*var(--pu)),0.661rem)] tracking-[0.3em] text-slate-200/90">
                   PLATFORM
                 </dt>
-                <dd className="border-t border-white/18 pt-[0.6em] text-[clamp(0.78rem,1.242vw,1.14rem)] leading-tight text-white">
+                <dd className="border-t border-white/18 pt-[0.6em] text-[length:clamp(0.78rem,calc(1.242*var(--pu)),1.14rem)] leading-tight text-white">
                   {project.platform}
                 </dd>
-                <dt className="border-t border-white/10 pt-[0.6em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.3em] text-slate-200/90">
+                <dt className="border-t border-white/10 pt-[0.6em] text-[length:clamp(0.5rem,calc(0.759*var(--pu)),0.661rem)] tracking-[0.3em] text-slate-200/90">
                   ACTION
                 </dt>
                 <dd className="border-t border-white/10 pt-[0.6em]">
@@ -2895,7 +2923,7 @@ function ProjectStage({
                     type="button"
                     data-nav-item
                     data-index={project.cta.chapter}
-                    className="group flex w-fit items-center gap-[0.7em] border-b border-white/25 pb-[0.3em] text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.28em] text-slate-200 uppercase transition-colors duration-200 outline-none hover:border-white/60 hover:text-white focus-visible:border-white focus-visible:text-white motion-reduce:transition-none"
+                    className="group flex w-fit items-center gap-[0.7em] border-b border-white/25 pb-[0.3em] text-[length:clamp(0.52rem,calc(0.828*var(--pu)),0.73rem)] tracking-[0.28em] text-slate-200 uppercase transition-colors duration-200 outline-none hover:border-white/60 hover:text-white focus-visible:border-white focus-visible:text-white motion-reduce:transition-none"
                   >
                     {project.cta.label}
                     <span
@@ -2936,7 +2964,7 @@ function ProjectStage({
               "says so.04". It clears by 55px at 1440 and 460 at 1920 -- 1280
               is simply the width where the wrap lands there -- so the fix is
               a reserved column rather than a number tuned for one viewport. */}
-          <p className="pe-[3.2em] text-[clamp(0.55rem,0.862vw,0.775rem)] leading-relaxed text-slate-300/80">
+          <p className="pe-[3.2em] text-[length:clamp(0.55rem,calc(0.862*var(--pu)),0.775rem)] leading-relaxed text-slate-300/80">
             {colophon}
           </p>
         </div>
@@ -2985,20 +3013,20 @@ function ServiceEntry({
   return (
     <div
       data-ink
-      className={`flex min-h-0 items-center gap-[clamp(1em,2.4vw,2.4em)] ${
+      className={`flex min-h-0 items-center gap-[clamp(1em,calc(2.4*var(--pu)),2.4em)] ${
         plateOnTheRight ? "flex-row-reverse" : ""
       }`}
     >
       {service.image ? <ServicePlate image={service.image} /> : null}
       <div className="min-w-0 flex-1">
-        <p className="mb-[0.5em] text-[clamp(0.5rem,0.76vw,0.67rem)] tracking-[0.34em] text-slate-300/75">
+        <p className="mb-[0.5em] text-[length:clamp(0.5rem,calc(0.76*var(--pu)),0.67rem)] tracking-[0.34em] text-slate-300/75">
           {roman(index + 1)}
         </p>
-        <p className="font-[family-name:var(--font-display)] text-[clamp(0.94rem,1.63vw,1.51rem)] leading-tight font-normal text-balance text-white">
+        <p className="font-[family-name:var(--font-display)] text-[length:clamp(0.94rem,calc(1.63*var(--pu)),1.51rem)] leading-tight font-normal text-balance text-white">
           {service.title}
         </p>
         {service.body ? (
-          <p className="mt-[0.55em] text-[clamp(0.66rem,1vw,0.92rem)] leading-relaxed text-slate-300/85">
+          <p className="mt-[0.55em] text-[length:clamp(0.66rem,calc(1*var(--pu)),0.92rem)] leading-relaxed text-slate-300/85">
             {service.body}
           </p>
         ) : null}
@@ -3115,16 +3143,16 @@ function ServiceGrid({
           {service.emblem ? (
             <Emblem
               name={service.emblem}
-              className="mb-[1.1em] w-[clamp(38px,4.9vw,68px)] text-slate-300"
+              className="mb-[1.1em] w-[clamp(38px,calc(4.9*var(--pu)),68px)] text-slate-300"
             />
           ) : null}
-          <p className="mb-[0.55em] text-[clamp(0.52rem,0.805vw,0.707rem)] tracking-[0.34em] text-slate-200/90">
+          <p className="mb-[0.55em] text-[length:clamp(0.52rem,calc(0.805*var(--pu)),0.707rem)] tracking-[0.34em] text-slate-200/90">
             {roman(from + i + 1)}
           </p>
-          <p className="text-[clamp(0.72rem,1.173vw,1.049rem)] leading-tight text-white">
+          <p className="text-[length:clamp(0.72rem,calc(1.173*var(--pu)),1.049rem)] leading-tight text-white">
             {service.title}
           </p>
-          <p className="mt-[0.45em] text-[clamp(0.62rem,0.989vw,0.889rem)] leading-relaxed text-slate-300/70">
+          <p className="mt-[0.45em] text-[length:clamp(0.62rem,calc(0.989*var(--pu)),0.889rem)] leading-relaxed text-slate-300/70">
             {service.body}
           </p>
         </div>
@@ -3244,18 +3272,18 @@ function SecondaryServices({
           {service.emblem ? (
             <Emblem
               name={service.emblem}
-              className="w-[clamp(26px,3.1vw,40px)] shrink-0 text-slate-300"
+              className="w-[clamp(26px,calc(3.1*var(--pu)),40px)] shrink-0 text-slate-300"
             />
           ) : null}
           <div>
-            <p className="mb-[0.3em] text-[clamp(0.46rem,0.713vw,0.627rem)] tracking-[0.32em] text-slate-300/80">
+            <p className="mb-[0.3em] text-[length:clamp(0.46rem,calc(0.713*var(--pu)),0.627rem)] tracking-[0.32em] text-slate-300/80">
               {roman(from + i + 1)}
             </p>
-            <p className="text-[clamp(0.72rem,1.15vw,1.026rem)] leading-tight text-white">
+            <p className="text-[length:clamp(0.72rem,calc(1.15*var(--pu)),1.026rem)] leading-tight text-white">
               {service.title}
             </p>
             {service.body ? (
-              <p className="mt-[0.3em] max-w-[32ch] text-[clamp(0.62rem,0.966vw,0.866rem)] leading-relaxed text-slate-300/70">
+              <p className="mt-[0.3em] max-w-[32ch] text-[length:clamp(0.62rem,calc(0.966*var(--pu)),0.866rem)] leading-relaxed text-slate-300/70">
                 {service.body}
               </p>
             ) : null}
@@ -3337,14 +3365,14 @@ function EngravedPlate({
             // its engraving at portrait for the same reason, and the two
             // remaining figures are still Fig. 1 and Fig. 2 on the spread,
             // where the numbering lives.
-            "mt-auto hidden w-[clamp(150px,18.5vw,268px)] lg:block"
+            "mt-auto hidden w-[clamp(150px,calc(18.5*var(--pu)),268px)] lg:block"
       }
     >
       <div
         role="img"
         aria-label={plate.caption}
         className={`opacity-80 ${
-          beside ? "w-[clamp(100px,12.3vw,176px)] shrink-0" : "w-full"
+          beside ? "w-[clamp(100px,calc(12.3*var(--pu)),176px)] shrink-0" : "w-full"
         }`}
         style={
           {
@@ -3369,10 +3397,10 @@ function EngravedPlate({
         }
       />
       <figcaption className={beside ? "pb-[0.4em]" : "mt-[0.9em]"}>
-        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] tracking-[0.28em] text-slate-300/80">
+        <p className="text-[length:clamp(0.52rem,calc(0.828*var(--pu)),0.73rem)] tracking-[0.28em] text-slate-300/80">
           {plate.caption.toUpperCase()}
         </p>
-        <p className="mt-[0.45em] text-[clamp(0.5rem,0.759vw,0.661rem)] tracking-[0.06em] text-slate-400/35 italic">
+        <p className="mt-[0.45em] text-[length:clamp(0.5rem,calc(0.759*var(--pu)),0.661rem)] tracking-[0.06em] text-slate-400/35 italic">
           {plate.credit}
         </p>
       </figcaption>
@@ -3397,17 +3425,17 @@ function StepList({ steps, from }: { steps: PageStep[]; from: number }) {
           data-ink
           className="flex items-start gap-[1.1em] border-t border-white/12 py-[1.1em] lg:py-[1.5em]"
         >
-          <span className="relative flex aspect-square w-[clamp(34px,4.2vw,52px)] shrink-0 items-center justify-center rounded-full border border-white/15">
+          <span className="relative flex aspect-square w-[clamp(34px,calc(4.2*var(--pu)),52px)] shrink-0 items-center justify-center rounded-full border border-white/15">
             <Emblem name={step.emblem} className="w-[58%] text-slate-200" />
           </span>
           <div className="pt-[0.15em]">
-            <p className="mb-[0.35em] text-[clamp(0.5rem,0.782vw,0.684rem)] tracking-[0.34em] text-slate-300/80 tabular-nums">
+            <p className="mb-[0.35em] text-[length:clamp(0.5rem,calc(0.782*var(--pu)),0.684rem)] tracking-[0.34em] text-slate-300/80 tabular-nums">
               {roman(from + i + 1)}
             </p>
-            <p className="text-[clamp(0.78rem,1.242vw,1.117rem)] leading-tight text-white">
+            <p className="text-[length:clamp(0.78rem,calc(1.242*var(--pu)),1.117rem)] leading-tight text-white">
               {step.title}
             </p>
-            <p className="mt-[0.4em] max-w-[34ch] text-[clamp(0.64rem,1.012vw,0.912rem)] leading-relaxed text-slate-300/75">
+            <p className="mt-[0.4em] max-w-[34ch] text-[length:clamp(0.64rem,calc(1.012*var(--pu)),0.912rem)] leading-relaxed text-slate-300/75">
               {step.body}
             </p>
           </div>
@@ -3500,14 +3528,14 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
   return (
     <article
       data-ink
-      className="flex min-h-0 items-stretch gap-[clamp(0.9em,1.7vw,1.6em)] border-t border-white/15 py-[clamp(0.6em,1.3vh,1.1em)]"
+      className="flex min-h-0 items-stretch gap-[clamp(0.9em,calc(1.7*var(--pu)),1.6em)] border-t border-white/15 py-[clamp(0.6em,1.3vh,1.1em)]"
     >
       <figure
         // Capped in vw as well as sized by the row. At 1024 the row alone made
         // the plate 150px of a 280px recto, and Ashok's sentence ran to six
         // lines beside it; the cap narrows the plate there and object-cover
         // crops the shoulders rather than the face.
-        className="w-[clamp(78px,22vw,110px)] shrink-0 self-start border border-white/15 p-[4px] [@media(max-height:480px)]:w-[56px] lg:aspect-[4/5] lg:h-full lg:w-auto lg:max-w-[9vw] lg:self-stretch xl:max-w-[clamp(100px,12.5vw,200px)]"
+        className="w-[clamp(78px,calc(22*var(--pu)),110px)] shrink-0 self-start border border-white/15 p-[4px] [@media(max-height:480px)]:w-[56px] lg:aspect-[4/5] lg:h-full lg:w-auto lg:max-w-[calc(9*var(--pu))] lg:self-stretch xl:max-w-[clamp(100px,calc(12.5*var(--pu)),200px)]"
       >
         <img
           src={member.portrait}
@@ -3522,13 +3550,13 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
         {/* 0.18em from xl, down from 0.3: the roles grew to "Lead Generation
             Executive" and "Business Generation Executive", and at 0.3em the
             second broke one word to a line beside a 170px portrait. */}
-        <p className="flex items-baseline gap-[0.8em] text-[clamp(0.5rem,0.74vw,0.66rem)] leading-snug tracking-[0.14em] text-slate-200/90 uppercase xl:tracking-[0.18em]">
+        <p className="flex items-baseline gap-[0.8em] text-[length:clamp(0.5rem,calc(0.74*var(--pu)),0.66rem)] leading-snug tracking-[0.14em] text-slate-200/90 uppercase xl:tracking-[0.18em]">
           <span aria-hidden className="tabular-nums text-slate-300/80">
             {roman(index + 1)}
           </span>
           {member.role}
         </p>
-        <h3 className="mt-[0.35em] font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.9vw,1.75rem)] leading-[1.1] font-light text-white">
+        <h3 className="mt-[0.35em] font-[family-name:var(--font-display)] text-[length:clamp(1.05rem,calc(1.9*var(--pu)),1.75rem)] leading-[1.1] font-light text-white">
           {member.name}
         </h3>
         {/* Dropped below 480px of viewport HEIGHT. At 844x390 the sheet shows
@@ -3537,7 +3565,7 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
             and name are the facts; the sentence elaborates them. The focus
             words that sat between name and sentence were removed on request,
             and the sentence moved up a little to keep the row's rhythm. */}
-        <p className="mt-[0.8em] max-w-[40ch] text-[clamp(0.64rem,0.98vw,0.9rem)] leading-relaxed text-slate-300/75 [@media(max-height:480px)]:hidden">
+        <p className="mt-[0.8em] max-w-[40ch] text-[length:clamp(0.64rem,calc(0.98*var(--pu)),0.9rem)] leading-relaxed text-slate-300/75 [@media(max-height:480px)]:hidden">
           {member.line}
         </p>
       </div>
@@ -3586,21 +3614,21 @@ function ContactPage({ page }: { page: BookPage }) {
       <div className="flex items-baseline">
         <span
           aria-hidden
-          className="invisible hidden w-0 font-[family-name:var(--font-display)] text-[clamp(2.2rem,4.4vw,4.4rem)] leading-[0.8] font-light lg:inline"
+          className="invisible hidden w-0 font-[family-name:var(--font-display)] text-[length:clamp(2.2rem,calc(4.4*var(--pu)),4.4rem)] leading-[0.8] font-light lg:inline"
         >
           {roman(page.number)}
         </span>
         {/* CONNECT's size and tracking, so the two labels read as a pair. */}
-        <p className="text-[clamp(0.52rem,0.828vw,0.73rem)] leading-none font-semibold tracking-[0.34em] text-[#c9d9ef] uppercase lg:text-[clamp(0.6rem,0.9vw,0.76rem)] lg:tracking-[0.4em]">
+        <p className="text-[length:clamp(0.52rem,calc(0.828*var(--pu)),0.73rem)] leading-none font-semibold tracking-[0.34em] text-[#c9d9ef] uppercase lg:text-[length:clamp(0.6rem,calc(0.9*var(--pu)),0.76rem)] lg:tracking-[0.4em]">
           {contact.eyebrow}
         </p>
       </div>
-      <h3 className="mt-[0.45em] font-[family-name:var(--font-display)] text-[clamp(1.3rem,2.4vw,2.2rem)] lg:mt-[0.35em] leading-[1.08] font-light text-balance text-white">
+      <h3 className="mt-[0.45em] font-[family-name:var(--font-display)] text-[length:clamp(1.3rem,calc(2.4*var(--pu)),2.2rem)] lg:mt-[0.35em] leading-[1.08] font-light text-balance text-white">
         {contact.headline}
       </h3>
       {/* Gone below 480px of viewport height: at 844x390 the recto has ~330px
           and the details table is what must not be clipped. */}
-      <p className="mt-[0.7em] max-w-[38ch] text-[clamp(0.7rem,1.06vw,0.96rem)] leading-relaxed text-slate-300/80 lg:mt-[1.5em] lg:leading-[1.85] [@media(max-height:480px)]:hidden">
+      <p className="mt-[0.7em] max-w-[38ch] text-[length:clamp(0.7rem,calc(1.06*var(--pu)),0.96rem)] leading-relaxed text-slate-300/80 lg:mt-[1.5em] lg:leading-[1.85] [@media(max-height:480px)]:hidden">
         {contact.directBody}
       </p>
 
@@ -3632,7 +3660,7 @@ function ContactPage({ page }: { page: BookPage }) {
             <a
               key={action.label}
               href={row.href}
-              className={`group relative inline-flex items-center gap-[0.6em] px-[1.45em] py-[0.6em] font-[family-name:var(--font-display)] text-[clamp(0.88rem,1.2vw,1.12rem)] tracking-[0.08em] [font-variant-caps:small-caps] outline-none transition-[color,transform] duration-300 hover:-translate-y-px focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-[#dce7f7] motion-reduce:transition-none [@media(max-height:480px)]:py-[0.5em] ${
+              className={`group relative inline-flex items-center gap-[0.6em] px-[1.45em] py-[0.6em] font-[family-name:var(--font-display)] text-[length:clamp(0.88rem,calc(1.2*var(--pu)),1.12rem)] tracking-[0.08em] [font-variant-caps:small-caps] outline-none transition-[color,transform] duration-300 hover:-translate-y-px focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-[#dce7f7] motion-reduce:transition-none [@media(max-height:480px)]:py-[0.5em] ${
                 action.solid ? "text-[#0b1728]" : "text-white"
               }`}
             >
@@ -3703,7 +3731,7 @@ function ContactPage({ page }: { page: BookPage }) {
           ran 5px into the folio and 1280x720 cleared it by 8. */}
       <div
         data-envelope
-        className="relative mt-[1.6em] border border-[#dce7f7]/20 bg-[#dce7f7]/[0.04] px-[1.2em] pt-[1em] pb-[0.8em] lg:mt-[1.3em] xl:mt-[2.2em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:mt-[1.3em] [@media(max-height:480px)]:mt-[0.8em] [@media(max-height:480px)]:py-[0.5em]"
+        className="relative mt-[1.6em] border border-[#dce7f7]/20 bg-[#dce7f7]/[0.04] px-[1.2em] pt-[1em] pb-[0.8em] lg:mt-[1.3em] xl:mt-[2.2em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:mt-[1.3em] [@media(max-height:480px)]:mt-[0.8em] [@media(max-height:480px)]:py-[0.5em]"
       >
         <span
           aria-hidden
@@ -3717,16 +3745,16 @@ function ContactPage({ page }: { page: BookPage }) {
         />
         <div className="relative flex items-start justify-between gap-[1em]">
           <div className="pt-[0.2em]">
-            <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-300/70 uppercase [@media(max-height:480px)]:hidden">
+            <p className="text-[length:clamp(0.44rem,calc(0.66*var(--pu)),0.6rem)] tracking-[0.3em] text-slate-300/70 uppercase [@media(max-height:480px)]:hidden">
               {contact.detailsTitle}
             </p>
-            <p className="mt-[0.3em] font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.05vw,0.95rem)] text-slate-200/90 italic lg:max-xl:hidden [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:hidden [@media(max-height:480px)]:hidden">
+            <p className="mt-[0.3em] font-[family-name:var(--font-display)] text-[length:clamp(0.72rem,calc(1.05*var(--pu)),0.95rem)] text-slate-200/90 italic lg:max-xl:hidden [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:hidden [@media(max-height:480px)]:hidden">
               To be delivered to Nivlak Technologies
             </p>
           </div>
           {/* The stamp and the postmark struck across its left edge. */}
           <div aria-hidden className="relative shrink-0">
-            <span className="grid h-[3.4em] w-[2.9em] place-items-center border border-dashed border-[#dce7f7]/45 bg-[#dce7f7]/[0.06] text-[clamp(0.7rem,1vw,0.9rem)] outline outline-1 outline-offset-2 outline-[#dce7f7]/15 [@media(max-height:480px)]:hidden">
+            <span className="grid h-[3.4em] w-[2.9em] place-items-center border border-dashed border-[#dce7f7]/45 bg-[#dce7f7]/[0.06] text-[length:clamp(0.7rem,calc(1*var(--pu)),0.9rem)] outline outline-1 outline-offset-2 outline-[#dce7f7]/15 [@media(max-height:480px)]:hidden">
               <img
                 src="/logo-mark.webp"
                 alt=""
@@ -3734,7 +3762,7 @@ function ContactPage({ page }: { page: BookPage }) {
                 className="h-auto w-[60%] opacity-80 select-none"
               />
             </span>
-            <span className="absolute top-[18%] right-[88%] grid size-[clamp(40px,3.6vw,52px)] portrait:hidden -rotate-12 place-items-center rounded-full border border-double border-[#dce7f7]/40 [border-width:3px] text-center font-[family-name:var(--font-display)] text-[clamp(0.3rem,0.42vw,0.42rem)] leading-tight tracking-[0.04em] text-[#dce7f7]/65 uppercase [@media(max-height:480px)]:hidden">
+            <span className="absolute top-[18%] right-[88%] grid size-[clamp(40px,calc(3.6*var(--pu)),52px)] portrait:hidden -rotate-12 place-items-center rounded-full border border-double border-[#dce7f7]/40 [border-width:3px] text-center font-[family-name:var(--font-display)] text-[length:clamp(0.3rem,calc(0.42*var(--pu)),0.42rem)] leading-tight tracking-[0.04em] text-[#dce7f7]/65 uppercase [@media(max-height:480px)]:hidden">
               Nagercoil
               <br />· India ·
             </span>
@@ -3748,9 +3776,9 @@ function ContactPage({ page }: { page: BookPage }) {
             // asked for on phones, where the label used to sit above). The rows
             // are a SUBGRID of the list, so the label column is as wide as the
             // widest label ("Location") and every value starts on one line.
-            className="col-span-3 grid grid-cols-subgrid items-center border-b border-dotted border-white/25 py-[0.55em] last:border-b-0 lg:py-[0.45em] xl:py-[0.85em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.55em] [@media(max-height:480px)]:py-[0.3em]"
+            className="col-span-3 grid grid-cols-subgrid items-center border-b border-dotted border-white/25 py-[0.55em] last:border-b-0 lg:py-[0.45em] xl:py-[0.85em] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:py-[0.55em] [@media(max-height:480px)]:py-[0.3em]"
           >
-            <dt className="font-[family-name:var(--font-display)] text-[clamp(0.62rem,0.86vw,0.8rem)] text-slate-200/90 italic">
+            <dt className="font-[family-name:var(--font-display)] text-[length:clamp(0.62rem,calc(0.86*var(--pu)),0.8rem)] text-slate-200/90 italic">
               {row.label}
             </dt>
             <dd
@@ -3758,7 +3786,7 @@ function ContactPage({ page }: { page: BookPage }) {
               // which rise and fall about the line (3 4 7 9 below, 6 8 above),
               // and "+91 97873 04869" read as bouncing -- asked for "in a
               // single line, not up and down". Tabular so digits align too.
-              className="min-w-0 break-words font-[family-name:var(--font-display)] text-[clamp(0.78rem,1.15vw,1.06rem)] text-slate-100 [font-variant-numeric:lining-nums_tabular-nums]"
+              className="min-w-0 break-words font-[family-name:var(--font-display)] text-[length:clamp(0.78rem,calc(1.15*var(--pu)),1.06rem)] text-slate-100 [font-variant-numeric:lining-nums_tabular-nums]"
             >
               {row.href ? (
                 <a
@@ -3804,7 +3832,7 @@ function ContactPage({ page }: { page: BookPage }) {
                   {...(row.href.startsWith("http")
                     ? { target: "_blank", rel: "noopener noreferrer" }
                     : {})}
-                  className="rounded-full border border-[#dce7f7]/30 bg-[#dce7f7]/[0.06] px-[0.75em] py-[0.35em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.2em] text-slate-200/85 uppercase transition-colors duration-300 hover:border-[#dce7f7]/70 hover:bg-[#dce7f7]/15 hover:text-white motion-reduce:transition-none max-sm:hidden lg:max-xl:hidden [@media(max-height:480px)]:hidden"
+                  className="rounded-full border border-[#dce7f7]/30 bg-[#dce7f7]/[0.06] px-[0.75em] py-[0.35em] text-[length:clamp(0.44rem,calc(0.62*var(--pu)),0.56rem)] tracking-[0.2em] text-slate-200/85 uppercase transition-colors duration-300 hover:border-[#dce7f7]/70 hover:bg-[#dce7f7]/15 hover:text-white motion-reduce:transition-none max-sm:hidden lg:max-xl:hidden [@media(max-height:480px)]:hidden"
                 >
                   {row.action}
                 </a>
@@ -3847,7 +3875,7 @@ function ContactVerso({
       className="mt-[2.2em] hidden flex-col gap-[2.4em] portrait:flex lg:flex [@media(max-height:620px)]:hidden"
     >
       <section>
-        <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-300/80 uppercase">
+        <p className="text-[length:clamp(0.44rem,calc(0.66*var(--pu)),0.6rem)] tracking-[0.3em] text-slate-300/80 uppercase">
           {contact.helpTitle}
         </p>
         <ul className="mt-[0.9em] flex flex-wrap gap-[0.55em]">
@@ -3861,7 +3889,7 @@ function ContactVerso({
             // in), as on the button; the fill is the page's own colour here.
             <li
               key={tag}
-              className="relative px-[1.15em] py-[0.42em] font-[family-name:var(--font-display)] text-[clamp(0.72rem,1.02vw,0.94rem)] tracking-[0.06em] text-slate-100 [font-variant-caps:small-caps]"
+              className="relative px-[1.15em] py-[0.42em] font-[family-name:var(--font-display)] text-[length:clamp(0.72rem,calc(1.02*var(--pu)),0.94rem)] tracking-[0.06em] text-slate-100 [font-variant-caps:small-caps]"
             >
               <span
                 aria-hidden
@@ -3909,7 +3937,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
         }
       }}
       aria-label={copied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
-      className="shrink-0 cursor-pointer rounded-full border border-[#dce7f7]/30 bg-[#dce7f7]/[0.06] px-[0.75em] py-[0.35em] text-[clamp(0.44rem,0.62vw,0.56rem)] tracking-[0.2em] text-slate-200/85 uppercase transition-colors duration-300 outline-none hover:border-[#dce7f7]/70 hover:bg-[#dce7f7]/15 hover:text-white focus-visible:border-[#dce7f7]/70 motion-reduce:transition-none"
+      className="shrink-0 cursor-pointer rounded-full border border-[#dce7f7]/30 bg-[#dce7f7]/[0.06] px-[0.75em] py-[0.35em] text-[length:clamp(0.44rem,calc(0.62*var(--pu)),0.56rem)] tracking-[0.2em] text-slate-200/85 uppercase transition-colors duration-300 outline-none hover:border-[#dce7f7]/70 hover:bg-[#dce7f7]/15 hover:text-white focus-visible:border-[#dce7f7]/70 motion-reduce:transition-none"
     >
       <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
     </button>
@@ -3929,29 +3957,29 @@ function HowItWorks({
 }) {
   return (
     <section>
-      <p className="text-[clamp(0.44rem,0.66vw,0.6rem)] tracking-[0.3em] text-slate-300/80 uppercase">
+      <p className="text-[length:clamp(0.44rem,calc(0.66*var(--pu)),0.6rem)] tracking-[0.3em] text-slate-300/80 uppercase">
         {next.title}
       </p>
       <div aria-hidden className="mt-[1.3em] flex items-center gap-[0.35em]">
         <span className="h-px flex-1 bg-white/22" />
         <ArcArrow />
       </div>
-      <ol className="grid grid-cols-3 gap-x-[clamp(0.8em,1.6vw,1.4em)]">
+      <ol className="grid grid-cols-3 gap-x-[clamp(0.8em,calc(1.6*var(--pu)),1.4em)]">
         {next.steps.map((step, i) => (
           <li key={step.title} className="relative pt-[1em]">
             <span
               aria-hidden
               className="absolute top-[-1px] left-0 block h-[9px] w-px bg-white/45"
             />
-            <p className="font-[family-name:var(--font-display)] text-[clamp(1rem,1.6vw,1.45rem)] leading-none font-light text-[#dce7f7]/75 tabular-nums">
+            <p className="font-[family-name:var(--font-display)] text-[length:clamp(1rem,calc(1.6*var(--pu)),1.45rem)] leading-none font-light text-[#dce7f7]/75 tabular-nums">
               {roman(i + 1)}
             </p>
             {/* 0.08em on a phone: at 0.22em "REACH OUT" and "WE REVIEW" broke
                 one word to a line in a ~95px column. */}
-            <p className="mt-[0.55em] text-[clamp(0.52rem,0.8vw,0.72rem)] tracking-[0.22em] whitespace-nowrap text-white uppercase portrait:tracking-[0.08em]">
+            <p className="mt-[0.55em] text-[length:clamp(0.52rem,calc(0.8*var(--pu)),0.72rem)] tracking-[0.22em] whitespace-nowrap text-white uppercase portrait:tracking-[0.08em]">
               {step.title}
             </p>
-            <p className="mt-[0.45em] text-[clamp(0.6rem,0.92vw,0.84rem)] leading-relaxed text-slate-300/70">
+            <p className="mt-[0.45em] text-[length:clamp(0.6rem,calc(0.92*var(--pu)),0.84rem)] leading-relaxed text-slate-300/70">
               {step.body}
             </p>
           </li>
@@ -4071,7 +4099,7 @@ function VersoPage({
             aria-hidden
             className="mb-[0.9em] block h-px w-[26%] bg-white/15"
           />
-          <p className="text-[clamp(0.62rem,0.966vw,0.866rem)] leading-relaxed text-slate-200/90">
+          <p className="text-[length:clamp(0.62rem,calc(0.966*var(--pu)),0.866rem)] leading-relaxed text-slate-200/90">
             <sup className="me-[0.4em] align-super text-[0.7em] tabular-nums">
               1
             </sup>
@@ -4081,7 +4109,7 @@ function VersoPage({
       ) : null}
 
       <p
-        className="absolute bottom-[7%] portrait:bottom-[3.5%] text-[clamp(0.825rem,1.2vw,1.05rem)] tracking-[0.35em] text-slate-300/80 tabular-nums portrait:tracking-[0.16em]"
+        className="absolute bottom-[7%] portrait:bottom-[3.5%] text-[length:clamp(0.825rem,calc(1.2*var(--pu)),1.05rem)] tracking-[0.35em] text-slate-300/80 tabular-nums portrait:tracking-[0.16em]"
         style={{ insetInlineStart: inset }}
       >
         {roman(page.number)} &mdash; {page.title.toUpperCase()}
@@ -4111,7 +4139,7 @@ function Terms({ page }: { page: BookPage }) {
       {page.termsTitle ? (
         <p
           data-ink
-          className="mb-[1.3em] text-[clamp(0.6rem,1.035vw,0.855rem)] tracking-[0.35em] text-slate-200/90"
+          className="mb-[1.3em] text-[length:clamp(0.6rem,calc(1.035*var(--pu)),0.855rem)] tracking-[0.35em] text-slate-200/90"
         >
           {page.termsTitle.toUpperCase()}
         </p>
@@ -4121,7 +4149,7 @@ function Terms({ page }: { page: BookPage }) {
           <div
             key={term.letter}
             data-ink
-            className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-[clamp(0.9em,1.6vw,1.5em)] border-t border-white/10 py-[0.7em] lg:py-[clamp(0.45em,calc(4.6vh-27.8px),0.85em)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:py-[0.45em]"
+            className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-[clamp(0.9em,calc(1.6*var(--pu)),1.5em)] border-t border-white/10 py-[0.7em] lg:py-[clamp(0.45em,calc(4.6vh-27.8px),0.85em)] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:py-[0.45em]"
           >
             {/* The letter is the artwork on this page -- same silver as the
                 lit page edge in the frame, so it reads as pressed into the
@@ -4131,21 +4159,21 @@ function Terms({ page }: { page: BookPage }) {
                 sit in one column and "Novel", "Intelligent" and "Visionary"
                 start on one line beside them. The column was 1.4em of the
                 BODY size -- 22px -- and a 50px N ran straight into "Novel". */}
-            <dt className="w-[1em] text-center font-[family-name:var(--font-display)] text-[clamp(1.6rem,3.45vw,3.192rem)] leading-none font-light text-[#dce7f7]">
+            <dt className="w-[1em] text-center font-[family-name:var(--font-display)] text-[length:clamp(1.6rem,calc(3.45*var(--pu)),3.192rem)] leading-none font-light text-[#dce7f7]">
               {term.letter}
             </dt>
             <dd>
-              <p className="mb-[0.4em] text-[clamp(0.85rem,1.438vw,1.254rem)] leading-none text-white">
+              <p className="mb-[0.4em] text-[length:clamp(0.85rem,calc(1.438*var(--pu)),1.254rem)] leading-none text-white">
                 {term.term}
               </p>
-              <p className="text-[clamp(0.72rem,1.15vw,1.049rem)] leading-relaxed text-slate-200/90 lg:leading-[1.7] [@media(min-aspect-ratio:17/10)_and_(max-height:880px)]:leading-relaxed">
+              <p className="text-[length:clamp(0.72rem,calc(1.15*var(--pu)),1.049rem)] leading-relaxed text-slate-200/90 lg:leading-[1.7] [@media(min-aspect-ratio:17/10)_and_(max-height:880px),(min-width:1000px)_and_(max-height:700px)]:leading-relaxed">
                 {term.body}
               </p>
               {/* The second line is the reason behind the first, so it is set
                   a shade quieter and in the display italic, the way a book
                   sets a gloss under a definition. */}
               {term.detail ? (
-                <p className="mt-[0.35em] font-[family-name:var(--font-display)] text-[clamp(0.74rem,1.12vw,1.02rem)] leading-relaxed text-slate-200/90 italic lg:leading-[1.6]">
+                <p className="mt-[0.35em] font-[family-name:var(--font-display)] text-[length:clamp(0.74rem,calc(1.12*var(--pu)),1.02rem)] leading-relaxed text-slate-200/90 italic lg:leading-[1.6]">
                   {term.detail}
                 </p>
               ) : null}
@@ -4156,7 +4184,7 @@ function Terms({ page }: { page: BookPage }) {
       {page.termsFoot ? (
         <p
           data-ink
-          className="mt-[1em] border-t border-white/10 pt-[0.9em] text-[clamp(0.7rem,1.092vw,1.003rem)] tracking-[0.02em] text-slate-200/90"
+          className="mt-[1em] border-t border-white/10 pt-[0.9em] text-[length:clamp(0.7rem,calc(1.092*var(--pu)),1.003rem)] tracking-[0.02em] text-slate-200/90"
         >
           {page.termsFoot}
         </p>
@@ -4193,7 +4221,7 @@ function PageFoot({ page }: { page: BookPage }) {
       data-ink
       className="absolute inset-x-0 bottom-[8%] flex justify-start ps-[12%]"
     >
-      <p className="text-[clamp(0.55rem,0.8vw,0.7rem)] tracking-[0.35em] text-slate-300/80 tabular-nums">
+      <p className="text-[length:clamp(0.55rem,calc(0.8*var(--pu)),0.7rem)] tracking-[0.35em] text-slate-300/80 tabular-nums">
         {roman(page.number)} &mdash; {page.title.toUpperCase()}
       </p>
     </div>
@@ -4240,19 +4268,19 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         <Terms page={page} />
       ) : (
         <div data-ink>
-          <p className="mb-3 text-[clamp(0.6rem,0.9vw,0.75rem)] tracking-[0.35em] text-slate-200/90 tabular-nums">
+          <p className="mb-3 text-[length:clamp(0.6rem,calc(0.9*var(--pu)),0.75rem)] tracking-[0.35em] text-slate-200/90 tabular-nums">
             {roman(page.number)} &mdash; {page.title.toUpperCase()}
           </p>
-          <h2 className="mb-[0.4em] font-[family-name:var(--font-display)] text-[clamp(1.9rem,4vw,3.9rem)] leading-[1.03] font-light text-white">
+          <h2 className="mb-[0.4em] font-[family-name:var(--font-display)] text-[length:clamp(1.9rem,calc(4*var(--pu)),3.9rem)] leading-[1.03] font-light text-white">
             {page.title}
           </h2>
           {page.body ? (
-            <p className="max-w-[34ch] text-[clamp(0.8rem,1.15vw,1.05rem)] leading-relaxed text-slate-300/90">
+            <p className="max-w-[34ch] text-[length:clamp(0.8rem,calc(1.15*var(--pu)),1.05rem)] leading-relaxed text-slate-300/90">
               {page.body}
             </p>
           ) : null}
           {page.points ? (
-            <ul className="mt-[1.2em] space-y-[0.5em] text-[clamp(0.7rem,1vw,0.9rem)] text-slate-400">
+            <ul className="mt-[1.2em] space-y-[0.5em] text-[length:clamp(0.7rem,calc(1*var(--pu)),0.9rem)] text-slate-400">
               {page.points.map((point) => (
                 <li key={point} className="border-t border-white/10 pt-[0.5em]">
                   {point}
@@ -4272,7 +4300,7 @@ function PageBody({ page }: { page: BookPage | BookSpread }) {
         // Out toward the page's right edge with the home mark (asked: "move
         // the roman right too"): it ends where the mark begins -- the mark's
         // own inset, width and a 0.8em gap -- so the line reads "II [mark]".
-        className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(11%+var(--page-text-inset-end,0px)+clamp(27px,2.25vw,36px)+0.8em)] min-h-[1em] text-[clamp(0.825rem,1.2vw,1.05rem)] tracking-[0.3em] text-slate-300/80 tabular-nums"
+        className="absolute bottom-[7%] portrait:bottom-[3.5%] end-[calc(11%+var(--page-text-inset-end,0px)+clamp(27px,calc(2.25*var(--pu)),36px)+0.8em)] min-h-[1em] text-[length:clamp(0.825rem,calc(1.2*var(--pu)),1.05rem)] tracking-[0.3em] text-slate-300/80 tabular-nums"
       >
         {page.facing ? roman(page.number) : null}
       </p>

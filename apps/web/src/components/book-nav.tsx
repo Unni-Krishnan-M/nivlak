@@ -151,7 +151,7 @@ export function BookIndex() {
                   puts it in the empty strip at the top of the window, which is
                   where a book prints a running head and the one band on this
                   page with nothing in it. */}
-              <span className="hidden translate-x-[0.4em] text-[clamp(0.6rem,0.66vw,0.66rem)] tracking-[0.26em] whitespace-nowrap text-slate-200 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-70 group-data-[current=true]:translate-x-0 group-data-[current=true]:opacity-100 motion-reduce:transition-none lg:inline">
+              <span className="hidden translate-x-[0.4em] text-[clamp(0.6rem,0.66vw,0.66rem)] tracking-[0.26em] whitespace-nowrap text-slate-200 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-70 group-data-[current=true]:translate-x-0 group-data-[current=true]:opacity-100 motion-reduce:transition-none lg:inline in-data-[index-room=numerals]:!hidden">
                 {page.title.toUpperCase()}
               </span>
               {/* Roman, like every number the book prints. A fixed-width,

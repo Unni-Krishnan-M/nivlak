@@ -2,12 +2,13 @@
 
 // THE SOUND OF A PAGE TURNING: a real recording, public/sounds/page-turn.mp3.
 //
-// Cut from "page turn sound new .mp3": the source is 2.6s with 0.69s of
-// silence before the turn and ~1s after, which would make every flip land
-// late. The shipped file is 0.67-1.64s of it, made MILD on request: a
-// gentle low-pass at 6kHz takes the edge off the paper's crackle, 40ms fade
-// in and 220ms fade out, loudness -24 LUFS -- 12KB. (A synthesised flip came
-// first; its low "landing tap" read as a drum beat.)
+// Cut from "page turn sound new .mp3": 0.67-1.29s of it -- the rustle and
+// nothing else. The source goes on into a sharp "tuck" at 1.37s, the loudest
+// moment in the file (a peak twice the rustle's), and that was cut on
+// request; 1.29 is the quiet dip just before it, so the clip fades out into
+// silence rather than into the hit. Made MILD: low-pass at 6kHz, 40ms fade
+// in, 160ms fade out, -24 LUFS. 0.62s, ~8KB. (A synthesised flip came first;
+// its low "landing tap" read as a drum beat.)
 //
 // It is decoded ONCE into an AudioBuffer and replayed through Web Audio, so a
 // turn plays instantly and several can overlap; an <audio> element would

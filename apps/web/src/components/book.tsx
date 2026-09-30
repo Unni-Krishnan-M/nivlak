@@ -1,5 +1,6 @@
 "use client";
 
+import { installPageTurnSound } from "@/components/page-turn-sound";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
@@ -150,6 +151,10 @@ export function Book() {
   // The cover's moving category band. Its own ref because it is laid against
   // the SCREEN's foot, outside the hero column; faded by the same tween.
   const bandRef = useRef<HTMLDivElement>(null);
+
+  // The page-turn sound: unlocked by the first click, tap or key (a browser
+  // rule), played on each `book:turn` from syncNav.
+  useEffect(() => installPageTurnSound(), []);
 
   // THE COVER'S ENTRANCE, run ONCE by GSAP and not by CSS keyframes.
   //
@@ -1260,6 +1265,12 @@ export function Book() {
           }
         }
         if (current === lastCurrent) return;
+        // A PAGE TURNED: one flip sound (page-turn-sound.ts). Only between two
+        // sheets -- not on the first sync, and not as the book opens onto its
+        // first page or closes back onto the cover.
+        if (current >= 0 && lastCurrent >= 0) {
+          window.dispatchEvent(new CustomEvent("book:turn"));
+        }
         lastCurrent = current;
         // Report the chapter, not the spread. A chapter running to two spreads
         // keeps ONE tab lit across both, instead of the index going dark on the

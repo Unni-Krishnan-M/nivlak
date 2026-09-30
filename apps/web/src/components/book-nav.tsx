@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { BOOK_PAGES, roman } from "@/components/book-pages.content";
+import { setSoundEnabled, soundEnabled } from "@/components/page-turn-sound";
 
 // The navigation, set as a running head.
 //
@@ -169,7 +172,45 @@ export function BookIndex() {
           </li>
         ))}
       </ul>
+      <SoundToggle />
     </div>
+  );
+}
+
+/**
+ * The page-turn sound's switch, under the last numeral: a speaker, struck
+ * through when off. It sits in the thumb index because that is the one
+ * control column that is on screen whenever pages are turning.
+ */
+function SoundToggle() {
+  const [on, setOn] = useState(true);
+  useEffect(() => {
+    setOn(soundEnabled());
+    const sync = (event: Event) => setOn((event as CustomEvent<boolean>).detail);
+    window.addEventListener("book:sound", sync);
+    return () => window.removeEventListener("book:sound", sync);
+  }, []);
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-label={on ? "Turn off page-turn sound" : "Turn on page-turn sound"}
+      title={on ? "Page sound on" : "Page sound off"}
+      onClick={() => setSoundEnabled(!on)}
+      className="mt-[clamp(0.6rem,1.8vh,1.2rem)] ms-auto grid size-[1.9rem] cursor-pointer place-items-center rounded-full text-slate-300/80 transition-colors duration-300 outline-none hover:text-white focus-visible:ring-1 focus-visible:ring-[#9dc0ee] motion-reduce:transition-none"
+    >
+      <svg viewBox="0 0 20 20" aria-hidden className="size-[1.05rem]" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3.5 7.5h3l4-3.5v12l-4-3.5h-3z" />
+        {on ? (
+          <>
+            <path d="M13.5 7.2a4 4 0 0 1 0 5.6" />
+            <path d="M15.8 5a7 7 0 0 1 0 10" />
+          </>
+        ) : (
+          <path d="M13.5 7.5l4.5 5M18 7.5l-4.5 5" />
+        )}
+      </svg>
+    </button>
   );
 }
 

@@ -972,6 +972,21 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   first page ends 11px into its drop folio and 04's colophon 7px into it. So
   does 844x390 on 04 and 05, which is the collapsed landscape layout.
 
+### Page-turn sound, and three phone fixes
+
+- **`page-turn-sound.ts`**: a synthesised paper flip (band-passed noise
+  sweep + a low settle, Web Audio, no file). `syncNav` dispatches
+  `book:turn` when one sheet gives way to another (not on opening or
+  closing); `<Book>` installs the listener. Browsers allow audio only after
+  a click, tap or key -- wheel scrolling does not count -- so it is silent
+  until then. `<SoundToggle>` under the thumb index switches it off;
+  kept in localStorage (`nivlak:page-sound`).
+- **`--pu`** (`min(1vw,1.6cqh)`, on `<Book>`'s section) is the unit every
+  page size uses, so wide, short browser windows lay out like 1440x900.
+- Phones: 02's plates 44% of the row (`max-lg:portrait:`); 03's one-page
+  runs `content-between`; 06's rows centre photo + words as one block with
+  their tops aligned (`flex-wrap content-center items-start`, words `flex-1`).
+
 ### Phone scroll halved, feet aligned, Naveen keyed properly
 
 - **Phones scroll half as far** (`PHONE_SCROLL = 0.5` in `scrollLength`):

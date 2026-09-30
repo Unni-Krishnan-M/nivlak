@@ -1736,7 +1736,9 @@ function StageRun({
       // down there, so the two grids stack at their content height.
       className={
         single
-          ? "grid gap-y-[clamp(0.25em,0.5vh,1em)]"
+          ? // Spread down the page like the spread's own recto: packed at the
+            // top, 03's second phone page left ~250px empty under Evolve.
+            "grid h-full min-h-0 flex-1 content-between gap-y-[clamp(0.25em,0.5vh,1em)]"
           : `xl:[--stage-type:1.08] grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 ${roomy ? "lg:content-start lg:gap-y-[clamp(0.9em,3.2vh,2em)]" : "lg:content-between"} lg:[grid-template-rows:var(--stage-rows)]`
       }
       style={
@@ -3071,6 +3073,11 @@ function ServicePlate({ image }: { image: PageFigure }) {
       // there the plate keeps the run's own 42%.
       className={`shrink-0 select-none ${
         image.wide ? "w-[32%] lg:w-[42%] xl:w-[52%]" : "w-[32%] lg:w-[42%]"
+      } ${
+        // Phones: 44% of the row (asked: "the image was very small"). At 32%
+        // a plate printed ~95px wide at 393x851, a texture; the copy beside
+        // it takes one more line per entry, which both phone pages have.
+        "max-lg:portrait:!w-[44%]"
       }`}
       style={{ aspectRatio: image.ratio, objectFit: "contain" }}
     />
@@ -3529,7 +3536,10 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
   return (
     <article
       data-ink
-      className="flex min-h-0 items-stretch gap-[clamp(0.9em,calc(1.7*var(--pu)),1.6em)] border-t border-white/15 py-[clamp(0.6em,1.3vh,1.1em)]"
+      // Phones: photo and words are ONE block, centred in the row with their
+      // TOPS aligned. The photo sat at the row's top while the words were
+      // centred, so every row read as two things at different heights.
+      className="flex min-h-0 items-stretch gap-[clamp(0.9em,calc(1.7*var(--pu)),1.6em)] border-t border-white/15 py-[clamp(0.6em,1.3vh,1.1em)] max-lg:portrait:flex-wrap max-lg:portrait:content-center max-lg:portrait:items-start"
     >
       <figure
         // Capped in vw as well as sized by the row. At 1024 the row alone made
@@ -3547,7 +3557,7 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
           className="block aspect-[4/5] w-full object-cover select-none lg:h-full"
         />
       </figure>
-      <div className="flex min-w-0 flex-col justify-center">
+      <div className="flex min-w-0 flex-1 flex-col justify-center">
         {/* 0.18em from xl, down from 0.3: the roles grew to "Lead Generation
             Executive" and "Business Generation Executive", and at 0.3em the
             second broke one word to a line beside a 170px portrait. */}

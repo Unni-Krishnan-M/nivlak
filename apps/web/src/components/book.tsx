@@ -1265,12 +1265,6 @@ export function Book() {
           }
         }
         if (current === lastCurrent) return;
-        // A PAGE TURNED: one flip sound (page-turn-sound.ts). Only between two
-        // sheets -- not on the first sync, and not as the book opens onto its
-        // first page or closes back onto the cover.
-        if (current >= 0 && lastCurrent >= 0) {
-          window.dispatchEvent(new CustomEvent("book:turn"));
-        }
         lastCurrent = current;
         // Report the chapter, not the spread. A chapter running to two spreads
         // keeps ONE tab lit across both, instead of the index going dark on the
@@ -1299,6 +1293,33 @@ export function Book() {
         }
       };
       tl.eventCallback("onUpdate", syncNav);
+
+      // THE PAGE-TURN SOUND fires the moment a turn BEGINS, read off the
+      // SCROLL position (the trigger's progress) rather than the timeline.
+      // The timeline trails the wheel by the scrub's catch-up -- up to a
+      // second -- and syncNav's page only flips at mid-turn, so a sound hung
+      // off either landed well after the page had started to move. A turn in
+      // either direction counts; opening the book onto its first page and
+      // closing it onto the cover do not.
+      let lastStarted = Number.NaN;
+      const onScrollSound = () => {
+        const st = tl.scrollTrigger;
+        if (!st) return;
+        const target = st.progress * tl.duration();
+        let started = 0;
+        for (let i = 0; i < turns; i++) {
+          const begins = OPEN + LEAD_IN + i * (TURN + GAP) + TURN * 0.04;
+          if (target >= begins) started = i + 1;
+        }
+        if (!Number.isNaN(lastStarted) && started !== lastStarted) {
+          window.dispatchEvent(new CustomEvent("book:turn"));
+        }
+        lastStarted = started;
+      };
+      window.addEventListener("scroll", onScrollSound, { passive: true });
+      windowTeardowns.push(() =>
+        window.removeEventListener("scroll", onScrollSound),
+      );
       syncNav();
 
       return () => {

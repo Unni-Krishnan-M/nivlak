@@ -214,6 +214,34 @@ const COVER_BOOK_LEFT = 0.48;
 // on the clip's own framing by 0.4 -- long before the covers open. Moving it
 // any earlier drops the photograph THROUGH the words it was lifted off.
 const COVER_HOLD = 0.12;
+
+// THE BOOK STANDS BETWEEN THE HEAD BAR AND THE CATEGORY BAND, on every
+// landscape window. Framing centred the measured box -- book AND rock -- so
+// the book itself sat high, and on a wide, short browser window (a
+// 1920x1080 laptop at 125% is ~1536x730 once the tabs and address bar are
+// taken) the frame is scaled to the WIDTH and cropped top and bottom: the
+// book's top landed at y=38, through "V PERSPECTIVES" and the head rule.
+//
+// So on the cover the book's own span -- the top corner to the base of the
+// page block, read off frame-001 -- is placed in the clear zone between the
+// two bars, and the plate is scaled down if that zone is shorter than the
+// book. The rock below the page block is ground and may run under the band.
+// At 16:10 and taller the zone already holds the book where the clip puts
+// it, and the clamp in place() returns the same position: 1440x900 is
+// unchanged.
+const BOOK_TOP_SRC = 145;
+const BOOK_BASE_SRC = 835;
+/** The clear band between <BookNav>'s rule and the cover's category band. */
+function coverZone(width: number, height: number) {
+  const clamp = (lo: number, v: number, hi: number) =>
+    Math.min(hi, Math.max(lo, v));
+  // <BookNav>: pt 3.4vh, a row the height of its logo, the rule 1.7vh under.
+  const rule = 0.051 * height + clamp(26, 0.023 * width, 34) + 4;
+  // The band: lifted clamp(20px, 6vh, 64px), about 44px tall.
+  const band = height - clamp(20, 0.06 * height, 64) - 44;
+  const air = clamp(12, 0.025 * height, 28);
+  return { top: rule + air, bottom: band - air };
+}
 const COVER_TO = 0.4;
 
 export type Plan = {
@@ -350,9 +378,13 @@ export function planAt(
   // -- the frame is always wider than the window here, so its left edge is
   // pinned at `width - FRAME_W * scale` and the book's own left edge lands at
   // `width - (FRAME_W - BOOK_LEFT_SRC) * scale`.
+  const zone = coverZone(width, height);
   const capped = onePage
     ? (COVER_BOOK_H * height) / lerp(a.sh, b.sh, mix)
-    : ((1 - COVER_BOOK_LEFT) * width) / (FRAME_W - BOOK_LEFT_SRC);
+    : Math.min(
+        ((1 - COVER_BOOK_LEFT) * width) / (FRAME_W - BOOK_LEFT_SRC),
+        (zone.bottom - zone.top) / (BOOK_BASE_SRC - BOOK_TOP_SRC),
+      );
   const scale = lerp(opened, Math.min(opened, capped), lift);
 
   const drawWidth = FRAME_W * scale;
@@ -388,11 +420,18 @@ export function planAt(
       lerp(follow, PAGE_CX_SRC, pageOpen),
       pageOpen,
     );
+    // Landscape cover: the anchor that puts the book's own middle on the
+    // middle of the clear zone (see coverZone), blended out as the cover
+    // lifts. place() still clamps it, so no bare ground is ever exposed.
+    const zoneAnchor =
+      (BOOK_TOP_SRC + BOOK_BASE_SRC) / 2 -
+      ((zone.top + zone.bottom) / 2 - height / 2) / scale;
+    const anchorY = onePage ? frame.ay : lerp(frame.ay, zoneAnchor, lift);
     return {
       index,
       alpha,
       x: place(anchor, width, drawWidth),
-      y: place(frame.ay, height, drawHeight),
+      y: place(anchorY, height, drawHeight),
       width: drawWidth,
       height: drawHeight,
     };

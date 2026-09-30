@@ -1736,9 +1736,13 @@ function StageRun({
       // down there, so the two grids stack at their content height.
       className={
         single
-          ? // Spread down the page like the spread's own recto: packed at the
-            // top, 03's second phone page left ~250px empty under Evolve.
-            "grid h-full min-h-0 flex-1 content-between gap-y-[clamp(0.25em,0.5vh,1em)]"
+          ? // ONE PAGE PER SHEET: the head keeps its place at the top and the
+            // stages share what is left EVENLY -- the same space above, between
+            // and below them. Packed at the top, 03's second phone page left
+            // ~250px empty under Evolve; pushed to both ends (content-between)
+            // it left two 120px holes between the stages instead. A full page
+            // has nothing to share and is unchanged.
+            "flex h-full min-h-0 flex-1 flex-col"
           : `xl:[--stage-type:1.08] grid gap-y-[clamp(0.25em,0.5vh,1em)] [grid-template-rows:none] lg:h-full lg:min-h-0 lg:flex-1 ${roomy ? "lg:content-start lg:gap-y-[clamp(0.9em,3.2vh,2em)]" : "lg:content-between"} lg:[grid-template-rows:var(--stage-rows)]`
       }
       style={
@@ -1765,9 +1769,15 @@ function StageRun({
       }
     >
       {head}
-      {slots.map((slot) => (
-        <StageRow key={slot.service.title} {...slot} />
-      ))}
+      {single ? (
+        <div className="flex min-h-0 flex-1 flex-col justify-evenly">
+          {slots.map((slot) => (
+            <StageRow key={slot.service.title} {...slot} />
+          ))}
+        </div>
+      ) : (
+        slots.map((slot) => <StageRow key={slot.service.title} {...slot} />)
+      )}
     </div>
   );
 }

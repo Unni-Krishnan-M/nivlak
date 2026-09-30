@@ -2,10 +2,14 @@
 
 // THE SOUND OF A PAGE TURNING, synthesised rather than recorded.
 //
-// No audio file ships with the book: a flip is a burst of noise swept through
-// a band-pass filter (the paper sliding) followed by a short low "settle" (the
-// leaf landing), which Web Audio builds in a few lines and costs nothing to
-// download. <Book> dispatches `book:turn` each time a new sheet lands; this
+// No audio file ships with the book. A turning page is not a hit: it is a
+// soft RUSTLE that swells as the leaf lifts and fades as it settles, a scatter
+// of tiny high CRINKLES (the paper's own texture) through the middle of the
+// turn, and a faint low WHOOSH of air. All three are rendered ONCE into a
+// buffer (OfflineAudioContext) and replayed with a slight random pitch, so
+// no two turns are identical. The first version ended in a low filtered
+// "tap" for the leaf landing; that transient is what read as a drum beat,
+// and it is gone. <Book> dispatches `book:turn` each time a new sheet lands; this
 // module plays one flip per event.
 //
 // Browsers only let a page make sound after the visitor has interacted with
@@ -19,8 +23,9 @@
 
 const KEY = "nivlak:page-sound";
 let ctx: AudioContext | null = null;
-let noise: AudioBuffer | null = null;
+let flip: AudioBuffer | null = null;
 let last = 0;
+const DURATION = 0.75;
 
 export function soundEnabled() {
   try {
@@ -37,6 +42,103 @@ export function setSoundEnabled(on: boolean) {
   window.dispatchEvent(new CustomEvent("book:sound", { detail: on }));
 }
 
+/** A smooth rise-and-fall, 0..1, peaking at `peak` (fraction of the turn). */
+function swell(n: number, peak: number, sharp = 1.6) {
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = i / (n - 1);
+    const y = x < peak ? x / peak : (1 - x) / (1 - peak);
+    curve[i] = Math.pow(Math.sin((y * Math.PI) / 2), sharp);
+  }
+  return curve;
+}
+
+async function render(sampleRate: number) {
+  const length = Math.floor(sampleRate * DURATION);
+  const off = new OfflineAudioContext(1, length, sampleRate);
+
+  const white = off.createBuffer(1, length, sampleRate);
+  const w = white.getChannelData(0);
+  for (let i = 0; i < length; i++) w[i] = Math.random() * 2 - 1;
+
+  // RUSTLE: paper sliding over paper -- mid-high band, gentle swell.
+  const rustle = off.createBufferSource();
+  rustle.buffer = white;
+  const hp = off.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 900;
+  const bp = off.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.Q.value = 0.55;
+  bp.frequency.setValueAtTime(2600, 0);
+  bp.frequency.linearRampToValueAtTime(4200, DURATION * 0.45);
+  bp.frequency.linearRampToValueAtTime(2200, DURATION);
+  const rustleEnv = off.createGain();
+  // The swell times an irregular FLUTTER (a smoothed random walk, 0.55-1):
+  // a leaf bending does not hiss evenly, and a smooth envelope alone read as
+  // a steady "shhh" of noise rather than paper.
+  const env = swell(256, 0.38);
+  let walk = 0.8;
+  let smooth = 0.8;
+  for (let i = 0; i < env.length; i++) {
+    walk = Math.min(1, Math.max(0.55, walk + (Math.random() - 0.5) * 0.35));
+    smooth += (walk - smooth) * 0.35;
+    env[i] = env[i]! * smooth;
+  }
+  rustleEnv.gain.setValueCurveAtTime(env, 0, DURATION);
+  rustle.connect(hp).connect(bp).connect(rustleEnv).connect(off.destination);
+
+  // CRINKLE: a scatter of 1-4ms grains, densest mid-turn, high and dry.
+  const grains = off.createBuffer(1, length, sampleRate);
+  const g = grains.getChannelData(0);
+  const count = 70;
+  for (let k = 0; k < count; k++) {
+    // Clustered toward the middle of the turn.
+    const at = (0.12 + 0.62 * ((Math.random() + Math.random() + Math.random()) / 3)) * DURATION;
+    const start = Math.floor(at * sampleRate);
+    const len = Math.floor(sampleRate * (0.001 + Math.random() * 0.003));
+    const amp = 0.15 + Math.random() * 0.45;
+    for (let i = 0; i < len && start + i < length; i++) {
+      g[start + i] += (Math.random() * 2 - 1) * amp * Math.exp((-5 * i) / len);
+    }
+  }
+  const crinkle = off.createBufferSource();
+  crinkle.buffer = grains;
+  const chp = off.createBiquadFilter();
+  chp.type = "highpass";
+  chp.frequency.value = 2400;
+  const crinkleGain = off.createGain();
+  crinkleGain.gain.value = 0.55;
+  crinkle.connect(chp).connect(crinkleGain).connect(off.destination);
+
+  // WHOOSH: the air the leaf moves -- low, soft, slower swell.
+  const whoosh = off.createBufferSource();
+  whoosh.buffer = white;
+  whoosh.playbackRate.value = 0.5;
+  const lp = off.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 650;
+  const whooshEnv = off.createGain();
+  whooshEnv.gain.setValueCurveAtTime(
+    swell(256, 0.5, 2.2).map((v) => v * 0.35),
+    0,
+    DURATION,
+  );
+  whoosh.connect(lp).connect(whooshEnv).connect(off.destination);
+
+  rustle.start(0);
+  crinkle.start(0);
+  whoosh.start(0);
+  const out = await off.startRendering();
+
+  // Normalise, so the level is set by `gain` in playPageTurn alone.
+  const d = out.getChannelData(0);
+  let peak = 0;
+  for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]!));
+  if (peak > 0) for (let i = 0; i < d.length; i++) d[i]! /= peak;
+  return out;
+}
+
 function unlock() {
   if (ctx) {
     if (ctx.state === "suspended") void ctx.resume();
@@ -48,60 +150,27 @@ function unlock() {
       .webkitAudioContext;
   if (!AC) return;
   ctx = new AC();
-  const length = Math.floor(ctx.sampleRate * 0.6);
-  noise = ctx.createBuffer(1, length, ctx.sampleRate);
-  const data = noise.getChannelData(0);
-  for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+  void render(ctx.sampleRate).then((buffer) => {
+    flip = buffer;
+  });
 }
 
 export function playPageTurn() {
-  if (!ctx || !noise || !soundEnabled()) return;
+  if (!ctx || !flip || !soundEnabled()) return;
   if (ctx.state !== "running") return;
-  // A fast scrub lands several sheets a second; one flip per ~140ms reads as
-  // riffling through pages rather than a buzz.
+  // One flip per ~250ms: a fast scrub lands several sheets a second, and a
+  // flip on each read as a rhythm rather than as pages.
   const now = performance.now();
-  if (now - last < 140) return;
+  if (now - last < 250) return;
   last = now;
 
-  const t = ctx.currentTime;
-  const out = ctx.createGain();
-  out.gain.value = 0.32;
-  out.connect(ctx.destination);
-
-  // The swish: noise through a band-pass that sweeps down as the leaf travels.
-  const swish = ctx.createBufferSource();
-  swish.buffer = noise;
-  swish.playbackRate.value = 0.9 + Math.random() * 0.2;
-  const band = ctx.createBiquadFilter();
-  band.type = "bandpass";
-  band.Q.value = 0.9;
-  band.frequency.setValueAtTime(3800, t);
-  band.frequency.exponentialRampToValueAtTime(900, t + 0.32);
-  const high = ctx.createBiquadFilter();
-  high.type = "highpass";
-  high.frequency.value = 350;
-  const env = ctx.createGain();
-  env.gain.setValueAtTime(0.0001, t);
-  env.gain.exponentialRampToValueAtTime(0.9, t + 0.04);
-  env.gain.exponentialRampToValueAtTime(0.25, t + 0.2);
-  env.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
-  swish.connect(band).connect(high).connect(env).connect(out);
-  swish.start(t);
-  swish.stop(t + 0.4);
-
-  // The settle: a short, low, soft tap as the page lands.
-  const tap = ctx.createBufferSource();
-  tap.buffer = noise;
-  const low = ctx.createBiquadFilter();
-  low.type = "lowpass";
-  low.frequency.value = 420;
-  const tapEnv = ctx.createGain();
-  tapEnv.gain.setValueAtTime(0.0001, t + 0.3);
-  tapEnv.gain.exponentialRampToValueAtTime(0.7, t + 0.315);
-  tapEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
-  tap.connect(low).connect(tapEnv).connect(out);
-  tap.start(t + 0.3);
-  tap.stop(t + 0.45);
+  const source = ctx.createBufferSource();
+  source.buffer = flip;
+  source.playbackRate.value = 0.9 + Math.random() * 0.18;
+  const gain = ctx.createGain();
+  gain.gain.value = 0.28;
+  source.connect(gain).connect(ctx.destination);
+  source.start();
 }
 
 /** Wire the sound up once; returns a teardown. */
@@ -115,3 +184,4 @@ export function installPageTurnSound() {
     window.removeEventListener("book:turn", onTurn);
   };
 }
+

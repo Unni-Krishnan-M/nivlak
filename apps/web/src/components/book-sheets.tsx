@@ -2755,8 +2755,9 @@ function ProjectStage({
         // of the column alone grew with the window on a wide, short screen
         // (the thumb index moves off the page there and the column widens) --
         // 264px of a 730px page at 1536x730 against 236 of 900 at 1440x900,
-        // which pushed the colophon over PLATFORM and ACTION.
-        className="group/stage relative mt-[0.75em] w-full shrink-0 cursor-grab touch-pan-y overflow-hidden border border-white/12 select-none data-[dragging=true]:cursor-grabbing lg:mt-[0.9em] lg:max-w-[44cqh]"
+        // which pushed the colophon over PLATFORM and ACTION. Centred in the
+        // column when the cap binds (asked for), not hung off the left.
+        className="group/stage relative mt-[0.75em] w-full shrink-0 cursor-grab touch-pan-y overflow-hidden border border-white/12 select-none data-[dragging=true]:cursor-grabbing lg:mx-auto lg:mt-[0.9em] lg:max-w-[52cqh]"
         style={{ aspectRatio: "16 / 9" }}
       >
         {/* The track. On a spread every plate shares one grid cell and the

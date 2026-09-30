@@ -3,12 +3,17 @@
 // THE SOUND OF A PAGE TURNING: a real recording, public/sounds/page-turn.mp3.
 //
 // Cut from "page turn sound new .mp3": 0.67-1.29s of it -- the rustle and
-// nothing else. The source goes on into a sharp "tuck" at 1.37s, the loudest
-// moment in the file (a peak twice the rustle's), and that was cut on
-// request; 1.29 is the quiet dip just before it, so the clip fades out into
-// silence rather than into the hit. Made MILD: low-pass at 6kHz, 40ms fade
-// in, 160ms fade out, -24 LUFS. 0.62s, ~8KB. (A synthesised flip came first;
-// its low "landing tap" read as a drum beat.)
+// nothing else; the source goes on into a sharp "tuck" at 1.37s, cut on
+// request. Then made SLOW and SMOOTH, also on request:
+//   - stretched to 75% speed, pitch kept (ffmpeg atempo), so 0.8s;
+//   - low-passed at 4.8kHz;
+//   - its own loudness divided out moment by moment (a 25ms RMS envelope),
+//     so the paper texture is even, then ONE rise-and-fall laid over it --
+//     rising to 42% of the clip, falling for the rest. Straight from the
+//     recording, neighbouring 40ms windows differed by up to 3x, which is
+//     what read as "fast and not smooth"; now the swell has no steps;
+//   - -24 LUFS, ~10KB.
+// (A synthesised flip came first; its low "landing tap" read as a beat.)
 //
 // It is decoded ONCE into an AudioBuffer and replayed through Web Audio, so a
 // turn plays instantly and several can overlap; an <audio> element would
@@ -83,8 +88,7 @@ export function playPageTurn() {
 
   const source = ctx.createBufferSource();
   source.buffer = flip;
-  // A touch of variation so consecutive turns are not identical.
-  source.playbackRate.value = 0.97 + Math.random() * 0.06;
+  // Always the same speed: a random pitch per turn read as unevenness.
   // Mild: a quiet presence under the page, not an effect on top of it.
   const gain = ctx.createGain();
   gain.gain.value = 0.55;

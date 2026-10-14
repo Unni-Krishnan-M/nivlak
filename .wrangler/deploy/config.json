@@ -1,0 +1,7 @@
+// Cloudflare Workers Builds runs `npx wrangler deploy` from the REPO ROOT,
+// and the Worker's config lives with the app it deploys, in apps/web. This is
+// Wrangler's own redirect (`.wrangler/deploy/config.json`, found by searching
+// up from the working directory): `wrangler deploy` at the root reads the
+// config named here, and every path inside it still resolves from apps/web.
+// One config, not a root copy that has to be kept in step with it.
+{ "configPath": "../../apps/web/wrangler.jsonc" }

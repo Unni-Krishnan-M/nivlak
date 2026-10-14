@@ -1213,7 +1213,7 @@ export const BOOK_PAGES: BookPage[] = [
     },
     team: {
       // The leadership principles and the founding belief headed the recto
-      // until Naveen joined; both were removed on request, and the recto
+      // until a fifth member joined; both were removed on request, and the recto
       // carries three people instead.
       // ONLY the names and roles were given. Laxman's words come from the
       // founder bio this chapter carried before; the other four members'
@@ -1246,10 +1246,10 @@ export const BOOK_PAGES: BookPage[] = [
           line: "Turns first conversations into new business, and keeps clients close from enquiry to launch.",
         },
         {
-          name: "Naveen",
-          role: "Sales Executive",
-          portrait: "/team/naveen.webp",
-          line: "Talks with businesses about what they need, and helps them find the right way to work with Nivlak.",
+          name: "Akshara",
+          role: "Project Manager & Social Media Manager",
+          portrait: "/team/akshara.webp",
+          line: "Keeps every project on schedule and every client in the loop, and tells the Nivlak story online.",
         },
       ],
     },

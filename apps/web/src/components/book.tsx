@@ -102,9 +102,18 @@ const OPEN = OPEN_VH / VH_PER_UNIT;
 // unchanged -- only how much scroll a unit costs -- so the turn, the gaps and
 // the reveal keep their proportions, and the drag-to-turn reads its page
 // distance off the trigger at drag time, so it follows on its own.
-const PHONE_SCROLL = 0.5;
+//
+// Then back UP to 0.75 (asked: "in the mobile view the scroll speed is high,
+// slow it"): at 0.5 a turn cost ~210px of thumb at 393x851, which a single
+// flick overshoots by two pages. 0.75 is ~11 screens for the book.
+const PHONE_SCROLL = 0.75;
+// And the spread scrolls 30% LESS (asked: "on the laptop it is more
+// scrolling"): 8.8 viewports at 1440x900 became ~6.5. A frame of the opening
+// gets ~17px of wheel instead of ~25 -- more frames per pixel, so the clip
+// plays smoother under a flick, not less.
+const DESKTOP_SCROLL = 0.7;
 const scrollLength = (turns: number, single = false) =>
-  `+=${Math.round((OPEN_VH + pagesUnits(turns) * VH_PER_UNIT) * (single ? PHONE_SCROLL : 1))}%`;
+  `+=${Math.round((OPEN_VH + pagesUnits(turns) * VH_PER_UNIT) * (single ? PHONE_SCROLL : DESKTOP_SCROLL))}%`;
 
 // Frames requested per batch after the first. Ninety-one at once is ninety-one
 // parallel requests fighting the document for the connection on a cold load; in
@@ -399,11 +408,24 @@ export function Book() {
       settleCeiling();
       redrawRef.current();
 
+      // THE LAST FRAME SECOND, out of order. It is not only the end of the
+      // film: it is the PAPER -- every sheet's face is frame-091 by CSS
+      // (`--page-image`). Loaded last, a phone on mobile data that scrolled
+      // straight in reached the pages before it had landed, and the type
+      // came up over a still-closed book with no paper under it ("pages
+      // mismatch / not loading correctly"). Fetched here, the CSS background
+      // is a cache hit and draw() can show it the moment the book is open
+      // (see `ceiling` there), whatever the middle of the film is doing.
+      const last = await load(FRAME_COUNT);
+      if (cancelled) return;
+      imagesRef.current[FRAME_COUNT - 1] = last;
+      redrawRef.current();
+
       // Then the rest, in order and in batches, so the ceiling only ever moves
       // forward and the reveal can be scrubbed before the whole set has landed.
       for (let start = 2; start <= FRAME_COUNT; start += BATCH) {
         const batch = [];
-        for (let i = start; i < start + BATCH && i <= FRAME_COUNT; i++) {
+        for (let i = start; i < start + BATCH && i < FRAME_COUNT; i++) {
           batch.push(load(i).then((img) => ({ i, img })));
         }
         const settled = await Promise.all(batch);
@@ -441,6 +463,9 @@ export function Book() {
       // Nearest frame at or before `index` that actually decoded, so a single
       // failed request degrades to a held frame instead of a blank one.
       const frameAt = (index: number) => {
+        // The exact frame if it is here -- the last one is fetched out of
+        // order, so it can be present above the contiguous ceiling.
+        if (imagesRef.current[index]) return imagesRef.current[index];
         for (let i = Math.min(index, loadedToRef.current); i >= 0; i--) {
           const img = imagesRef.current[i];
           if (img) return img;
@@ -482,11 +507,18 @@ export function Book() {
         // state changes, so the state would be stale for a whole rotation --
         // and the question is geometric anyway, which is why that function is
         // shared with layoutSheets in the first place.
+        // Once the book is open the film is over: show its last frame if it
+        // has landed, rather than holding a half-open book behind the pages
+        // because frames in the MIDDLE are still on their way.
+        const ceiling =
+          scroll.u >= 0.999 && imagesRef.current[FRAME_COUNT - 1]
+            ? FRAME_COUNT - 1
+            : loadedToRef.current;
         const plan = planAt(
           scroll.u,
           width,
           height,
-          loadedToRef.current,
+          ceiling,
           isFullBleed(width, height),
         );
 
@@ -508,6 +540,20 @@ export function Book() {
           ctx.fillRect(0, 0, width, height);
         }
 
+        // THE BARS ARE THE SCENE, NOT BLACK. Wherever the frame stops short
+        // of the window -- every viewport wider than 16:9 once the reveal is
+        // clamped to the window height (see `fitted` in planAt), the book's
+        // whole flanks on a 2560x1080 -- the window used to be flat
+        // LETTERBOX, and asked for: "the background is black, I want the
+        // correct background". It is now the frame's own surroundings carried
+        // out to the edge: the frame painted into a ~96px canvas, once
+        // covering the window and once at its true place, blurred there and
+        // stretched back up. A 96px canvas upscaled IS the blur, so this
+        // costs two tiny draws a frame and never a full-size filter. The book
+        // stays whole -- only what was black changes.
+        const ambient = !covered ? paintAmbient(plan.layers, width, height) : null;
+        if (ambient) ctx.drawImage(ambient.fill, 0, 0, width, height);
+
         for (const layer of plan.layers) {
           const img = frameAt(layer.index);
           if (!img) continue;
@@ -516,19 +562,125 @@ export function Book() {
           if (canvas.dataset.ready !== "true") canvas.dataset.ready = "true";
           // Same alpha as the frame it belongs to, so the 49 -> 50 cross-fade
           // takes the shade out with the matte instead of popping it.
-          if (layer.index <= MATTE_LAST) {
-            const x0 = layer.x + layer.width * MATTE_SHADE_FROM;
-            const x1 = layer.x + layer.width;
-            const shade = ctx.createLinearGradient(x0, 0, x1, 0);
-            shade.addColorStop(0, `${LETTERBOX}00`);
-            shade.addColorStop(MATTE_SHADE_KNEE, `${LETTERBOX}d9`);
-            shade.addColorStop(MATTE_SHADE_SOLID, LETTERBOX);
-            shade.addColorStop(1, LETTERBOX);
-            ctx.fillStyle = shade;
-            ctx.fillRect(x0, layer.y, x1 - x0, layer.height);
-          }
+          if (layer.index <= MATTE_LAST) shadeMatte(ctx, layer);
         }
         ctx.globalAlpha = 1;
+        // Then the same picture again, feathered INTO the frame's edge, so
+        // the sharp frame dissolves into its own continuation instead of
+        // ending on a line.
+        if (ambient) ctx.drawImage(ambient.seam, 0, 0, width, height);
+      };
+
+      // The matte's shade over the right of the early frames, for any rect
+      // the frame is drawn at -- the window, or the ambient's tiny canvas.
+      const shadeMatte = (
+        target: CanvasRenderingContext2D,
+        r: { x: number; y: number; width: number; height: number },
+      ) => {
+        const x0 = r.x + r.width * MATTE_SHADE_FROM;
+        const x1 = r.x + r.width;
+        const shade = target.createLinearGradient(x0, 0, x1, 0);
+        shade.addColorStop(0, `${LETTERBOX}00`);
+        shade.addColorStop(MATTE_SHADE_KNEE, `${LETTERBOX}d9`);
+        shade.addColorStop(MATTE_SHADE_SOLID, LETTERBOX);
+        shade.addColorStop(1, LETTERBOX);
+        target.fillStyle = shade;
+        target.fillRect(x0, r.y, x1 - x0, r.height);
+      };
+
+      const AMBIENT_W = 96;
+      const ambientFill = document.createElement("canvas");
+      const ambientSeam = document.createElement("canvas");
+      const fillCtx = ambientFill.getContext("2d");
+      const seamCtx = ambientSeam.getContext("2d");
+      const paintAmbient = (
+        layers: ReturnType<typeof planAt>["layers"],
+        width: number,
+        height: number,
+      ) => {
+        if (!fillCtx || !seamCtx) return null;
+        const w = AMBIENT_W;
+        const h = Math.max(8, Math.round((AMBIENT_W * height) / width));
+        for (const c of [ambientFill, ambientSeam]) {
+          if (c.width !== w || c.height !== h) {
+            c.width = w;
+            c.height = h;
+          }
+        }
+        const k = w / width;
+        fillCtx.globalCompositeOperation = "source-over";
+        fillCtx.filter = "none";
+        fillCtx.fillStyle = LETTERBOX;
+        fillCtx.fillRect(0, 0, w, h);
+        fillCtx.imageSmoothingQuality = "high";
+        let frame: { x: number; y: number; width: number; height: number } | null =
+          null;
+        for (const layer of layers) {
+          const img = frameAt(layer.index);
+          if (!img) continue;
+          // Cover the tiny canvas, anchored on the frame's own centre so the
+          // flanks continue the side of the picture they sit beside.
+          const scale = Math.max(w / (layer.width * k), h / (layer.height * k));
+          const cw = layer.width * k * scale;
+          const ch = layer.height * k * scale;
+          const cx = (layer.x + layer.width / 2) * k - cw / 2;
+          const cy = (layer.y + layer.height / 2) * k - ch / 2;
+          const cover = { x: cx, y: cy, width: cw, height: ch };
+          const real = {
+            x: layer.x * k,
+            y: layer.y * k,
+            width: layer.width * k,
+            height: layer.height * k,
+          };
+          fillCtx.globalAlpha = layer.alpha;
+          fillCtx.drawImage(img, cover.x, cover.y, cover.width, cover.height);
+          if (layer.index <= MATTE_LAST) shadeMatte(fillCtx, cover);
+          fillCtx.drawImage(img, real.x, real.y, real.width, real.height);
+          if (layer.index <= MATTE_LAST) shadeMatte(fillCtx, real);
+          frame = real;
+        }
+        fillCtx.globalAlpha = 1;
+        if (!frame) return null;
+        // Blur on 96px is nearly free; where `filter` is unsupported the
+        // upscale alone still softens it.
+        const blur = Math.max(1.5, w / 40);
+        seamCtx.globalCompositeOperation = "source-over";
+        seamCtx.filter = `blur(${blur}px)`;
+        seamCtx.clearRect(0, 0, w, h);
+        seamCtx.drawImage(ambientFill, 0, 0);
+        seamCtx.filter = "none";
+        // Dim it a little toward the window's edges: a surround, not a
+        // second subject. Painted before the seam is cut, so both carry it.
+        const vignette = seamCtx.createLinearGradient(0, 0, w, 0);
+        vignette.addColorStop(0, `${LETTERBOX}8c`);
+        vignette.addColorStop(0.3, `${LETTERBOX}1a`);
+        vignette.addColorStop(0.7, `${LETTERBOX}1a`);
+        vignette.addColorStop(1, `${LETTERBOX}8c`);
+        seamCtx.fillStyle = vignette;
+        seamCtx.fillRect(0, 0, w, h);
+        fillCtx.clearRect(0, 0, w, h);
+        fillCtx.drawImage(ambientSeam, 0, 0);
+        // The seam layer: the same picture with the frame's interior cut out
+        // on a soft edge about two tiny pixels wide -- ~50px of feather on a
+        // 2560 window -- so it lies over the frame's border only.
+        // Only an edge that ENDS INSIDE the window is feathered: where the
+        // frame runs to (or past) the window's edge -- top and foot on every
+        // wide screen -- the cut is carried off the canvas, or the real
+        // frame's top 50px would be blurred for no seam at all.
+        const band = 2;
+        const left = frame.x > 0.5 ? frame.x + band : -w;
+        const top = frame.y > 0.5 ? frame.y + band : -h;
+        const right =
+          frame.x + frame.width < w - 0.5 ? frame.x + frame.width - band : w * 2;
+        const bottom =
+          frame.y + frame.height < h - 0.5 ? frame.y + frame.height - band : h * 2;
+        seamCtx.globalCompositeOperation = "destination-out";
+        seamCtx.filter = `blur(${band / 2}px)`;
+        seamCtx.fillStyle = "#000";
+        seamCtx.fillRect(left, top, right - left, bottom - top);
+        seamCtx.filter = "none";
+        seamCtx.globalCompositeOperation = "source-over";
+        return { fill: ambientFill, seam: ambientSeam };
       };
 
       const relayout = () => {
@@ -923,6 +1075,35 @@ export function Book() {
           scrub: single ? 0.3 : SCRUB,
           pin: true,
           anticipatePin: 1,
+          // A PAGE COMES TO REST OPEN, never half turned. Stop scrolling
+          // mid-turn and the scroll settles on the nearest open page, the
+          // way an iOS scroll view lands on a row -- from where the scroll
+          // STOPPED. `inertia` is off: the browser's own wheel and touch
+          // momentum has already played out by then, and ScrollTrigger's
+          // projection on top of it read a scrollbar drag or a keyboard jump
+          // as a huge velocity and landed a chapter past where the reader
+          // stopped (y=1685 at 2560x1080 settled on 03). Snapping waits for the pointer to
+          // lift, so it never fights the drag-to-turn below. The opening is
+          // left alone until it is mostly played: a half-opened book is a
+          // frame of the film, and pulling it shut or open would take the
+          // scrub out of the reader's hands.
+          snap: {
+            snapTo: (progress: number) => {
+              const total = tl.duration();
+              const time = progress * total;
+              if (time < OPEN * 0.7) return progress;
+              let best = total;
+              for (let i = 0; i <= turns; i++) {
+                const rest = timeOf(i);
+                if (Math.abs(rest - time) < Math.abs(best - time)) best = rest;
+              }
+              return best / total;
+            },
+            inertia: false,
+            duration: { min: 0.3, max: 0.7 },
+            delay: 0.12,
+            ease: "power3.out",
+          },
         },
       });
 
@@ -1069,7 +1250,15 @@ export function Book() {
       // many spreads it runs to -- and the timeline is measured in spreads, so
       // this is where the two meet: a click on a tab goes to where its chapter
       // OPENS.
-      const seekSpread = (index: number) => {
+      // `fromGesture`: the scroll is ALREADY moving under a finger, so the
+      // landing starts at speed and only decelerates (power3.out). An inOut
+      // ease there starts from rest -- the page visibly stalls the instant
+      // the finger lifts and then sets off again, the seam between drag and
+      // animation that makes a gesture feel scripted. A tap on a tab starts
+      // from rest, so it keeps the symmetric ease, and the duration follows
+      // the distance so a chapter next door is not as slow as one across
+      // the book.
+      const seekSpread = (index: number, fromGesture = false) => {
         const trigger = tl.scrollTrigger;
         if (!trigger) return;
         const y =
@@ -1077,12 +1266,15 @@ export function Book() {
             ? 0
             : trigger.start +
               (timeOf(index) / tl.duration()) * (trigger.end - trigger.start);
+        const distance = Math.abs(y - window.scrollY) / (window.innerHeight || 1);
         gsap.to(window, {
           // autoKill so a flick of the wheel takes the scroll back off the
           // tween rather than fighting it.
           scrollTo: { y, autoKill: true },
-          duration: 0.9,
-          ease: "power2.inOut",
+          duration: fromGesture
+            ? 0.55
+            : Math.min(1.4, 0.7 + distance * 0.12),
+          ease: fromGesture ? "power3.out" : "power3.inOut",
           overwrite: true,
         });
       };
@@ -1145,6 +1337,11 @@ export function Book() {
             y: number;
             from: number;
             px: number;
+            // Release velocity, px/ms, smoothed over the last few moves --
+            // a single last event is too noisy to judge a flick by.
+            lastX: number;
+            lastT: number;
+            vx: number;
           } | null = null;
           const onDown = (event: PointerEvent) => {
             if (event.pointerType === "mouse" && event.button !== 0) return;
@@ -1164,12 +1361,21 @@ export function Book() {
               y: event.clientY,
               from: window.scrollY,
               px: pageScroll(),
+              lastX: event.clientX,
+              lastT: event.timeStamp,
+              vx: 0,
             };
           };
           const onMove = (event: PointerEvent) => {
             if (!drag || event.pointerId !== drag.id) return;
             const dx = event.clientX - drag.x;
             const dy = event.clientY - drag.y;
+            const dt = event.timeStamp - drag.lastT;
+            if (dt > 0) {
+              drag.vx = drag.vx * 0.4 + ((event.clientX - drag.lastX) / dt) * 0.6;
+              drag.lastX = event.clientX;
+              drag.lastT = event.timeStamp;
+            }
             // A mostly-vertical drag is a scroll, and the stage's
             // `touch-action: pan-y` has already given it to the browser.
             if (Math.abs(dy) > Math.abs(dx)) return;
@@ -1183,15 +1389,24 @@ export function Book() {
             const dx = event.clientX - drag.x;
             const dy = event.clientY - drag.y;
             const width = window.innerWidth || 1;
+            const vx = drag.vx;
             drag = null;
             if (Math.abs(dy) > Math.abs(dx)) return;
             const moved = Math.abs(dx) / width;
             if (moved < 0.02) return;
+            // A FLICK turns the page however short it was. Distance alone
+            // made a quick 15% swipe -- the commonest way a thumb turns a
+            // page -- spring back. Velocity decides when there is any
+            // (0.35px/ms is a deliberate flick, not a jittery release), and
+            // its SIGN decides the direction, so a drag that changed its
+            // mind at the end goes where the finger was last heading.
+            const flick = Math.abs(vx) > 0.35;
+            const forward = flick ? vx < 0 : dx < 0;
             const next =
-              moved >= COMMIT
-                ? currentSheet + (dx < 0 ? 1 : -1)
+              flick || moved >= COMMIT
+                ? currentSheet + (forward ? 1 : -1)
                 : currentSheet;
-            seekSpread(Math.min(Math.max(next, 0), turns));
+            seekSpread(Math.min(Math.max(next, 0), turns), true);
           };
           stageEl.style.touchAction = "pan-y";
           const stageInner =

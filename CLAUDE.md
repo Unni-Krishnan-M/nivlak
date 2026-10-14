@@ -100,7 +100,7 @@ affects both targets even though only one of them runs.
 no footer, no panels.
 
 ```
-<Book />   one section, one pin, one timeline    +=779%
+<Book />   one section, one pin, one timeline    +=545% (779% x DESKTOP_SCROLL 0.7)
               0%..250%   the book opens (91-frame canvas scrub)
             250%..779%   six sheets turn over the frame it lands on
 ```
@@ -987,6 +987,43 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   runs `content-between`; 06's rows centre photo + words as one block with
   their tops aligned (`flex-wrap content-center items-start`, words `flex-1`).
 
+### Akshara, pages that come to rest, and the ambient surround
+
+- **06: Akshara replaces Naveen** (Project Manager & Social Media Manager).
+  Her photo is framed TIGHTER than the plate: crown-to-chin is 776 of 1448
+  source px, and matching Gokul's 49% head / 33% eye line needs a 1267x1584
+  window. `build-team-portraits.sh` takes an `extend` viewport for this and
+  fills it by repeating the edge pixels (`-virtual-pixel edge`): white wall
+  at the sides, jacket and shirt carried down. The other four plates rebuild
+  byte-identical. `naveen.webp` is deleted.
+- **Scroll: desktop x0.7, phone x0.75** (`DESKTOP_SCROLL`, `PHONE_SCROLL`).
+  Asked for: less wheel on a laptop, slower turns on a phone. 6.5 viewports
+  at 1440x900 (was 8.8), 11.1 at 393x851 (was 7.7).
+- **Pages come to rest open.** ScrollTrigger `snap` to the nearest page's
+  `timeOf()` once the opening is 70% played; `inertia: false`, because the
+  projection read a scrollbar drag or harness jump as a huge flick and landed a
+  chapter late. Snap never fires while a pointer is down, so it cannot fight
+  drag-to-turn. Consequence for QA: every harness stop now shows a page at
+  rest, never mid-turn -- sample a turn with `--settle` UNDER the snap delay
+  (~100ms) if you need to see one.
+- **A flick turns the page** (|vx| > 0.35px/ms, sign decides direction),
+  however short; a gesture's landing is `power3.out` from speed, a tab's is
+  `power3.inOut` with a duration that grows with distance.
+- **The bars on wide windows are the scene, not black.** Where the frame
+  stops short of the window (wider than 16:9, after `fitted`), `draw()` paints
+  the frame into a 96px canvas -- cover-scaled, then at its true place --
+  blurs it, dims the outer edges, and upscales it under the frame; a second
+  copy with the frame's interior cut out on a soft edge is laid over the seam.
+  Only edges that end INSIDE the window are feathered. Costs two tiny draws a
+  frame, and nothing when the frame covers the window (every 16:9-or-taller
+  screen).
+- **Frame 091 loads second, not last.** It is every sheet's paper. Loaded
+  last, a phone on mobile data reached the pages before it had landed and the
+  type came up over a closed book with no paper. `draw()` also shows it as
+  soon as the book is open, above the contiguous ceiling. Production at the
+  time was a Sep 7 deploy and predates most of what this file describes --
+  test the local build before blaming the code for what a phone shows there.
+
 ### Phone scroll halved, feet aligned, Naveen keyed properly
 
 - **Phones scroll half as far** (`PHONE_SCROLL = 0.5` in `scrollLength`):
@@ -1042,7 +1079,8 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   1.4em-of-body column let a 50px N run into "Novel". NOTE: 01's footnote
   still says "Noble, Intelligent, Vision" against the recto's "Novel Ideas,
   Intelligent Engineering, Visionary Impact" -- flagged, not changed.
-- **06 has five people and no principles.** Naveen (Sales Executive) was added
+- **06 has five people and no principles.** (Naveen, added here, was later
+  replaced by Akshara -- see "Akshara, pages that come to rest" below.) Naveen (Sales Executive) was added
   (`tools/build-team-portraits.sh`, crop set to Gokul's 47% head / 5.5% top);
   the leadership principles and the founding belief were removed on request.
   `teamHalves()` cuts SLOTS (head counts as one, all `1fr`): head + 2 | 3.

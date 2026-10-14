@@ -60,6 +60,17 @@ OUT="$ROOT/apps/web/public/team"
 mkdir -p "$OUT"
 
 # slug | source | crop | corners (optional: "top" keys from the top two only)
+#        | extend (optional: WxH+X+Y viewport, offsets may be negative)
+#
+# EXTEND is for a photograph framed TIGHTER than the plate. Akshara's head
+# runs crown-to-chin 776 of 1448 source px; the others' plates hold it at 49%
+# of the frame (Gokul's: crown 22, eyes 125, chin 205 of 375), which needs a
+# 1267x1584 window -- wider and taller than her whole photograph. Cropping
+# inside it printed her face a fifth larger than the four beside it. The
+# viewport is filled by REPEATING THE EDGE pixels outward (-virtual-pixel
+# edge): the sides are studio white, which the key takes anyway, and the
+# bottom rows are jacket and shirt, which repeated downward read as the
+# torso continuing. Nothing is drawn; only edges are carried on.
 #
 # CORNERS is for a photograph whose SUBJECT reaches the bottom edge. The key
 # floodfills from all four corners of the full frame, which in the first four
@@ -73,9 +84,9 @@ PORTRAITS=(
   "unni-krishnan-m|Unni Krishnan M.png|933x1166+174+60"
   "ashok|Ashok.jpeg|667x833+217+90"
   "gokul|Gokul.jpeg|848x1060+141+36"
-  # Naveen: head (hair 85 -> chin ~700 of 1410) set to the same 47% of the
-  # frame and 5.5% top margin that Gokul's finished plate measures.
-  "naveen|Naveen.png|1046x1308+52+13|top"
+  # Akshara: extended (see EXTEND above) to put her eye line at the 33% of
+  # the frame and her head at the 49% that Gokul's plate measures.
+  "akshara|Akshara.jpeg|1267x1584+0+0|top|1267x1584-78+32"
 )
 
 SIZE=360x450      # ~2.5x the ~150px the portraits print at
@@ -96,9 +107,14 @@ trap 'rm -rf "$WORK"' EXIT
 magick xc:"$INK" xc:"$MID" xc:"$PAPER" +append -filter Cubic -resize 256x1! "$WORK/ramp.png"
 
 for entry in "${PORTRAITS[@]}"; do
-  IFS='|' read -r slug src crop keyfrom <<<"$entry"
+  IFS='|' read -r slug src crop keyfrom extend <<<"$entry"
   path="$ROOT/$src"
   [ -f "$path" ] || { echo "missing $src at the repo root" >&2; exit 1; }
+  if [ -n "${extend:-}" ]; then
+    magick "$path" -virtual-pixel edge -set option:distort:viewport "$extend" \
+      -distort SRT 0 +repage "$WORK/extended.png"
+    path="$WORK/extended.png"
+  fi
   read -r w h < <(magick identify -format '%w %h\n' "$path")
   mx=$((w - 1)); my=$((h - 1))
 

@@ -3481,7 +3481,7 @@ function StepList({ steps, from }: { steps: PageStep[]; from: number }) {
  * leaving the recto's last row empty rather than respacing one page.
  *
  * The recto used to spend its first slot on the leadership principles and
- * the founding belief, removed on request when Naveen joined -- which is
+ * the founding belief, removed on request when a fifth member joined -- which is
  * what lets it carry three people.
  */
 function teamHalves(members: PageMember[]) {

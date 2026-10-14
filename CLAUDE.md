@@ -45,9 +45,23 @@ Two paths are wired up and only one of them is live.
   `@netlify/plugin-nextjs`. Production is **https://nivlak.netlify.app**.
 - **Cloudflare** — what `bts.jsonc` and `packages/infra` describe.
   `@opennextjs/cloudflare` + `wrangler.jsonc` + `alchemy.run.ts`; `pnpm deploy`.
-  Not serving anything. `pnpm deploy` is NOT how this site ships.
+  `pnpm deploy` (Alchemy) is NOT how this site ships.
 
-**The site has no continuous deployment**, which is the thing that catches
+  **Cloudflare Workers Builds is now connected to the GitHub repo** and
+  deploys the Worker `nivlak-web` on push, running from the REPO ROOT:
+  `pnpm run build`, then `npx wrangler deploy`. Both are made to work there on
+  purpose: the root `build` has turbo build everything but web and hands web
+  to `opennextjs-cloudflare build` (never `next build` + `--skipNextBuild`:
+  OpenNext needs the standalone output only its own build turns on, and the
+  skip path only passes locally on a leftover `.next/standalone`); `wrangler`
+  is a root devDependency; and `.wrangler/deploy/config.json` is Wrangler's
+  own redirect to `apps/web/wrangler.jsonc`, so there is one config, not a
+  root copy. Test a change to any of it on a FRESH CLONE, not this checkout.
+  On a machine with a system libvips (this one: 8.18.7), a clean install
+  tries to compile sharp from source and fails; `SHARP_IGNORE_GLOBAL_LIBVIPS=1`
+  -- Cloudflare's image has none and is unaffected.
+
+**Netlify has no continuous deployment**, which is the thing that catches
 people out. `netlify api getSite` reports `build_settings: {}`, no `repo_url`,
 `deploy_hook: null`, and `commit_ref: null` on every recent deploy — the
 project is not connected to the GitHub repo at all. **Pushing to `main` deploys

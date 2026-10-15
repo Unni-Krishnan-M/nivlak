@@ -37,6 +37,20 @@
  * two cannot disagree. `:has()` keeps it to the page that has the book; the
  * login and dashboard routes scroll normally.
  */
+/*
+ * THE PIN'S THIRD OF A PIXEL. On a fractionally-scaled screen (125%, 150% --
+ * most Windows laptops) the body is 1424.67px wide and GSAP writes the pin
+ * spacer as "1425px": 0.33px of overflow, which is enough for Chrome to put
+ * a HORIZONTAL SCROLLBAR under the book and take 15px off the foot of every
+ * page (clientHeight 885 of a 900 window, measured at 1440x900 @1.5x).
+ * `clip`, not `hidden`: it makes no scroll container, so the pin, `sticky`
+ * and the fixed section inside are untouched. The touch box below overrides
+ * it with its own `hidden`.
+ */
+[data-scroller] {
+  overflow-x: clip;
+}
+
 @media (pointer: coarse) {
   html:has([data-scroller]),
   html:has([data-scroller]) body {

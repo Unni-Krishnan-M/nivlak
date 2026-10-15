@@ -349,6 +349,13 @@ export function paintSheets(
  */
 const SingleSheetContext = createContext(false);
 
+// True inside the MIRRORED back of a phone sheet -- the page printed again,
+// reversed at 14%, for the length of a turn. Anything that is expensive or
+// live checks it: 04's live site was mounted a second time in there, a whole
+// external website running in an inert, invisible copy (two iframes measured
+// on a Pixel 5, where there should be one).
+const MirrorContext = createContext(false);
+
 export function BookSheets({ single = false }: { single?: boolean }) {
   if (single) return <SinglePageSheets />;
   return <SpreadSheets />;
@@ -419,11 +426,13 @@ function SinglePageSheets() {
                   inert
                   className="pointer-events-none absolute inset-0 opacity-[0.14] [transform:scaleX(-1)]"
                 >
-                  {page.kind === "facing" ? (
-                    <VersoPage page={spread} flush />
-                  ) : (
-                    <PageBody page={spread} />
-                  )}
+                  <MirrorContext.Provider value>
+                    {page.kind === "facing" ? (
+                      <VersoPage page={spread} flush />
+                    ) : (
+                      <PageBody page={spread} />
+                    )}
+                  </MirrorContext.Provider>
                 </div>
                 <PageFoot page={spread} />
               </PageFace>
@@ -2417,9 +2426,12 @@ const WORK_CHAPTER = BOOK_PAGES.findIndex((page) =>
  * - No plate image (asked for: only the live site). Loading is a shimmer on
  *   the window's navy; if the frame has not loaded after 12s a link out is
  *   shown. `onError` never fires for a frame, so a timeout is the only signal.
- * - It loads when chapter 04 is OPEN (<Book> announces `book:chapter`), not
- *   on the cover: the sheets are all in the DOM from the first paint, so a
- *   plain `loading="lazy"` would still fetch it behind the hero.
+ * - It loads only while the book RESTS on chapter 04 (<Book> announces
+ *   `book:rest`), and is unmounted when it rests anywhere else -- never on
+ *   the cover, never mid-turn, never left running in 05-07. The sheets are
+ *   all in the DOM from the first paint, so a plain `loading="lazy"` would
+ *   still fetch it behind the hero. Never in the mirrored back of a phone
+ *   sheet (MirrorContext).
  * - On touch screens it sits behind "Tap to use the live site" until tapped,
  *   because a live frame swallows every touch -- the phone carousel could
  *   not be swiped across it, nor the book scrolled.
@@ -2445,19 +2457,64 @@ function LivePlate({
   const [armed, setArmed] = useState(false);
   const [box, setBox] = useState({ w: 0, h: 0 });
   const viewRef = useRef<HTMLDivElement>(null);
+  const mirror = useContext(MirrorContext);
 
+  // THE LIVE SITE RUNS ONLY WHILE THE BOOK RESTS ON THIS CHAPTER. It used to
+  // start on `book:chapter`, which fires at the MIDDLE of the turn into 04,
+  // and never stop: a whole external website downloading, laying out and
+  // animating through that turn and every one after it. Measured on a Pixel 5
+  // through III -> IV -> V: 22% of 04's frames dropped (66 of 304), freezes up
+  // to 267ms, eight long tasks up to 185ms, and 05 still paying for it --
+  // against 3 of 287 dropped in 03. Now it waits for `book:rest` on 04 (and a
+  // beat more, so a reader passing through does not start a download), and
+  // is unmounted the moment the book rests anywhere else.
   useEffect(() => {
-    // Reduced motion reads the book as a plain column with no chapter events.
+    if (mirror) return;
+    // Reduced motion reads the book as a plain column with no book events.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setActive(true);
     }
     setCoarse(window.matchMedia("(pointer: coarse)").matches);
-    const onChapter = (event: Event) => {
-      if ((event as CustomEvent<number>).detail === WORK_CHAPTER) setActive(true);
+    let timer = 0;
+    const stop = () => {
+      setActive(false);
+      setLoaded(false);
+      setFailed(false);
+      setArmed(false);
     };
-    window.addEventListener("book:chapter", onChapter);
-    return () => window.removeEventListener("book:chapter", onChapter);
-  }, []);
+    // Resting on 04 is not enough on a phone: the chapter is two pages and
+    // this window is on the second, so it loaded under the first and was
+    // still loading through the turn onto it. So it asks the page what is
+    // actually ON TOP at its own centre -- a sheet lying over it answers with
+    // that sheet -- and runs only when the answer is this window.
+    const onTop = () => {
+      const el = viewRef.current;
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.bottom < 0 || r.top > window.innerHeight) return false;
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return !!hit && el.contains(hit);
+    };
+    const onRest = (event: Event) => {
+      window.clearTimeout(timer);
+      if ((event as CustomEvent<number>).detail !== WORK_CHAPTER) {
+        stop();
+        return;
+      }
+      timer = window.setTimeout(() => {
+        if (onTop()) setActive(true);
+        else stop();
+      }, 300);
+    };
+    const onTurning = () => window.clearTimeout(timer);
+    window.addEventListener("book:rest", onRest);
+    window.addEventListener("book:turning", onTurning);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("book:rest", onRest);
+      window.removeEventListener("book:turning", onTurning);
+    };
+  }, [mirror]);
 
   useEffect(() => {
     const el = viewRef.current;

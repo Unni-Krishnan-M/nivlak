@@ -1083,6 +1083,10 @@ export function Book() {
         );
 
       let gestureFrom: number | null = null;
+      // `?nosnap` turns the snap off, for QA only: with it on, every stop the
+      // screenshot harness makes is pulled to a page at rest, so a fault that
+      // lives MID-TURN can never be photographed (`scroll-shots --no-snap`).
+      const noSnap = new URLSearchParams(window.location.search).has("nosnap");
       // True while the book is being MOVED for the reader -- a sideways drag
       // under the finger, or a seek landing after a tap or a swipe. The snap
       // stands aside meanwhile: both settling the same scroll at once is what
@@ -1137,7 +1141,7 @@ export function Book() {
             snapTo: (progress: number, self?: ScrollTrigger) => {
               const total = tl.duration();
               const time = progress * total;
-              if (seeking || time < OPEN) return progress;
+              if (seeking || noSnap || time < OPEN) return progress;
               const rests: number[] = [];
               for (let i = 0; i <= turns; i++) rests.push(timeOf(i));
               let near = rests[0] ?? time;
@@ -1593,6 +1597,7 @@ export function Book() {
       // Which page is face up. This runs on every scrubbed frame, so it only
       // writes to the DOM when the answer actually changes.
       let lastCurrent = Number.NaN;
+      let lastRest = "";
       const syncNav = () => {
         const t = tl.time();
         let current = t >= OPEN + LEAD_IN * 0.5 ? 0 : -1;
@@ -1608,16 +1613,39 @@ export function Book() {
         // ink sat at 1, dropped to 0 the frame the turn passed halfway, and
         // took ~350ms to come back -- on every page, and again each time a
         // scroll hovered around the midpoint. The turn IS the page arriving.
+
+        // AT REST OR MOVING, announced on each change: `book:rest` (detail:
+        // the chapter lying open, -1 on the cover) once no turn and no film is
+        // under way, `book:turning` the moment one starts. 04's live site is
+        // what listens -- it loads only at rest on its chapter and leaves on
+        // rest anywhere else, because a website loading inside a turn was the
+        // stutter in the turns into and out of 04.
+        let moving = t > 0.001 && t < OPEN + LEAD_IN;
+        for (let i = 0; i < turns && !moving; i++) {
+          const start = OPEN + LEAD_IN + i * (TURN + GAP);
+          if (t > start && t < start + TURN) moving = true;
+        }
+        const restKey = moving ? "moving" : `rest:${current}`;
+        if (restKey !== lastRest) {
+          lastRest = restKey;
+          window.dispatchEvent(
+            moving
+              ? new CustomEvent("book:turning")
+              : new CustomEvent("book:rest", {
+                  detail: current < 0 ? -1 : (chapterOfSheet[current] ?? -1),
+                }),
+          );
+        }
         if (current === lastCurrent) return;
         lastCurrent = current;
         // Report the chapter, not the spread. A chapter running to two spreads
         // keeps ONE tab lit across both, instead of the index going dark on the
         // continuation because no tab has that spread's number.
         const chapter = current < 0 ? -1 : (chapterOfSheet[current] ?? -1);
-        // Announced for anything on a page that should only wake up when its
-        // chapter is open -- 04's live site loads here rather than on the
-        // cover. An event rather than a prop because the sheets are rendered
-        // once and this runs outside React.
+        // Announced for anything that follows which chapter is face up (it
+        // flips at MID-TURN; for "the book is lying open here" listen to
+        // `book:rest` above). An event rather than a prop because the sheets
+        // are rendered once and this runs outside React.
         window.dispatchEvent(new CustomEvent("book:chapter", { detail: chapter }));
         for (const el of navItems) {
           const index = Number(el.dataset.index);

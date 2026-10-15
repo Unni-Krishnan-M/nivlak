@@ -47,6 +47,9 @@ const REDUCED = has("--reduced-motion");
 // switches the book to scrolling inside [data-scroller] instead of the
 // document (see index.css). Without it every pass tests the desktop path only.
 const TOUCH = has("--touch");
+// --no-snap loads the page with ?nosnap: without it every stop is pulled to a
+// page at rest by the book's snap, and nothing mid-turn can be photographed.
+const NO_SNAP = has("--no-snap");
 const [W, H] = arg("--viewport", "1440x900").split("x").map(Number);
 
 // Refuse rather than proceed: a mistyped --viewport used to sail through as
@@ -194,7 +197,9 @@ if (REDUCED) {
     features: [{ name: "prefers-reduced-motion", value: "reduce" }],
   });
 }
-await send("Page.navigate", { url: URL_ });
+await send("Page.navigate", {
+  url: NO_SNAP ? `${URL_}${URL_.includes("?") ? "&" : "?"}nosnap` : URL_,
+});
 // The frame set is fetched in batches after mount; screenshotting before it
 // has landed measures the loader, not the reveal.
 await sleep(READY);

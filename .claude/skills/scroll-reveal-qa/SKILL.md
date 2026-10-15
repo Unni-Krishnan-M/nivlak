@@ -64,6 +64,9 @@ looks wrong — the montage is for finding the suspect frame, not for judging it
 
 ## Zooming in on one transition
 
+**Pass `--no-snap`** when sampling a turn: the book snaps every stop to a page
+at rest, so without it a "mid-turn" frame is never mid-turn.
+
 ```bash
 node tools/scroll-shots.mjs --out /tmp/turn --from 5200 --to 6300 --shots 12
 ```

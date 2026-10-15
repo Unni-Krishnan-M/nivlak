@@ -1001,6 +1001,35 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   runs `content-between`; 06's rows centre photo + words as one block with
   their tops aligned (`flex-wrap content-center items-start`, words `flex-1`).
 
+### The turns into and out of 04, and the pin's third of a pixel
+
+"Still some bugs in the 4th and 5th turning": on a spread those are the turns
+INTO and OUT OF 04, and the cause was 04's live site, measured on a Pixel 5
+with real swipes (frame times + long tasks, recorded in-page over CDP).
+
+- **The live site runs only while the book RESTS with its window on top.**
+  It used to start on `book:chapter` -- which flips at MID-TURN -- and never
+  stop, so a whole external website loaded inside the turn into 04 and kept
+  animating through every turn after it: 66 of 304 frames dropped in 04
+  (22%, freezes to 267ms, 8 long tasks to 185ms) against 3 of 287 in 03.
+  `syncNav` now dispatches `book:rest` (detail: chapter) and `book:turning`;
+  `<LivePlate>` loads 300ms after resting on 04, only if `elementFromPoint`
+  at its window's centre is the window itself (on a phone 04 is two pages and
+  the window is on the second), and unmounts on rest anywhere else. After: 6
+  frames over 50ms in 04, 2 long tasks (max 66ms); one iframe, on 04 only.
+- **The mirrored back of a phone sheet mounted a SECOND live iframe**, in an
+  inert copy no one sees. `MirrorContext` marks that subtree; anything live
+  or expensive has to check it.
+- **`[data-scroller] { overflow-x: clip }`** -- at a fractional device scale
+  (1440x900 @1.5x, i.e. most Windows laptops at 125-150%) the body is
+  1424.67px and GSAP writes the pin spacer as 1425px; that 0.33px put a
+  horizontal scrollbar under the book and took 15px off every page
+  (clientHeight 885 of 900). The harness never sees it: its windows have no
+  scrollbars. `clip`, not `hidden`, so no scroll container is made.
+- **`?nosnap`** (harness `--no-snap`) turns the snap off for QA: with it on,
+  every harness stop is pulled to a page at rest and nothing mid-turn can be
+  photographed.
+
 ### On a touch screen the book scrolls in its own box (Chrome's bar stays put)
 
 Found and verified on a real Pixel 5 in the Android emulator (`pnpm

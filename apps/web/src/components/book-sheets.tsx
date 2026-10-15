@@ -2575,6 +2575,10 @@ function LivePlate({
             title={`${live.host} — the live site`}
             loading="lazy"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            // calioon.com's footer reads the phone's motion sensors; refused,
+            // it logged a permissions-policy ERROR into this page's console
+            // on every load of 04. It is the client's own live site.
+            allow="accelerometer; gyroscope"
             referrerPolicy="strict-origin-when-cross-origin"
             onLoad={() => {
               setLoaded(true);

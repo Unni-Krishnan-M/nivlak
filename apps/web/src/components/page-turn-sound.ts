@@ -15,10 +15,23 @@
 //   - -24 LUFS, ~10KB.
 // (A synthesised flip came first; its low "landing tap" read as a beat.)
 //
-// It is decoded ONCE into an AudioBuffer and replayed through Web Audio, so a
-// turn plays instantly and several can overlap; an <audio> element would
+// THE COVER has two more, both real recordings, both CC0 from Freesound:
+//   - public/sounds/book-open.mp3: freesound.org/s/554837 (The_Runner_01,
+//     "Book - Open/Close"), 4.80-6.10s -- the air of the cover swinging and
+//     a soft low swell as it lies down; no hard transient, because a cover
+//     laid open does not slam. +23dB, limited to -6dBFS.
+//   - public/sounds/book-close.mp3: freesound.org/s/612174 (MayelinOrozco,
+//     "closing a book"), 14.80-15.60s -- ONE thump, starting 50ms before it,
+//     so the hit lands on the frame where the covers meet rather than after a
+//     swish of pre-roll. -3dB, limited to -3dBFS (the source clipped).
+//   Both high-passed at 60Hz, low-passed at 9.5kHz, mono 96k like the turn;
+//   ~-28 LUFS each, lifted at playback (GAIN) to sit with the turn.
+//
+// Each is decoded ONCE into an AudioBuffer and replayed through Web Audio, so
+// it plays instantly and several can overlap; an <audio> element would
 // stutter on rapid turns. <Book> dispatches `book:turn` each time a new sheet
-// lands.
+// lands, and `book:open` / `book:close` as the film passes the frame where
+// the covers part.
 //
 // Browsers only let a page make sound after the visitor has interacted with
 // it -- a click, a tap or a key; scrolling with a wheel does NOT count -- so
@@ -30,15 +43,29 @@
 // degrades to "on" when storage is unavailable.
 
 const KEY = "nivlak:page-sound";
-const SRC = "/sounds/page-turn.mp3";
+type Sound = "turn" | "open" | "close";
+const SRC: Record<Sound, string> = {
+  turn: "/sounds/page-turn.mp3",
+  open: "/sounds/book-open.mp3",
+  close: "/sounds/book-close.mp3",
+};
+// Mild: a quiet presence under the page, not an effect on top of it. The
+// cover's two are ~3.5dB quieter files than the turn, hence the higher gain.
+const GAIN: Record<Sound, number> = { turn: 0.55, open: 0.9, close: 0.75 };
+// One of each per this many ms: a fast scrub lands several sheets a second,
+// and a flip on each read as a rhythm rather than as pages. The cover's
+// thresholds already have hysteresis; this only stops a jittering scroll
+// right on them from drumming.
+const MIN_GAP: Record<Sound, number> = { turn: 250, open: 400, close: 400 };
+const SOUNDS = Object.keys(SRC) as Sound[];
 let ctx: AudioContext | null = null;
-let flip: AudioBuffer | null = null;
-// The file's BYTES are fetched as soon as the book mounts, not on the first
-// click, so the first turn after that click already has something to play.
+const buffers: Partial<Record<Sound, AudioBuffer>> = {};
+// The files' BYTES are fetched as soon as the book mounts, not on the first
+// click, so the first sound after that click already has something to play.
 // Decoding waits for the AudioContext, which a browser only allows after a
 // gesture; decoding a 1s file takes a few milliseconds.
-let bytes: Promise<ArrayBuffer | null> | null = null;
-let last = 0;
+let bytes: Partial<Record<Sound, Promise<ArrayBuffer | null>>> | null = null;
+const last: Record<Sound, number> = { turn: 0, open: 0, close: 0 };
 
 export function soundEnabled() {
   try {
@@ -56,6 +83,14 @@ export function setSoundEnabled(on: boolean) {
 }
 
 function unlock() {
+  // Only inside a REAL user activation. A touch that becomes a scroll fires
+  // pointerdown and touchend but is not one, and creating or resuming the
+  // context then is refused with a console warning -- one per swipe, logged
+  // on a Pixel 5 at every page turn. Where the API is missing, try anyway.
+  const activation = (navigator as Navigator & {
+    userActivation?: { isActive: boolean };
+  }).userActivation;
+  if (activation && !activation.isActive) return;
   if (ctx) {
     if (ctx.state === "suspended") void ctx.resume();
     return;
@@ -67,46 +102,57 @@ function unlock() {
   if (!AC) return;
   const audio = new AC();
   ctx = audio;
-  void (bytes ?? Promise.resolve(null))
-    .then((data) => (data ? audio.decodeAudioData(data.slice(0)) : null))
-    .then((buffer) => {
-      if (buffer) flip = buffer;
-    })
-    .catch(() => {
-      // No sound is the right failure: the book works without it.
-    });
+  for (const name of SOUNDS) {
+    void (bytes?.[name] ?? Promise.resolve(null))
+      .then((data) => (data ? audio.decodeAudioData(data.slice(0)) : null))
+      .then((buffer) => {
+        if (buffer) buffers[name] = buffer;
+      })
+      .catch(() => {
+        // No sound is the right failure: the book works without it.
+      });
+  }
 }
 
-export function playPageTurn() {
-  if (!ctx || !flip || !soundEnabled()) return;
+function play(name: Sound) {
+  const buffer = buffers[name];
+  if (!ctx || !buffer || !soundEnabled()) return;
   if (ctx.state !== "running") return;
-  // One flip per ~250ms: a fast scrub lands several sheets a second, and a
-  // flip on each read as a rhythm rather than as pages.
   const now = performance.now();
-  if (now - last < 250) return;
-  last = now;
+  if (now - last[name] < MIN_GAP[name]) return;
+  last[name] = now;
 
   const source = ctx.createBufferSource();
-  source.buffer = flip;
+  source.buffer = buffer;
   // Always the same speed: a random pitch per turn read as unevenness.
-  // Mild: a quiet presence under the page, not an effect on top of it.
   const gain = ctx.createGain();
-  gain.gain.value = 0.55;
+  gain.gain.value = GAIN[name];
   source.connect(gain).connect(ctx.destination);
   source.start();
 }
 
-/** Wire the sound up once; returns a teardown. */
+export const playPageTurn = () => play("turn");
+
+/** Wire the sounds up once; returns a teardown. */
 export function installPageTurnSound() {
-  bytes ??= fetch(SRC)
-    .then((response) => (response.ok ? response.arrayBuffer() : null))
-    .catch(() => null);
-  const gestures = ["pointerdown", "keydown", "touchend"] as const;
+  bytes ??= Object.fromEntries(
+    SOUNDS.map((name) => [
+      name,
+      fetch(SRC[name])
+        .then((response) => (response.ok ? response.arrayBuffer() : null))
+        .catch(() => null),
+    ]),
+  );
+  const gestures = ["pointerdown", "keydown", "touchend", "click"] as const;
   for (const g of gestures) window.addEventListener(g, unlock, { passive: true });
-  const onTurn = () => playPageTurn();
-  window.addEventListener("book:turn", onTurn);
+  const listeners = SOUNDS.map((name) => {
+    const event = name === "turn" ? "book:turn" : `book:${name}`;
+    const listener = () => play(name);
+    window.addEventListener(event, listener);
+    return () => window.removeEventListener(event, listener);
+  });
   return () => {
     for (const g of gestures) window.removeEventListener(g, unlock);
-    window.removeEventListener("book:turn", onTurn);
+    for (const remove of listeners) remove();
   };
 }

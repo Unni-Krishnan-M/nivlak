@@ -92,6 +92,7 @@ node tools/scroll-shots.mjs --out /tmp/d  --viewport 1440x900   # desktop
 node tools/scroll-shots.mjs --out /tmp/m  --viewport 390x844    # portrait: full-bleed fallback
 node tools/scroll-shots.mjs --out /tmp/l  --viewport 844x390    # landscape phone: sd tier
 node tools/scroll-shots.mjs --out /tmp/rm --reduced-motion      # no pin, plain column
+node tools/scroll-shots.mjs --out /tmp/t  --viewport 393x851 --touch  # phone: scrolls in [data-scroller], sticky, no pin
 ```
 
 Portrait is the one that breaks: the camera crops the 16:9 frame to a tall band,

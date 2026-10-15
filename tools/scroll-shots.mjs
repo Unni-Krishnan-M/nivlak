@@ -15,6 +15,7 @@
 //   node tools/scroll-shots.mjs --out /tmp/turn --from 5200 --to 6300 --shots 12
 //   node tools/scroll-shots.mjs --out /tmp/m --viewport 390x844
 //   node tools/scroll-shots.mjs --out /tmp/rm --reduced-motion
+//   node tools/scroll-shots.mjs --out /tmp/t --viewport 393x851 --touch  # phone: scrolls in [data-scroller]
 //
 // Needs a dev server already running (pnpm dev:web) and google-chrome-stable.
 // --probe prints the live DOM state at each stop instead of writing a PNG,
@@ -42,6 +43,10 @@ const SETTLE = Number(arg("--settle", 1400));
 const READY = Number(arg("--ready", 9000));
 const PROBE = has("--probe");
 const REDUCED = has("--reduced-motion");
+// --touch emulates a phone's touch screen (`pointer: coarse`), which is what
+// switches the book to scrolling inside [data-scroller] instead of the
+// document (see index.css). Without it every pass tests the desktop path only.
+const TOUCH = has("--touch");
 const [W, H] = arg("--viewport", "1440x900").split("x").map(Number);
 
 // Refuse rather than proceed: a mistyped --viewport used to sail through as
@@ -176,8 +181,14 @@ await send("Emulation.setDeviceMetricsOverride", {
   width: W,
   height: H,
   deviceScaleFactor: 1,
-  mobile: false,
+  mobile: TOUCH,
 });
+if (TOUCH) {
+  await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+  await send("Emulation.setEmitTouchEventsForMouse", { enabled: true, configuration: "mobile" });
+}
+// Whatever actually scrolls: the touch box when it is live, else the document.
+const SCROLLER = `((b) => b && getComputedStyle(b).overflowY === "auto" ? b : document.scrollingElement)(document.querySelector("[data-scroller]"))`;
 if (REDUCED) {
   await send("Emulation.setEmulatedMedia", {
     features: [{ name: "prefers-reduced-motion", value: "reduce" }],
@@ -188,16 +199,16 @@ await send("Page.navigate", { url: URL_ });
 // has landed measures the loader, not the reveal.
 await sleep(READY);
 
-const total = await evaluate("document.documentElement.scrollHeight");
+const total = await evaluate(`${SCROLLER}.scrollHeight`);
 const lo = FROM;
 const hi = TO ?? total - H;
 console.log(
-  `${W}x${H}${REDUCED ? " reduced-motion" : ""}  scrollHeight=${total} (${(total / H).toFixed(1)} viewports)  sampling ${lo}..${hi} in ${SHOTS}`,
+  `${W}x${H}${REDUCED ? " reduced-motion" : ""}${TOUCH ? " touch" : ""}  scrollHeight=${total} (${(total / H).toFixed(1)} viewports)  sampling ${lo}..${hi} in ${SHOTS}`,
 );
 
 // What a dark rectangle actually is. Read this before theorising about CSS.
 const PROBE_JS = `(() => {
-  const out = { scrollY: window.scrollY };
+  const out = { scrollY: ${SCROLLER}.scrollTop };
   out.spacers = [...document.querySelectorAll('.pin-spacer')]
     .map((p) => ({ height: p.offsetHeight, top: Math.round(p.getBoundingClientRect().top) }));
   out.sections = [...document.querySelectorAll('section')].map((s) => {
@@ -220,7 +231,7 @@ const PROBE_JS = `(() => {
 
 for (let i = 0; i < SHOTS; i++) {
   const y = Math.round(lo + (hi - lo) * (SHOTS === 1 ? 0 : i / (SHOTS - 1)));
-  await evaluate(`window.scrollTo(0, ${y})`);
+  await evaluate(`${SCROLLER}.scrollTop = ${y}`);
   await sleep(SETTLE);
 
   if (PROBE) {

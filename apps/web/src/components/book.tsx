@@ -112,8 +112,12 @@ const PHONE_SCROLL = 0.75;
 // gets ~17px of wheel instead of ~25 -- more frames per pixel, so the clip
 // plays smoother under a flick, not less.
 const DESKTOP_SCROLL = 0.7;
+// In percent of the viewport: the pin's `end`, and on a touch screen the
+// height of the spacer the sticky book scrolls over (see `box` in <Book>).
+const scrollPercent = (turns: number, single = false) =>
+  Math.round((OPEN_VH + pagesUnits(turns) * VH_PER_UNIT) * (single ? PHONE_SCROLL : DESKTOP_SCROLL));
 const scrollLength = (turns: number, single = false) =>
-  `+=${Math.round((OPEN_VH + pagesUnits(turns) * VH_PER_UNIT) * (single ? PHONE_SCROLL : DESKTOP_SCROLL))}%`;
+  `+=${scrollPercent(turns, single)}%`;
 
 // Frames requested per batch after the first. Ninety-one at once is ninety-one
 // parallel requests fighting the document for the connection on a cold load; in
@@ -151,6 +155,7 @@ const MATTE_SHADE_SOLID = (0.9 - MATTE_SHADE_FROM) / (1 - MATTE_SHADE_FROM);
 
 export function Book() {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const kickerRef = useRef<HTMLDivElement>(null);
   // The scroll cue, which sits at the foot of the SCREEN and so cannot live
@@ -459,6 +464,20 @@ export function Book() {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d", { alpha: false });
       if (!section || !canvas || !ctx) return;
+
+      // WHAT SCROLLS. On a touch screen it is the wrapper box and not the
+      // document, so the browser's address bar stays put -- see the note on
+      // [data-scroller] in index.css, whose media query this asks verbatim so
+      // the CSS and the scroll code can never disagree. Everything below reads
+      // and writes the scroll through these three, never through `window`.
+      const box =
+        scrollerRef.current && window.matchMedia("(pointer: coarse)").matches
+          ? scrollerRef.current
+          : null;
+      const scroller: HTMLElement | Window = box ?? window;
+      const scrollY = () => (box ? box.scrollTop : window.scrollY);
+      const scrollToY = (top: number) =>
+        box ? (box.scrollTop = top) : window.scrollTo({ top, behavior: "auto" });
 
       // Nearest frame at or before `index` that actually decoded, so a single
       // failed request degrades to a held frame instead of a blank one.
@@ -1041,7 +1060,7 @@ export function Book() {
               ? null
               : document.getElementById(`section-${BOOK_PAGES[index]?.number}`);
           if (target) target.scrollIntoView();
-          else window.scrollTo(0, 0);
+          else scrollToY(0);
         };
         return () => {
           dropNav();
@@ -1063,6 +1082,13 @@ export function Book() {
           Number(gsap.getProperty(sheet, "rotationY")),
         );
 
+      let gestureFrom: number | null = null;
+      // True while the book is being MOVED for the reader -- a sideways drag
+      // under the finger, or a seek landing after a tap or a swipe. The snap
+      // stands aside meanwhile: both settling the same scroll at once is what
+      // left a sideways swipe on a real Pixel 5 doing nothing, two pages, or
+      // stopping between pages (1468) across eight tries.
+      let seeking = false;
       const tl = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
@@ -1073,31 +1099,81 @@ export function Book() {
           // wheel reads as lag under a finger, and a dragged page that
           // arrives a second late is not the page you are dragging.
           scrub: single ? 0.3 : SCRUB,
-          pin: true,
-          anticipatePin: 1,
-          // A PAGE COMES TO REST OPEN, never half turned. Stop scrolling
-          // mid-turn and the scroll settles on the nearest open page, the
-          // way an iOS scroll view lands on a row -- from where the scroll
-          // STOPPED. `inertia` is off: the browser's own wheel and touch
-          // momentum has already played out by then, and ScrollTrigger's
-          // projection on top of it read a scrollbar drag or a keyboard jump
-          // as a huge velocity and landed a chapter past where the reader
-          // stopped (y=1685 at 2560x1080 settled on 03). Snapping waits for the pointer to
-          // lift, so it never fights the drag-to-turn below. The opening is
-          // left alone until it is mostly played: a half-opened book is a
-          // frame of the film, and pulling it shut or open would take the
-          // scrub out of the reader's hands.
+          // In the touch box the book is held by CSS `position: sticky` (see
+          // index.css) over a spacer of exactly this trigger's length, and
+          // NOT pinned. Both of GSAP's pins were wrong there, and measured on
+          // a real Pixel 5: `pinType: "fixed"` makes the section a fixed
+          // element, and Chrome hands a touch on a fixed element to the
+          // DOCUMENT -- which cannot scroll -- so the box never moved (y=0
+          // after five swipes) and the address bar still slid; a transform
+          // pin repositions the section on the main thread a frame behind
+          // the compositor's scroll and shakes. Sticky is in flow, so a touch
+          // scrolls the box, and the compositor holds it still.
+          ...(box
+            ? { scroller: box, pin: false }
+            : { pin: true, anticipatePin: 1 }),
+          // A PAGE COMES TO REST OPEN, never half turned -- and it rests on
+          // the page the reader was HEADING FOR. Stop mid-turn and the scroll
+          // settles on the next page in the direction of the last scroll,
+          // the way a paged scroll view on iOS commits to a swipe.
+          //
+          // Directional, not nearest. Nearest was the first version, and on a
+          // real phone it made going BACK impossible: a page costs ~513px of
+          // scroll at 393x851 and a relaxed thumb swipe moves 200-300, so
+          // every swipe back stopped short of halfway and was pulled straight
+          // back to the page it started on (two swipes back on a Pixel 5 left
+          // the scroll at y=1664 both times). Only a movement under STAY --
+          // 6% of a page, a jitter rather than a decision -- falls back.
+          //
+          // The opening is never snapped: it is a film the reader scrubs, and
+          // it is how the cover is reached again -- the first version pulled
+          // the last 30% of it forward onto page 1, so a reader scrolling back
+          // could not get past it to the cover. `inertia` is off: the
+          // browser's own momentum has played out by the time this runs, and
+          // ScrollTrigger's projection on top of it read a scrollbar drag or
+          // a keyboard jump as a huge flick. Snapping waits for the pointer
+          // to lift, so it never fights the drag-to-turn below.
           snap: {
-            snapTo: (progress: number) => {
+            snapTo: (progress: number, self?: ScrollTrigger) => {
               const total = tl.duration();
               const time = progress * total;
-              if (time < OPEN * 0.7) return progress;
-              let best = total;
-              for (let i = 0; i <= turns; i++) {
-                const rest = timeOf(i);
-                if (Math.abs(rest - time) < Math.abs(best - time)) best = rest;
+              if (seeking || time < OPEN) return progress;
+              const rests: number[] = [];
+              for (let i = 0; i <= turns; i++) rests.push(timeOf(i));
+              let near = rests[0] ?? time;
+              for (const rest of rests) {
+                if (Math.abs(rest - time) < Math.abs(near - time)) near = rest;
               }
-              return best / total;
+              const PAGE = TURN + GAP;
+              const STAY = PAGE * 0.06;
+              if (Math.abs(near - time) <= STAY) return near / total;
+              // ONE SWIPE IS ONE PAGE, counted from where the swipe STARTED.
+              // Counted from where it stopped, a thumb swipe that ran a
+              // little long was "heading for" the page after the one it
+              // reached: a Pixel 5 swipe out of the film's last frames went
+              // 1219 -> 1896 and skipped 01's first page, the chapter's
+              // headline, entirely. Only a real fling -- over 1.5 pages of
+              // travel -- is taken at its word and settles past.
+              const from = gestureFrom ?? time;
+              const forward = (self?.direction ?? 1) > 0;
+              if (forward) {
+                if (time - from <= PAGE * 1.5) {
+                  const next = rests.find((rest) => rest > from + STAY);
+                  if (next !== undefined && next <= time + PAGE) return next / total;
+                }
+                const next = rests.find((rest) => rest > time);
+                // Past the last page is the trail: nothing to settle on.
+                return next === undefined ? progress : next / total;
+              }
+              if (from - time <= PAGE * 1.5) {
+                let back: number | undefined;
+                for (const rest of rests) if (rest < from - STAY) back = rest;
+                if (back !== undefined && back >= time - PAGE) return back / total;
+              }
+              let prev: number | undefined;
+              for (const rest of rests) if (rest < time) prev = rest;
+              // Back from page 1 into the lead-in: free, toward the film.
+              return prev === undefined ? progress : prev / total;
             },
             inertia: false,
             duration: { min: 0.3, max: 0.7 },
@@ -1122,10 +1198,43 @@ export function Book() {
       // is only repainted while the opening is actually moving. On the
       // timeline it would redraw 91 frames' worth of compositing under every
       // page turn, for a picture that cannot change.
+      //
+      // THE COVER'S SOUNDS hang off the same update, so they follow the FILM
+      // and not the wheel: the close is a thump, and it has to land on the
+      // frame where the covers meet, not up to a scrub's catch-up before it
+      // (the page turn reads the scroll instead -- see onScrollSound -- because
+      // a rustle that starts early reads as the paper lifting; a thud that
+      // arrives early reads as a mistake). Read off the frames themselves:
+      // frame-038 is the last with the covers together and frame-039 the
+      // first with a gap at the foot, so the book opens as the playhead
+      // passes index 38 and shuts as it falls back to 37. The one-frame band
+      // between is hysteresis: a scroll resting on the hinge cannot drum
+      // open-close-open. The first update only records which side it is on,
+      // so a reload restored mid-book does not announce a cover.
+      const COVER_PARTS = 38 / (FRAME_COUNT - 1);
+      const COVER_SHUT = 37 / (FRAME_COUNT - 1);
+      let coverOpen: boolean | null = null;
+      const syncCover = () => {
+        if (coverOpen === null) coverOpen = scroll.u >= COVER_PARTS;
+        else if (!coverOpen && scroll.u >= COVER_PARTS) {
+          coverOpen = true;
+          window.dispatchEvent(new CustomEvent("book:open"));
+        } else if (coverOpen && scroll.u <= COVER_SHUT) {
+          coverOpen = false;
+          window.dispatchEvent(new CustomEvent("book:close"));
+        }
+      };
       tl.fromTo(
         scroll,
         { u: 0 },
-        { u: 1, duration: OPEN, onUpdate: draw },
+        {
+          u: 1,
+          duration: OPEN,
+          onUpdate: () => {
+            draw();
+            syncCover();
+          },
+        },
         0,
       );
 
@@ -1266,8 +1375,12 @@ export function Book() {
             ? 0
             : trigger.start +
               (timeOf(index) / tl.duration()) * (trigger.end - trigger.start);
-        const distance = Math.abs(y - window.scrollY) / (window.innerHeight || 1);
-        gsap.to(window, {
+        const distance = Math.abs(y - scrollY()) / (window.innerHeight || 1);
+        seeking = true;
+        const settle = () => {
+          seeking = false;
+        };
+        gsap.to(scroller, {
           // autoKill so a flick of the wheel takes the scroll back off the
           // tween rather than fighting it.
           scrollTo: { y, autoKill: true },
@@ -1276,7 +1389,19 @@ export function Book() {
             : Math.min(1.4, 0.7 + distance * 0.12),
           ease: fromGesture ? "power3.out" : "power3.inOut",
           overwrite: true,
+          onComplete: settle,
+          onInterrupt: settle,
         });
+      };
+      // The page at rest nearest timeline time `t`; -1 on the cover side of
+      // the first page.
+      const restIndexAt = (t: number) => {
+        if (t < OPEN) return -1;
+        let best = 0;
+        for (let i = 1; i <= turns; i++) {
+          if (Math.abs(timeOf(i) - t) < Math.abs(timeOf(best) - t)) best = i;
+        }
+        return best;
       };
       const lastSheetOf = (chapter: number) =>
         chapterOfSheet.lastIndexOf(chapter);
@@ -1337,30 +1462,62 @@ export function Book() {
             y: number;
             from: number;
             px: number;
+            // The page the finger went down on. The landing counts from THIS,
+            // never from the face-up page syncNav reports: that follows the
+            // timeline, which trails the scroll by the scrub, so a drag past
+            // mid-turn had already counted the next page and landed TWO on.
+            page: number;
+            // Decided once, after 10px, and then kept: a vertical swipe that
+            // began with a sideways wobble used to set the scroll while the
+            // browser was scrolling it natively.
+            axis: "x" | "y" | null;
+            onIndex: boolean;
             // Release velocity, px/ms, smoothed over the last few moves --
             // a single last event is too noisy to judge a flick by.
             lastX: number;
             lastT: number;
             vx: number;
           } | null = null;
+          // One click, captured before the tab's own handler, within the
+          // moment a drag that began on a tab ends.
+          const swallowClick = () => {
+            const eat = (event: Event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            };
+            window.addEventListener("click", eat, { capture: true, once: true });
+            window.setTimeout(
+              () => window.removeEventListener("click", eat, { capture: true }),
+              600,
+            );
+          };
           const onDown = (event: PointerEvent) => {
             if (event.pointerType === "mouse" && event.button !== 0) return;
             // The controls keep their own gestures: a tab is a tap, and 04's
             // plate has a drag of its own that changes the study.
             const target = event.target as HTMLElement | null;
+            // EXCEPT the thumb index, whose tabs are taps only. It sits on the
+            // fore-edge, which is exactly where a thumb starts a swipe to the
+            // next page: on a Pixel 5 a left swipe from x=327 began on a tab
+            // and turned nothing. A drag from there turns the page and eats
+            // the click it would otherwise end in (see `swallowClick`).
+            const onIndex = !!target?.closest?.("[data-book-index]");
             if (
-              target?.closest?.(
-                "[data-nav-item],[data-book-index],[data-project-stage],a,button",
-              )
+              !onIndex &&
+              target?.closest?.("[data-nav-item],[data-project-stage],a,button")
             ) {
               return;
             }
+            const st = tl.scrollTrigger;
             drag = {
               id: event.pointerId,
               x: event.clientX,
               y: event.clientY,
-              from: window.scrollY,
+              from: scrollY(),
               px: pageScroll(),
+              page: st ? restIndexAt(st.progress * tl.duration()) : -1,
+              axis: null,
+              onIndex,
               lastX: event.clientX,
               lastT: event.timeStamp,
               vx: 0,
@@ -1376,13 +1533,22 @@ export function Book() {
               drag.lastX = event.clientX;
               drag.lastT = event.timeStamp;
             }
-            // A mostly-vertical drag is a scroll, and the stage's
-            // `touch-action: pan-y` has already given it to the browser.
-            if (Math.abs(dy) > Math.abs(dx)) return;
+            if (drag.axis === null) {
+              if (Math.max(Math.abs(dx), Math.abs(dy)) < 10) return;
+              // A mostly-vertical drag is a scroll, and the stage's
+              // `touch-action: pan-y` has already given it to the browser.
+              drag.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+              if (drag.axis === "y") {
+                drag = null;
+                return;
+              }
+              seeking = true;
+              if (drag.onIndex) swallowClick();
+            }
             const width = window.innerWidth || 1;
             // Left is forward, the way a swipe turns a page.
             const top = Math.max(0, drag.from - (dx / (width * REACH)) * drag.px);
-            if (Number.isFinite(top)) window.scrollTo({ top, behavior: "auto" });
+            if (Number.isFinite(top)) scrollToY(top);
           };
           const onUp = (event: PointerEvent) => {
             if (!drag || event.pointerId !== drag.id) return;
@@ -1390,10 +1556,10 @@ export function Book() {
             const dy = event.clientY - drag.y;
             const width = window.innerWidth || 1;
             const vx = drag.vx;
+            const { axis, page } = drag;
             drag = null;
-            if (Math.abs(dy) > Math.abs(dx)) return;
+            if (axis !== "x") return;
             const moved = Math.abs(dx) / width;
-            if (moved < 0.02) return;
             // A FLICK turns the page however short it was. Distance alone
             // made a quick 15% swipe -- the commonest way a thumb turns a
             // page -- spring back. Velocity decides when there is any
@@ -1403,10 +1569,9 @@ export function Book() {
             const flick = Math.abs(vx) > 0.35;
             const forward = flick ? vx < 0 : dx < 0;
             const next =
-              flick || moved >= COMMIT
-                ? currentSheet + (forward ? 1 : -1)
-                : currentSheet;
-            seekSpread(Math.min(Math.max(next, 0), turns), true);
+              flick || moved >= COMMIT ? page + (forward ? 1 : -1) : page;
+            // Back off the cover side has nowhere to go but the cover.
+            seekSpread(Math.min(Math.max(next, -1), turns), true);
           };
           stageEl.style.touchAction = "pan-y";
           const stageInner =
@@ -1428,12 +1593,6 @@ export function Book() {
       // Which page is face up. This runs on every scrubbed frame, so it only
       // writes to the DOM when the answer actually changes.
       let lastCurrent = Number.NaN;
-      let currentSheet = 0;
-      // The ink fade for the page that has just come up, in portrait; a scrub
-      // can start a second one before the first has finished, and `overwrite`
-      // only covers the same targets, so the page being left behind is
-      // completed by hand rather than left printed at half opacity.
-      let inkTween: gsap.core.Tween | null = null;
       const syncNav = () => {
         const t = tl.time();
         let current = t >= OPEN + LEAD_IN * 0.5 ? 0 : -1;
@@ -1441,44 +1600,14 @@ export function Book() {
           const midTurn = OPEN + LEAD_IN + i * (TURN + GAP) + TURN * 0.5;
           if (t >= midTurn) current = i + 1;
         }
-        // What a drag turns from. Kept even when the chapter has not
-        // changed, because two pages of one chapter are two sheets.
-        const arrived = current !== currentSheet;
-        currentSheet = Math.max(0, current);
-
-        // THE INK ARRIVES WITH THE PAGE, in portrait only.
-        //
-        // A turned page used to land with its type already printed, which on
-        // a phone -- where the page IS the screen -- reads as a cut rather
-        // than as a page arriving. So the face that just came up fades its
-        // own ink in and lifts it a few pixels, one block after another.
-        //
-        // On the INK and never on the sheet: opacity on a sheet is a grouping
-        // value and would flatten its 3D mid-turn (see the note in
-        // book-sheets.tsx). Skipped under reduced motion, and skipped on a
-        // spread, where both pages are already on screen and a fade would be
-        // a second animation over a turn that is doing the work.
-        if (single && arrived && !reduced && currentSheet >= 0) {
-          const face = sheets[currentSheet]?.querySelector<HTMLElement>(
-            "[data-face='front']",
-          );
-          const ink = face?.querySelectorAll<HTMLElement>("[data-ink]");
-          if (ink?.length) {
-            inkTween?.progress(1).kill();
-            inkTween = gsap.fromTo(
-              ink,
-              { autoAlpha: 0, y: 10 },
-              {
-                autoAlpha: 1,
-                y: 0,
-                duration: 0.4,
-                ease: "power2.out",
-                stagger: 0.04,
-                overwrite: true,
-              },
-            );
-          }
-        }
+        // NO INK FADE ON A TURNED PAGE -- it was the phone's "blink". For a
+        // few revisions the face that came up faded its type in from 0, so a
+        // turn did not land as a cut. But `current` flips at MID-TURN, and by
+        // then the incoming page has been lying face up under the turning
+        // sheet, fully printed, for half the turn: measured at 393x851, its
+        // ink sat at 1, dropped to 0 the frame the turn passed halfway, and
+        // took ~350ms to come back -- on every page, and again each time a
+        // scroll hovered around the midpoint. The turn IS the page arriving.
         if (current === lastCurrent) return;
         lastCurrent = current;
         // Report the chapter, not the spread. A chapter running to two spreads
@@ -1517,6 +1646,56 @@ export function Book() {
       // either direction counts; opening the book onto its first page and
       // closing it onto the cover do not.
       let lastStarted = Number.NaN;
+      // Where the current scroll GESTURE began, in timeline time, for the
+      // snap above. Taken from the INPUT, not from gaps in the scroll: during
+      // the film the main thread is busy painting frames, scroll events on a
+      // phone arrived more than 160ms apart, and a gap-based start was reset
+      // mid-swipe to the swipe's own end (logged: from 4.472 = time 4.472).
+      // A finger going down starts a gesture, its momentum after lifting
+      // belongs to it; a wheel's first notch after a pause starts one; and
+      // only scrolling with neither (the scrollbar, the keyboard) falls back
+      // on a pause in the scroll itself.
+      const here = () => {
+        const st = tl.scrollTrigger;
+        return st ? st.progress * tl.duration() : null;
+      };
+      let touching = false;
+      let touchEndedAt = -Infinity;
+      let lastWheelAt = -Infinity;
+      let lastScrollAt = -Infinity;
+      const onTouchStart = () => {
+        touching = true;
+        gestureFrom = here();
+      };
+      const onTouchEnd = () => {
+        touching = false;
+        touchEndedAt = performance.now();
+      };
+      const onWheel = () => {
+        const now = performance.now();
+        if (now - lastWheelAt > 250) gestureFrom = here();
+        lastWheelAt = now;
+      };
+      const onScrollGesture = () => {
+        const now = performance.now();
+        const fromInput =
+          touching || now - touchEndedAt < 1500 || now - lastWheelAt < 1500;
+        if (!fromInput && now - lastScrollAt > 250) gestureFrom = here();
+        lastScrollAt = now;
+      };
+      const gestureEvents: [string, EventListener][] = [
+        ["touchstart", onTouchStart],
+        ["touchend", onTouchEnd],
+        ["touchcancel", onTouchEnd],
+        ["wheel", onWheel],
+        ["scroll", onScrollGesture],
+      ];
+      for (const [type, fn] of gestureEvents) {
+        scroller.addEventListener(type, fn, { passive: true });
+      }
+      windowTeardowns.push(() => {
+        for (const [type, fn] of gestureEvents) scroller.removeEventListener(type, fn);
+      });
       const onScrollSound = () => {
         const st = tl.scrollTrigger;
         if (!st) return;
@@ -1531,9 +1710,9 @@ export function Book() {
         }
         lastStarted = started;
       };
-      window.addEventListener("scroll", onScrollSound, { passive: true });
+      scroller.addEventListener("scroll", onScrollSound, { passive: true });
       windowTeardowns.push(() =>
-        window.removeEventListener("scroll", onScrollSound),
+        scroller.removeEventListener("scroll", onScrollSound),
       );
       syncNav();
 
@@ -1557,9 +1736,10 @@ export function Book() {
   );
 
   return (
-    <div>
+    <div ref={scrollerRef} data-scroller>
       {/* This wrapper exists for ScrollTrigger, and removing it breaks the
-          page at runtime. pin:true does not style the section in place -- it
+          page at runtime. (On a touch screen it is also the box the book
+          scrolls in -- `data-scroller`, see index.css.) pin:true does not style the section in place -- it
           builds a div.pin-spacer, inserts it where the section was, and moves
           the section inside it (ScrollTrigger.js: `pin.parentNode.insertBefore
           (spacer, pin); spacer.appendChild(pin)`). React is not told, so it
@@ -1593,7 +1773,7 @@ export function Book() {
            1366x768 too. Measured with it, the last line clears the folio by
            8-19px from 1024x768 to 1920x1080.
 
-           Colour comesColour comes from the frames themselves rather than a matching
+           Colour comes from the frames themselves rather than a matching
            literal, so a rebuilt set cannot leave the section a different colour
            to the canvas sitting on it. */
         style={{ backgroundColor: LETTERBOX }}
@@ -1981,6 +2161,15 @@ export function Book() {
           ever adds a child at the end of this wrapper -- an append needs no
           reference node, which is the one DOM operation that cannot trip over
           a reparented pin. */}
+      {/* The scroll the sticky book rides over on a touch screen; display:
+          none everywhere else (index.css), where the pin makes its own. */}
+      {reduced ? null : (
+        <div
+          data-scroll-spacer
+          aria-hidden
+          style={{ height: `${scrollPercent(single ? MOBILE_TURNS : TURNS, single)}svh` }}
+        />
+      )}
       {reduced ? <BookPageColumn /> : null}
     </div>
   );

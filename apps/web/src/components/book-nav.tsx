@@ -194,8 +194,8 @@ function SoundToggle() {
     <button
       type="button"
       aria-pressed={on}
-      aria-label={on ? "Turn off page-turn sound" : "Turn on page-turn sound"}
-      title={on ? "Page sound on" : "Page sound off"}
+      aria-label={on ? "Turn off book sounds" : "Turn on book sounds"}
+      title={on ? "Book sounds on" : "Book sounds off"}
       onClick={() => setSoundEnabled(!on)}
       className="mt-[clamp(0.6rem,1.8vh,1.2rem)] ms-auto grid size-[1.9rem] cursor-pointer place-items-center rounded-full text-slate-300/80 transition-colors duration-300 outline-none hover:text-white focus-visible:ring-1 focus-visible:ring-[#9dc0ee] motion-reduce:transition-none"
     >

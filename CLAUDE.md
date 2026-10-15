@@ -1001,6 +1001,55 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   runs `content-between`; 06's rows centre photo + words as one block with
   their tops aligned (`flex-wrap content-center items-start`, words `flex-1`).
 
+### On a touch screen the book scrolls in its own box (Chrome's bar stays put)
+
+Found and verified on a real Pixel 5 in the Android emulator (`pnpm
+mobileview`), driven over CDP (`adb forward tcp:9222
+localabstract:chrome_devtools_remote`) with real `adb shell input swipe`
+gestures. DevTools device emulation has NO address bar, so none of this shows
+there -- which is how every item below shipped unnoticed.
+
+- **The document does not scroll on `pointer: coarse`.** `[data-scroller]`
+  (the wrapper `<div>` in `<Book>`) is `position: fixed` and scrolls; html and
+  body are `overflow: hidden` (`index.css`, `:has()`-scoped to the book).
+  Chrome hides its bar when the DOCUMENT scrolls, and the window then grew
+  721 -> 801px and the book re-laid every page at the new height (its folio
+  jumped 697 -> 774) every time the reader changed direction. Asked for
+  directly: "the Chrome bar is hiding, other sites are not like that".
+- **The box is one pixel wider than the window** (`inset: 0 -1px 0 0`).
+  Chrome IMPLICITLY PROMOTES a scroller that exactly fills the viewport to root
+  scroller and hides its bar for it anyway (measured: 721 -> 801 with
+  `inset: 0`). Promotion needs an exact fit.
+- **No GSAP pin in the box -- `position: sticky` over `[data-scroll-spacer]`**
+  (height `scrollPercent()` svh, display:none off touch). `pinType: "fixed"`
+  made the section a fixed element and Chrome sends a touch on a fixed element
+  to the DOCUMENT, which cannot scroll: the box stayed at y=0 through five
+  swipes. A transform pin shakes. Desktop still pins exactly as before.
+- **Every scroll goes through `scroller` / `scrollY()` / `scrollToY()`** in
+  `<Book>`, never `window` -- ScrollTrigger (`scroller: box`), seeks, the drag,
+  the sound and the gesture listeners. `tools/scroll-shots.mjs --touch`
+  exercises this path; without the flag the harness tests desktop only.
+- **Snap is directional and counts ONE PAGE FROM WHERE THE GESTURE STARTED**
+  (`gestureFrom`, from `touchstart` / a wheel's first notch, else a 250ms
+  scroll pause). Nearest-rest made going back impossible (a relaxed swipe is
+  under half a 435px page, so it was pulled back); direction-from-the-end
+  skipped 01's first page coming out of the film (1219 -> 1896). Only a fling
+  of over 1.5 pages settles past. The film itself is never snapped -- it is how
+  the cover is reached again. `seeking` makes the snap stand aside while a
+  drag or a seek is landing.
+- **Drag-to-turn counts from the page the finger went down on**, locks its
+  axis after 10px (a vertical swipe with a sideways wobble used to set
+  `scrollTop` while the browser was panning), and may start ON the thumb index
+  -- where a right thumb begins a swipe -- swallowing the tab's click. Measured:
+  8/8 sideways swipes one page each, where before two did nothing, two jumped
+  two pages and one stopped between pages (1468).
+- **Console is clean on the phone**: audio unlocks only inside a real user
+  activation (`navigator.userActivation.isActive`; a swipe is not one, and
+  every page turn logged "AudioContext was not allowed to start"), and 04's
+  live iframe is `allow="accelerometer; gyroscope"` (calioon.com's footer
+  asked and logged a permissions-policy ERROR). Captured with Runtime/Log over
+  CDP on a production build: none left.
+
 ### Akshara, pages that come to rest, and the ambient surround
 
 - **06: Akshara replaces Naveen** (Project Manager & Social Media Manager).
@@ -1220,27 +1269,14 @@ of its WIDTH, so the two overlap and 02 ended 4px inside the folio. It is
 does not work: 02's entries fill the face as a grid of equal rows, so 15px off
 `PAGE_SINKAGE` only makes the rows taller and returns 2 of the 15.
 
-### The ink arrives with the page
+### The ink arrives with the page -- REMOVED
 
-In portrait, `syncNav` fades the front face's `[data-ink]` blocks in from
-`autoAlpha: 0` and 10px down when a new page comes up — 0.4s, `power2.out`,
-0.04 stagger. A turned page used to land with its type already printed, which
-on a phone (where the page IS the screen) reads as a cut rather than as a page
-arriving.
-
-- **On the INK and never on the sheet.** Opacity on a sheet is a grouping
-  value and would flatten its 3D mid-turn, which is the rule this file states
-  twice already.
-- **`[data-face="front"]` is why that attribute exists.** A sheet carries two
-  faces and the back one is the front page MIRRORED at 14%; without the
-  attribute the tween would also drive a copy of every block inside an
-  `aria-hidden` subtree and fight that wash.
-- **An interrupted fade is finished by hand.** A scrub turns two pages faster
-  than 0.4s and `overwrite` only covers the same targets, so the tween handle
-  is kept and the page being left behind is run to `progress(1)` — otherwise a
-  reader scrolling back finds it printed at half opacity.
-- **Not on a spread and not under reduced motion.** On a spread both pages are
-  already on screen and the turn is doing the work.
+It was the phone's "blink". `syncNav` faded a turned page's `[data-ink]` in
+from 0, but `current` flips at MID-TURN, when the incoming page has already
+been lying face up, fully printed, under the turning sheet: measured, its ink
+sat at 1, dropped to 0 at halfway and took ~350ms to return -- on every page,
+and again whenever a scroll hovered at the midpoint. The turn is the page
+arriving. Do not bring an entrance fade back onto a page.
 
 ### The type grew, and the MINIMUMS did not
 

@@ -19,3 +19,53 @@
     font-size: clamp(16px, min(4.8346vw, 2.2327svh), 28px);
   }
 }
+
+/*
+ * ON A TOUCH SCREEN THE BOOK SCROLLS IN ITS OWN BOX, NOT THE DOCUMENT -- so
+ * the browser's address bar never hides. Asked for ("when I scroll the Chrome
+ * bar is hiding; other sites are not like that"), and it is also the fix for
+ * a jump nothing but a real phone shows: Chrome slides its bar away when the
+ * DOCUMENT scrolls, the window grows 81px (721 -> 802 measured on a Pixel 5),
+ * and the book -- which is sized to the window -- re-laid every page at the
+ * new height, its folio moving from y=697 to 774, each time the reader
+ * changed direction. A scroll inside a fixed box leaves the window alone.
+ *
+ * `pointer: coarse` and not a width: a narrow DESKTOP window keeps the
+ * document scrolling, where the keyboard (space, arrows, Page Down) scrolls
+ * the document without anything having focus first. <Book> asks the same
+ * media query to decide what ScrollTrigger and its own seeks scroll, so the
+ * two cannot disagree. `:has()` keeps it to the page that has the book; the
+ * login and dashboard routes scroll normally.
+ */
+@media (pointer: coarse) {
+  html:has([data-scroller]),
+  html:has([data-scroller]) body {
+    height: 100%;
+    overflow: hidden;
+  }
+  [data-scroller] {
+    position: fixed;
+    /* ONE PIXEL WIDER THAN THE WINDOW, off its right edge, and that pixel is
+       the whole point. Chrome "implicitly promotes" a scroller that exactly
+       fills the viewport to ROOT scroller -- it then hides its bar for that
+       box just as it would for the document. Measured on a Pixel 5 with
+       `inset: 0`: the box scrolled and the bar still slid away (721 -> 801).
+       Promotion needs an exact fit, so this opts out; html and body clip the
+       extra pixel. */
+    inset: 0 -1px 0 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: none;
+  }
+  /* Held by the box itself rather than by a GSAP pin -- see `box` in
+     book.tsx for why neither kind of pin works in here. */
+  [data-scroller] > section {
+    position: sticky;
+    top: 0;
+  }
+}
+@media not (pointer: coarse) {
+  [data-scroll-spacer] {
+    display: none;
+  }
+}

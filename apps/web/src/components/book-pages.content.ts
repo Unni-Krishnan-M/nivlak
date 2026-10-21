@@ -1213,10 +1213,11 @@ export const BOOK_PAGES: BookPage[] = [
     },
     team: {
       // The leadership principles and the founding belief headed the recto
-      // until a fifth member joined; both were removed on request, and the recto
-      // carries three people instead.
+      // until a fifth member joined; both were removed on request. Gokul has
+      // since left (removed on request), so it is four: two to a page, the
+      // recto's pair level with the verso's (see teamHalves).
       // ONLY the names and roles were given. Laxman's words come from the
-      // founder bio this chapter carried before; the other four members'
+      // founder bio this chapter carried before; the other three members'
       // sentences are written from their ROLE and nothing
       // else -- no credentials, no results, no history. Replace them with
       // each person's own words when there are some.
@@ -1238,12 +1239,6 @@ export const BOOK_PAGES: BookPage[] = [
           role: "Lead Generation Executive",
           portrait: "/team/ashok.webp",
           line: "Finds the businesses Nivlak can help and starts the first conversation with them.",
-        },
-        {
-          name: "Gokul",
-          role: "Business Generation Executive",
-          portrait: "/team/gokul.webp",
-          line: "Turns first conversations into new business, and keeps clients close from enquiry to launch.",
         },
         {
           name: "Akshara",

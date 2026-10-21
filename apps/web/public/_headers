@@ -1,0 +1,13 @@
+# Cloudflare Workers static assets (and Netlify) read this file; it is never
+# served. It exists because next.config.ts's headers() does NOT reach assets
+# on Cloudflare: OpenNext serves public/ and _next/static straight from the
+# ASSETS binding, and the live site sent every film frame with
+# `max-age=0, must-revalidate` -- 91 revalidations on every visit, on a phone.
+#
+# Both paths are safe to cache for a year because their URLs change when their
+# content does: frames live under a versioned /frames/<set>/ (FRAME_SET in
+# book-camera.ts) and _next/static filenames are content hashes.
+/frames/*
+  Cache-Control: public, max-age=31536000, immutable
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable

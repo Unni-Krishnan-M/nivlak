@@ -83,7 +83,8 @@ PORTRAITS=(
   "laxman|Laxman.jpeg|800x1000+335+0"
   "unni-krishnan-m|Unni Krishnan M.png|933x1166+174+60"
   "ashok|Ashok.jpeg|667x833+217+90"
-  "gokul|Gokul.jpeg|848x1060+141+36"
+  # Gokul (848x1060+141+36) left the team; his plate was deleted. His crop is
+  # still the reference the Akshara line below is measured against.
   # Akshara: extended (see EXTEND above) to put her eye line at the 33% of
   # the frame and her head at the 49% that Gokul's plate measures.
   "akshara|Akshara.jpeg|1267x1584+0+0|top|1267x1584-78+32"

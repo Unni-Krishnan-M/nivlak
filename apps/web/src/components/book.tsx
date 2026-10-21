@@ -5,7 +5,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import {
   FRAME_COUNT,
@@ -14,6 +14,7 @@ import {
   LETTERBOX,
   pickTier,
   planAt,
+  playheadFor,
 } from "@/components/book-camera";
 import { BookIndex, BookNav, BookRunningHead } from "@/components/book-nav";
 import {
@@ -33,6 +34,7 @@ import {
   isFullBleed,
   layoutSheets,
   paintSheets,
+  releaseBookImages,
 } from "@/components/book-sheets";
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, useGSAP);
@@ -180,15 +182,46 @@ export function Book() {
   // refresh". A tween is not restarted by a DOM move. Until it runs the lines
   // are `motion-safe:opacity-0` in the markup, so the server HTML does not
   // flash them first; under reduced motion they are simply there.
-  useEffect(() => {
+  //
+  // ...and it TAKES OVER from a CSS fallback rather than starting the rise
+  // itself. On a slow phone the script lands seconds after first paint (~9s on
+  // the live site at Slow 4G), so index.css runs the same rise from 1.4s and
+  // the cover is there without it. Here each line continues from wherever that
+  // has got to -- its live opacity, read before the animation is removed --
+  // so a fast load still rises from nothing and a slow one never re-hides a
+  // cover the reader is already looking at. A LAYOUT effect, declared above
+  // useGSAP, so it runs before the pin re-inserts the section: with the CSS
+  // animation still on, that re-insert would restart it and blink the cover.
+  useLayoutEffect(() => {
+    const lines = [...document.querySelectorAll<HTMLElement>("[data-rise]")];
+    const ribbon = document.querySelector<HTMLElement>("[data-ribbon-drop]");
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const lines = document.querySelectorAll<HTMLElement>("[data-rise]");
+    const from = lines.map((el) => Number(getComputedStyle(el).opacity) || 0);
+    // Where the ribbon is, as a percentage of its height. It is hidden by the
+    // `translate` PROPERTY (Tailwind v4), which the fallback animates too, so
+    // that is the value to read; GSAP folds it into its own transform below.
+    const ribbonFrom = (() => {
+      if (!ribbon) return -105;
+      const y = getComputedStyle(ribbon).translate.trim().split(/\s+/)[1] ?? "0";
+      if (y.endsWith("%")) return Number.parseFloat(y);
+      const h = ribbon.offsetHeight || 1;
+      return (Number.parseFloat(y) / h) * 100 || 0;
+    })();
+    for (const el of lines) el.style.animation = "none";
+    if (ribbon) ribbon.style.animation = "none";
+    const fresh = from.every((o) => o < 0.01);
     const rise = gsap.fromTo(
       lines,
-      { opacity: 0, y: 14 },
-      { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.09, delay: 0.05 },
+      { opacity: (i: number) => from[i] ?? 0, y: (i: number) => 14 * (1 - (from[i] ?? 0)) },
+      {
+        opacity: 1,
+        y: 0,
+        duration: (i: number) => 0.9 * Math.max(0.25, 1 - (from[i] ?? 0)),
+        ease: "power3.out",
+        stagger: fresh ? 0.09 : 0,
+        delay: fresh ? 0.05 : 0,
+      },
     );
-    const ribbon = document.querySelector<HTMLElement>("[data-ribbon-drop]");
     const drop = ribbon
       ? gsap.fromTo(
           ribbon,
@@ -196,8 +229,14 @@ export function Book() {
           // starting `-translate-y-[105%]` into its own `y` (as -187px at
           // 1440x900) and a tween of yPercent alone left it there -- the
           // ribbon finished its drop still hidden above the head bar.
-          { yPercent: -105, y: 0 },
-          { yPercent: 0, y: 0, duration: 1.1, ease: "back.out(1.3)", delay: 0.35 },
+          { yPercent: ribbonFrom, y: 0 },
+          {
+            yPercent: 0,
+            y: 0,
+            duration: ribbonFrom < -100 ? 1.1 : 0.6,
+            ease: "back.out(1.3)",
+            delay: ribbonFrom < -100 && fresh ? 0.35 : 0,
+          },
         )
       : null;
     return () => {
@@ -207,10 +246,6 @@ export function Book() {
   }, []);
 
   const imagesRef = useRef<(HTMLImageElement | null)[]>([]);
-  // Highest frame index that is decoded and safe to draw. The playhead is
-  // clamped to it, so the reveal can start scrubbing off the first frame
-  // instead of holding an empty canvas until the whole set has arrived.
-  const loadedToRef = useRef(0);
   const redrawRef = useRef<() => void>(() => {});
 
   // Resolved once, on the first client render, and then never revisited. A
@@ -372,17 +407,6 @@ export function Book() {
   // ScrollTrigger has to be told: the pin's spacing is measured from a layout
   // that just changed.
 
-  // Highest contiguous index present in imagesRef. Derived, never reset: the
-  // ref survives a remount (and StrictMode's double invoke), so resetting would
-  // regress the canvas to frame 1 with everything already cached.
-  const settleCeiling = useCallback(() => {
-    let to = 0;
-    while (to + 1 < FRAME_COUNT && imagesRef.current[to + 1] !== undefined) {
-      to += 1;
-    }
-    loadedToRef.current = to;
-  }, []);
-
   const load = useCallback((index: number) => {
     return new Promise<HTMLImageElement | null>((resolve) => {
       const img = new window.Image();
@@ -410,7 +434,6 @@ export function Book() {
       const first = await load(1);
       if (cancelled) return;
       imagesRef.current[0] = first;
-      settleCeiling();
       redrawRef.current();
 
       // THE LAST FRAME SECOND, out of order. It is not only the end of the
@@ -426,25 +449,39 @@ export function Book() {
       imagesRef.current[FRAME_COUNT - 1] = last;
       redrawRef.current();
 
-      // Then the rest, in order and in batches, so the ceiling only ever moves
-      // forward and the reveal can be scrubbed before the whole set has landed.
-      for (let start = 2; start <= FRAME_COUNT; start += BATCH) {
-        const batch = [];
-        for (let i = start; i < start + BATCH && i < FRAME_COUNT; i++) {
-          batch.push(load(i).then((img) => ({ i, img })));
+      // Then the rest COARSE TO FINE: every 8th frame, then every 4th, every
+      // 2nd, then the remainder, in batches. In order, a phone on mobile data
+      // that scrolled in before the set had landed found the book frozen shut
+      // -- measured on a Pixel 5 at Slow 4G, three swipes 3s into a cold load
+      // left it in the film with 2 of 91 frames, and the canvas never draws
+      // past the first gap. A dozen frames cover the whole opening in about a
+      // second; the book opens under the finger from then on, in steps at
+      // first, and smooths as the gaps fill (draw() holds the camera to the
+      // frame it actually has, so picture and move always agree).
+      for (const stride of [8, 4, 2, 1]) {
+        const todo: number[] = [];
+        for (let i = 2; i < FRAME_COUNT; i++) {
+          if ((i - 1) % stride === 0 && imagesRef.current[i - 1] === undefined) todo.push(i);
         }
-        const settled = await Promise.all(batch);
-        if (cancelled) return;
-        for (const { i, img } of settled) imagesRef.current[i - 1] = img;
-        settleCeiling();
-        redrawRef.current();
+        for (let k = 0; k < todo.length; k += BATCH) {
+          const batch = todo
+            .slice(k, k + BATCH)
+            .map((i) => load(i).then((img) => ({ i, img })));
+          const settled = await Promise.all(batch);
+          if (cancelled) return;
+          for (const { i, img } of settled) imagesRef.current[i - 1] = img;
+          redrawRef.current();
+        }
       }
+      // The film is in: the book's own pictures may load now. Before this
+      // they would have taken the frames' bandwidth (see BookImg).
+      releaseBookImages();
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [load, settleCeiling]);
+  }, [load]);
 
   useGSAP(
     (_context, contextSafe) => {
@@ -479,13 +516,11 @@ export function Book() {
       const scrollToY = (top: number) =>
         box ? (box.scrollTop = top) : window.scrollTo({ top, behavior: "auto" });
 
-      // Nearest frame at or before `index` that actually decoded, so a single
-      // failed request degrades to a held frame instead of a blank one.
+      // Nearest frame at or before `index` that has decoded. Frames arrive
+      // coarse to fine and a request can fail, so a gap degrades to the frame
+      // before it rather than to a blank.
       const frameAt = (index: number) => {
-        // The exact frame if it is here -- the last one is fetched out of
-        // order, so it can be present above the contiguous ceiling.
-        if (imagesRef.current[index]) return imagesRef.current[index];
-        for (let i = Math.min(index, loadedToRef.current); i >= 0; i--) {
+        for (let i = Math.min(index, FRAME_COUNT - 1); i >= 0; i--) {
           const img = imagesRef.current[i];
           if (img) return img;
         }
@@ -526,13 +561,21 @@ export function Book() {
         // state changes, so the state would be stale for a whole rotation --
         // and the question is geometric anyway, which is why that function is
         // shared with layoutSheets in the first place.
-        // Once the book is open the film is over: show its last frame if it
-        // has landed, rather than holding a half-open book behind the pages
-        // because frames in the MIDDLE are still on their way.
-        const ceiling =
-          scroll.u >= 0.999 && imagesRef.current[FRAME_COUNT - 1]
-            ? FRAME_COUNT - 1
-            : loadedToRef.current;
+        // Hold the camera to the frame that is actually THERE. Where the
+        // playhead and the frame after it have both landed, nothing is held
+        // and the two cross-fade as before; across a gap the playhead is
+        // clamped to the nearest frame behind it, so the move and the picture
+        // stay one frame of the film instead of the camera running ahead of a
+        // photograph it does not have. At the end that is frame 91, fetched
+        // second, so an open book shows its paper while the middle loads.
+        const ceiling = (() => {
+          const base = Math.min(Math.floor(playheadFor(scroll.u)), FRAME_COUNT - 1);
+          const next = Math.min(base + 1, FRAME_COUNT - 1);
+          if (imagesRef.current[base] && imagesRef.current[next]) return FRAME_COUNT - 1;
+          let i = base;
+          while (i > 0 && !imagesRef.current[i]) i--;
+          return i;
+        })();
         const plan = planAt(
           scroll.u,
           width,
@@ -570,7 +613,14 @@ export function Book() {
         // stretched back up. A 96px canvas upscaled IS the blur, so this
         // costs two tiny draws a frame and never a full-size filter. The book
         // stays whole -- only what was black changes.
-        const ambient = !covered ? paintAmbient(plan.layers, width, height) : null;
+        // SIDE bars only. On a phone the frame always spans the width and the
+        // gap is above or below the book while the camera lowers it from the
+        // cover's lift; filled with the blurred scene, that read as a soft
+        // light smudge across the top of the screen (seen on a Pixel 5).
+        // There the letterbox colour is cleaner, as it always was.
+        const sideBars =
+          !!base && (base.x > 0.5 || base.x + base.width < width - 0.5);
+        const ambient = sideBars ? paintAmbient(plan.layers, width, height) : null;
         if (ambient) ctx.drawImage(ambient.fill, 0, 0, width, height);
 
         for (const layer of plan.layers) {
@@ -1051,6 +1101,8 @@ export function Book() {
         // Reduced motion has no spread and no fore-edge -- it is an ordinary
         // scrolling column -- so the head bar stays and the thumb index, which
         // only makes sense on an open book, is not shown at all.
+        // A plain column shows every picture at once.
+        releaseBookImages();
         gsap.set(thumbIndex, { autoAlpha: 0 });
         // No timeline to seek, and no business animating a scroll for someone
         // who asked for less motion: jump.
@@ -1237,6 +1289,9 @@ export function Book() {
           onUpdate: () => {
             draw();
             syncCover();
+            // A reader opening the book will reach the pages before a slow
+            // connection has finished the film: start the pictures now.
+            if (scroll.u > 0.12) releaseBookImages();
           },
         },
         0,

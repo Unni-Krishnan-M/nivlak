@@ -1001,6 +1001,59 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   runs `content-between`; 06's rows centre photo + words as one block with
   their tops aligned (`flex-wrap content-center items-start`, words `flex-1`).
 
+### Loading on a phone, and four on the team
+
+"Still loading bugs in the mobile view" -- measured on the LIVE Cloudflare
+site (https://nivlak-web.unni-nivlak.workers.dev) in the Android emulator's
+Chrome with a cold cache at Slow 4G (1.6 Mbps, 150ms), screenshotting the
+real screen over CDP. A black screen with a wordmark for ~10s, the cover
+appearing at ~12s, and a runtime error. Five causes, five fixes:
+
+- **The cover waited for the JavaScript.** Its lines and ribbon are hidden in
+  the markup until GSAP rises them, and the script landed at ~9s. index.css
+  now runs the same rise in CSS from 0.6s after first paint; <Book>'s cover
+  effect is a LAYOUT effect declared above useGSAP that reads each line's
+  live opacity (and the ribbon's live `translate` -- Tailwind v4 hides it with
+  the `translate` PROPERTY, not `transform`), removes the CSS animation and
+  continues from there. Before the pin: re-inserting the pinned section
+  restarts a CSS animation, the old "blinks three times".
+- **900KB of book pictures loaded at page load**, from pages stacked hidden
+  INSIDE the viewport, so `loading="lazy"` did nothing and React preloaded
+  the eager ones at high priority. `BookImg` (and the two mask plates) hold
+  their `src` until `releaseBookImages()`: when the film's frames are all in,
+  when the reader is 12% into the opening, or at once under reduced motion.
+  Late pictures fade in.
+- **The film loaded strictly in order**, and the canvas never drew past the
+  first gap, so a reader who scrolled in early found the book frozen shut.
+  It now loads coarse to fine (1, 91, every 8th, 4th, 2nd, rest) and draw()
+  clamps the playhead to the nearest frame it HAS, so camera and picture
+  agree; `loadedToRef`/`settleCeiling` are gone.
+- **`ReferenceError: __name is not defined`** at 3.5s, Cloudflare only:
+  wrangler's keep_names wraps functions that end up in the page as text.
+  `"keep_names": false` in apps/web/wrangler.jsonc.
+- **Every asset was `max-age=0` on Cloudflare** -- next.config's headers()
+  does not reach OpenNext's ASSETS binding. `apps/web/public/_headers` gives
+  /frames/* and /_next/static/* a year, immutable (both URLs change with
+  their content).
+
+After, same phone and network: headline 3.0s, cover with its book 4.5s (was
+~12s), LCP 4.5s (was 9.7s), no errors or warnings. The ambient surround is
+now SIDE BARS ONLY -- on a phone its blur showed as a light smudge above the
+book while the camera lowered it from the cover's lift.
+
+**Running wrangler INSIDE apps/web needs `-c wrangler.jsonc`** (e.g.
+`npx wrangler dev -c wrangler.jsonc` after `opennextjs-cloudflare build`):
+the root `.wrangler/deploy/config.json` redirect otherwise makes wrangler
+refuse with "Found both a user configuration file ... and a deploy
+configuration file". From the repo root (Cloudflare's own path) it is fine.
+
+**06 is four people: Gokul left (removed on request).** Head + Laxman and
+Unni on the verso; Ashok and Akshara on the recto, which on a spread takes
+its LOWER two rows (`TeamRun`'s `offset`) so the four faces sit on two
+straight rows across the gutter and the empty slot faces the chapter head.
+On a phone (one page per sheet) the recto's two fill the page.
+`gokul.webp` is deleted and dropped from `build-team-portraits.sh`.
+
 ### The turns into and out of 04, and the pin's third of a pixel
 
 "Still some bugs in the 4th and 5th turning": on a spread those are the turns

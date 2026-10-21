@@ -4,6 +4,12 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-05-05",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Off: with it on, the bundler wraps named functions in __name(), and any
+  // function shipped to the browser as TEXT (an inline <head> script built
+  // from fn.toString()) then threw "ReferenceError: __name is not defined" on
+  // the live site -- caught on a Pixel 5, 3.5s into a cold load. Wrangler's
+  // own documented fix for OpenNext.
+  "keep_names": false,
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS",

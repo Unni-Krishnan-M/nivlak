@@ -356,6 +356,59 @@ const SingleSheetContext = createContext(false);
 // on a Pixel 5, where there should be one).
 const MirrorContext = createContext(false);
 
+// THE BOOK'S PICTURES WAIT FOR THE BOOK. Every plate and portrait is in the
+// DOM from the first paint, on pages stacked -- invisible -- INSIDE the
+// viewport, so neither `loading="lazy"` (it only skips what is outside the
+// viewport) nor anything else kept them back: React preloaded the eager ones
+// at high priority and the lazy ones loaded at DOM-interactive. Measured on the
+// live site, Pixel 5 on Slow 4G: 900KB of pictures from chapters the reader
+// could not reach, downloading in the same seconds as the JavaScript the cover
+// was waiting for -- a black screen for ~10s. `<Book>` calls
+// releaseBookImages() once the film's frames are in or the reader starts
+// opening the book; until then a BookImg has no `src` at all.
+let bookImagesReleased = false;
+export function releaseBookImages() {
+  if (bookImagesReleased) return;
+  bookImagesReleased = true;
+  window.dispatchEvent(new Event("book:images"));
+}
+function useBookImages() {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (bookImagesReleased) {
+      setOn(true);
+      return;
+    }
+    const release = () => setOn(true);
+    window.addEventListener("book:images", release);
+    return () => window.removeEventListener("book:images", release);
+  }, []);
+  return on;
+}
+// A held mask must hide its block, not show it: with `none` the plate's
+// silver ground would print as a solid rectangle. A transparent gradient
+// masks everything out and fetches nothing.
+const HELD_MASK = "linear-gradient(transparent, transparent)";
+function BookImg(props: React.ImgHTMLAttributes<HTMLImageElement>) {
+  const on = useBookImages();
+  return (
+    <img
+      {...props}
+      src={on ? props.src : undefined}
+      // A picture arriving late fades in rather than popping onto a page the
+      // reader is already looking at; one already cached is shown at once.
+      data-book-img={on ? "on" : "held"}
+      ref={(el) => {
+        if (el?.complete && el.naturalWidth) el.dataset.loaded = "";
+      }}
+      onLoad={(event) => {
+        event.currentTarget.dataset.loaded = "";
+        props.onLoad?.(event);
+      }}
+    />
+  );
+}
+
 export function BookSheets({ single = false }: { single?: boolean }) {
   if (single) return <SinglePageSheets />;
   return <SpreadSheets />;
@@ -1517,7 +1570,7 @@ function StageRow({ service, index }: StageSlot) {
         </p>
       </div>
 
-      <img
+      <BookImg
         src={service.image!.src}
         alt={service.image!.alt}
         // The first two are on screen the moment the spread lands; the rest
@@ -1832,6 +1885,7 @@ function StruckPlate({
   fill?: boolean;
 }) {
   const size = fill ? "cover" : "contain";
+  const mask = useBookImages() ? `url("${plate.src}")` : HELD_MASK;
   return (
     <div
       role="img"
@@ -1840,8 +1894,8 @@ function StruckPlate({
       style={{
         aspectRatio: fill ? undefined : plate.ratio,
         backgroundColor: "#dce7f7",
-        maskImage: `url("${plate.src}")`,
-        WebkitMaskImage: `url("${plate.src}")`,
+        maskImage: mask,
+        WebkitMaskImage: mask,
         // LUMINANCE, and this is the whole ball game. The mask files are
         // greyscale negatives with NO alpha channel, so under the default
         // `match-source` the browser reads their alpha -- which is opaque
@@ -2866,7 +2920,7 @@ function ProjectStage({
                 className={plateClass}
               />
             ) : (
-              <img
+              <BookImg
                 key={service.title}
                 data-project-plate={i}
                 data-current={i === 0 ? "true" : "false"}
@@ -3124,7 +3178,7 @@ function ServiceEntry({
  */
 function ServicePlate({ image }: { image: PageFigure }) {
   return (
-    <img
+    <BookImg
       src={image.src}
       alt={image.alt}
       loading="lazy"
@@ -3404,6 +3458,7 @@ function EngravedPlate({
    */
   beside?: boolean;
 }) {
+  const mask = useBookImages() ? `url("${plate.src}")` : HELD_MASK;
   return (
     <figure
       data-ink
@@ -3457,8 +3512,8 @@ function EngravedPlate({
           {
             aspectRatio: plate.ratio,
             backgroundColor: "#dce7f7",
-            maskImage: `url("${plate.src}")`,
-            WebkitMaskImage: `url("${plate.src}")`,
+            maskImage: mask,
+            WebkitMaskImage: mask,
             maskSize: "contain",
             WebkitMaskSize: "contain",
             maskRepeat: "no-repeat",
@@ -3536,10 +3591,13 @@ function StepList({ steps, from }: { steps: PageStep[]; from: number }) {
 /**
  * The run cut across the gutter as SLOTS, the chapter head counting as one.
  *
- * Every slot is one equal row on both pages, so every portrait is one size
- * and the verso's rows II-III sit on the recto's rows II-III. Five members
- * are head + 2 on the verso and 3 on the recto; four would be head + 2 and 2,
- * leaving the recto's last row empty rather than respacing one page.
+ * Every slot is one equal row on both pages, so every portrait is one size.
+ * Four members are head + 2 on the verso and 2 on the recto, and on a spread
+ * the recto's two take its LOWER rows (TeamPage's `offset`), level with the
+ * verso's two across the gutter: the four faces are one size in two straight
+ * rows, and the empty slot faces the chapter head rather than hanging off the
+ * foot as a hole. Five were head + 2 and 3 until Gokul left the team (asked
+ * for); with an odd count the recto still fills from the top.
  *
  * The recto used to spend its first slot on the leadership principles and
  * the founding belief, removed on request when a fifth member joined -- which is
@@ -3559,11 +3617,14 @@ function TeamRun({
   from,
   rows,
   head,
+  offset = 0,
 }: {
   members: PageMember[];
   from: number;
   rows: number;
   head?: React.ReactNode;
+  /** Empty slots before the first member -- see teamHalves. */
+  offset?: number;
 }) {
   if (!members.length) return null;
   return (
@@ -3588,6 +3649,9 @@ function TeamRun({
       }
     >
       {head}
+      {Array.from({ length: offset }, (_, i) => (
+        <div key={`slot-${i}`} aria-hidden />
+      ))}
       {members.map((member, i) => (
         <MemberRow key={member.name} member={member} index={from + i} />
       ))}
@@ -3619,7 +3683,7 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
         // crops the shoulders rather than the face.
         className="w-[clamp(78px,calc(22*var(--pu)),110px)] shrink-0 self-start border border-white/15 p-[4px] [@media(max-height:480px)]:w-[56px] lg:aspect-[4/5] lg:h-full lg:w-auto lg:max-w-[calc(9*var(--pu))] lg:self-stretch xl:max-w-[clamp(100px,calc(12.5*var(--pu)),200px)]"
       >
-        <img
+        <BookImg
           src={member.portrait}
           alt={`${member.name}, ${member.role}`}
           width={360}
@@ -3657,8 +3721,19 @@ function MemberRow({ member, index }: { member: PageMember; index: number }) {
 
 /** The team spread's recto: the second part of the run, no head. */
 function TeamPage({ team }: { team: NonNullable<BookPage["team"]> }) {
+  const single = useContext(SingleSheetContext);
   const { recto, verso, rows } = teamHalves(team.members);
-  return <TeamRun members={recto} from={verso.length} rows={rows} />;
+  // On a spread the recto aligns to the verso's member rows; one page per
+  // sheet (a phone) has no facing page to line up with, so its members take
+  // the whole page between them.
+  return (
+    <TeamRun
+      members={recto}
+      from={verso.length}
+      rows={single ? recto.length : rows}
+      offset={single ? 0 : rows - recto.length}
+    />
+  );
 }
 
 /**

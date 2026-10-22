@@ -2324,8 +2324,14 @@ function ProjectIndex({ services }: { services: PageService[] }) {
         <span className="[@media(hover:none)]:hidden">
           Point at a project — the plate on the right changes
         </span>
-        <span className="hidden [@media(hover:none)]:inline">
-          Tap a project, then swipe through them on the next page
+        {/* Touch in portrait is one page per sheet, and a tap there now
+            turns to the plate (see <Book>); a touch screen held landscape
+            shows the spread, where the plate is simply opposite. */}
+        <span className="hidden [@media(hover:none)_and_(orientation:portrait)]:inline">
+          Tap a project to see it on the next page
+        </span>
+        <span className="hidden [@media(hover:none)_and_(orientation:landscape)]:inline">
+          Tap a project — the plate on the right changes
         </span>
       </p>
       {/* The rows' padding follows the viewport HEIGHT (capped at the old
@@ -2536,11 +2542,10 @@ function LivePlate({
       setFailed(false);
       setArmed(false);
     };
-    // Resting on 04 is not enough on a phone: the chapter is two pages and
-    // this window is on the second, so it loaded under the first and was
-    // still loading through the turn onto it. So it asks the page what is
-    // actually ON TOP at its own centre -- a sheet lying over it answers with
-    // that sheet -- and runs only when the answer is this window.
+    // Whether this window is actually ON TOP at its own centre -- a sheet
+    // lying over it answers with that sheet. On top, it loads at once; on a
+    // phone, where 04 is two pages and this is the second, it preloads under
+    // the first after a longer rest (see onRest).
     const onTop = () => {
       const el = viewRef.current;
       if (!el) return false;
@@ -2555,10 +2560,14 @@ function LivePlate({
         stop();
         return;
       }
-      timer = window.setTimeout(() => {
-        if (onTop()) setActive(true);
-        else stop();
-      }, 300);
+      // On top: load now. Under the chapter's FIRST page (a phone): load
+      // after a reader has stayed there 1.2s, so the window is ready by the
+      // time they turn to it -- on a Pixel 5 it was still an empty box 3s
+      // after arriving. Measured against waiting for the window to be on
+      // top, the turn costs the same (17 vs 16 frames over 33ms in 04): the
+      // stutter came from loading INSIDE a turn, which this still never does.
+      const visibleNow = onTop();
+      timer = window.setTimeout(() => setActive(true), visibleNow ? 300 : 1200);
     };
     const onTurning = () => window.clearTimeout(timer);
     window.addEventListener("book:rest", onRest);
@@ -2674,10 +2683,21 @@ function LivePlate({
             image". While it loads the window is the plate's own navy with a
             shimmer across it; if it never loads, a link out takes its place. */}
         {!loaded && !failed ? (
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,transparent_30%,rgba(220,231,247,0.14)_50%,transparent_70%)] bg-[length:250%_100%] motion-safe:animate-[live-shimmer_1.6s_linear_infinite]"
-          />
+          <>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,transparent_30%,rgba(220,231,247,0.14)_50%,transparent_70%)] bg-[length:250%_100%] motion-safe:animate-[live-shimmer_1.6s_linear_infinite]"
+            />
+            {/* An empty navy box read as a broken plate; say what is
+                happening. Polite live region, so it is announced once. */}
+            <span
+              role="status"
+              className="pointer-events-none absolute inset-0 m-auto flex h-fit w-fit items-center gap-[0.6em] text-[length:clamp(0.44rem,calc(0.62*var(--pu)),0.56rem)] tracking-[0.24em] text-slate-200/80 uppercase"
+            >
+              <span aria-hidden className="size-[0.5em] rounded-full bg-[#9dc0ee]/80 motion-safe:animate-pulse" />
+              Loading {live.host}
+            </span>
+          </>
         ) : null}
         {active ? (
           <iframe

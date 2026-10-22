@@ -4,6 +4,7 @@ import { installPageTurnSound } from "@/components/page-turn-sound";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
+import { SplitText } from "gsap/SplitText";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -37,7 +38,7 @@ import {
   releaseBookImages,
 } from "@/components/book-sheets";
 
-gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, useGSAP);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, SplitText, useGSAP);
 // A phone's address bar showing and hiding is a height-only resize, and a
 // ScrollTrigger refresh on it re-measures the pin mid-scroll -- the page jumps
 // every time the reader changes direction. This is GSAP's default on touch
@@ -1372,6 +1373,90 @@ export function Book() {
         `pages+=${LEAD_IN}`,
       );
 
+      // THE TEXT SETTLES AS ITS PAGE IS UNCOVERED -- tied to the turn, never
+      // to a clock. Asked for ("smooth animations for the text"), and built
+      // so it cannot be the old blink: that was a TIMED fade fired at
+      // mid-turn on a page already lying face up and fully printed, so its
+      // type vanished and came back. This one starts the instant the turn
+      // starts, while the incoming page is still wholly under the sheet, and
+      // is SCRUBBED with it -- each block rises 16px into place and comes up
+      // from nothing as the leaf lifts off it, reversing exactly when the
+      // reader scrolls back. At rest it is simply printed. Opacity is on the
+      // INK inside a face, never on a sheet (that flattens the 3D); only the
+      // outermost [data-ink] of each face, so nested blocks do not fade twice;
+      // and it ends at 97% of the turn, inside the timeline it already had.
+      // ...and every HEADING on that page rises word by word from behind its
+      // own baseline (GSAP SplitText, asked for: "the GSAP animation for the
+      // text, smooth"). Words in a clip box each, not lines: words reflow when
+      // the window changes, where split lines would stay broken at the old
+      // width. Each clip box is padded below by 0.18em and pulled back by the
+      // same, so descenders in a tightly-leaded display headline are not
+      // cropped. SplitText instances made here are reverted with the useGSAP
+      // context, so a rotate or a reduced-motion switch restores the text.
+      const riseWords = (heads: HTMLElement[], at: number, span: number) => {
+        const words: HTMLElement[] = [];
+        for (const head of heads) {
+          const split = SplitText.create(head, { type: "words", mask: "words" });
+          for (const m of split.masks as HTMLElement[]) {
+            m.style.paddingBottom = "0.18em";
+            m.style.marginBottom = "-0.18em";
+          }
+          words.push(...(split.words as HTMLElement[]));
+        }
+        if (!words.length) return;
+        tl.fromTo(
+          words,
+          { yPercent: 110 },
+          {
+            yPercent: 0,
+            ease: "power3.out",
+            duration: span * 0.7,
+            stagger: (span * 0.3) / Math.max(1, words.length - 1),
+          },
+          at,
+        );
+      };
+      const headingsOf = (face: Element | null | undefined) =>
+        face ? [...face.querySelectorAll<HTMLElement>("h2, h3")] : [];
+
+      // The opening spread: its left page and the first sheet's front.
+      riseWords(
+        [
+          ...headingsOf(facing),
+          ...headingsOf(sheets[0]?.querySelector("[data-face='front']")),
+        ],
+        OPEN,
+        LEAD_IN,
+      );
+
+      const pagesStart = OPEN + LEAD_IN;
+      sheets.forEach((sheet, k) => {
+        // Turn k-1 uncovers sheet k; sheet 0 arrives with the opening.
+        if (k === 0 || k > turns) return;
+        const face = sheet.querySelector<HTMLElement>("[data-face='front']");
+        const ink = face
+          ? [...face.querySelectorAll<HTMLElement>("[data-ink]")].filter(
+              (el) => !el.parentElement?.closest("[data-ink]"),
+            )
+          : [];
+        const start = pagesStart + (k - 1) * (TURN + GAP);
+        if (ink.length) {
+          tl.fromTo(
+            ink,
+            { opacity: 0, y: 16 },
+            {
+              opacity: 1,
+              y: 0,
+              ease: "power2.out",
+              duration: TURN * 0.8,
+              stagger: (TURN * 0.12) / Math.max(1, ink.length - 1),
+            },
+            start + TURN * 0.05,
+          );
+        }
+        riseWords(headingsOf(face), start + TURN * 0.1, TURN * 0.85);
+      });
+
       // Hold on the last page before the pin releases, so it is readable
       // rather than a thing you scroll past.
       tl.to({}, { duration: TRAIL });
@@ -1462,6 +1547,25 @@ export function Book() {
         }
         return best;
       };
+      // A PROJECT TAPPED ON 04'S FIRST PAGE TURNS TO IT, on a phone. The
+      // index there changes the plate on the NEXT page, which one page per
+      // sheet puts out of sight: on a Pixel 5 a tap on "AI Platform" lit its
+      // row and left the reader on the same page with nothing visibly
+      // changed -- read as a dead control. On a spread both pages are on
+      // screen, so this is phone-only. The carousel's own dots are project
+      // buttons too and are on the plate's page already, so they are left out.
+      if (single) {
+        const onProjectTap = (event: MouseEvent) => {
+          const target = event.target as HTMLElement | null;
+          const button = target?.closest?.("[data-project]");
+          if (!button || button.closest("[data-carousel], [data-project-stage]")) return;
+          const sheet = button.closest<HTMLElement>("[data-sheet]");
+          const k = sheet ? sheets.indexOf(sheet) : -1;
+          if (k >= 0 && k + 1 <= turns) seekSpread(k + 1);
+        };
+        section.addEventListener("click", onProjectTap);
+        windowTeardowns.push(() => section.removeEventListener("click", onProjectTap));
+      }
       const lastSheetOf = (chapter: number) =>
         chapterOfSheet.lastIndexOf(chapter);
       const seek = (chapter: number, last = false) =>

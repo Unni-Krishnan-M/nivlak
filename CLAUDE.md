@@ -1001,6 +1001,30 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   runs `content-between`; 06's rows centre photo + words as one block with
   their tops aligned (`flex-wrap content-center items-start`, words `flex-1`).
 
+### Text that arrives with its page, and 04 on a phone
+
+- **Text rises as its page is uncovered, SCRUBBED with the turn** (asked for:
+  "smooth GSAP animation for the text"). Each incoming page's outermost
+  `[data-ink]` blocks rise 16px from 0 opacity, and every `h2`/`h3` is split
+  into words with GSAP **SplitText** (`mask: "words"`, each clip box padded
+  0.18em below so descenders survive) that rise from behind their baseline.
+  It starts as the turn STARTS, while the page is still wholly covered, and
+  ends at 97% of it -- which is why it is not the removed "ink arrives" fade:
+  that one was timed, fired at mid-turn on a page already printed, and
+  blinked. Words, not lines, because words reflow on resize. The opening
+  spread gets the same word rise over LEAD_IN. Never on a sheet, never on a
+  back face, never under reduced motion; SplitText reverts with the context.
+- **A project tapped on 04's first page turns to it on a phone.** The index
+  changes the plate on the NEXT page, so a tap lit a row and visibly did
+  nothing. Phone-only (`single`); the carousel's own dots are excluded. The
+  touch hint now reads by orientation.
+- **04's live window preloads** under the chapter's first page after a 1.2s
+  rest (300ms when it is itself on top), and says "Loading calioon.com"
+  instead of being an empty navy box.
+- **`tools/scroll-shots.mjs --audit`** measures instead of photographing:
+  text out of its page, text over text, text into the folio, per page at
+  rest. 1440x900: 18 stops, 0 issues.
+
 ### Loading on a phone, and four on the team
 
 "Still loading bugs in the mobile view" -- measured on the LIVE Cloudflare
@@ -1351,7 +1375,7 @@ of its WIDTH, so the two overlap and 02 ended 4px inside the folio. It is
 does not work: 02's entries fill the face as a grid of equal rows, so 15px off
 `PAGE_SINKAGE` only makes the rows taller and returns 2 of the 15.
 
-### The ink arrives with the page -- REMOVED
+### The ink arrives with the page -- REMOVED (a scrubbed version replaced it, see "Text that arrives with its page")
 
 It was the phone's "blink". `syncNav` faded a turned page's `[data-ink]` in
 from 0, but `current` flips at MID-TURN, when the incoming page has already

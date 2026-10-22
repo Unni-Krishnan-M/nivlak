@@ -16,6 +16,7 @@
 //   node tools/scroll-shots.mjs --out /tmp/m --viewport 390x844
 //   node tools/scroll-shots.mjs --out /tmp/rm --reduced-motion
 //   node tools/scroll-shots.mjs --out /tmp/t --viewport 393x851 --touch  # phone: scrolls in [data-scroller]
+//   node tools/scroll-shots.mjs --audit --viewport 393x851 --touch --shots 40  # measure, do not photograph
 //
 // Needs a dev server already running (pnpm dev:web) and google-chrome-stable.
 // --probe prints the live DOM state at each stop instead of writing a PNG,
@@ -42,6 +43,11 @@ const TO = arg("--to", null) === null ? null : Number(arg("--to"));
 const SETTLE = Number(arg("--settle", 1400));
 const READY = Number(arg("--ready", 9000));
 const PROBE = has("--probe");
+// --audit MEASURES each stop instead of photographing it: on every page face
+// that is actually on top, text that leaves its page, text printed over other
+// text, and text running into the folio line. A 3px collision is easy to miss
+// in a screenshot and impossible to miss in a number. Exits non-zero on any.
+const AUDIT = has("--audit");
 const REDUCED = has("--reduced-motion");
 // --touch emulates a phone's touch screen (`pointer: coarse`), which is what
 // switches the book to scrolling inside [data-scroller] instead of the
@@ -78,7 +84,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // to make the run faster, you will only make it lie.
 if (SETTLE < 1000) console.warn(`warning: --settle ${SETTLE}ms is under the scrub's catch-up; frames may be caught mid-flight`);
 
-if (!PROBE) fs.mkdirSync(OUT, { recursive: true });
+if (!PROBE && !AUDIT) fs.mkdirSync(OUT, { recursive: true });
 
 const port = 9300 + Math.floor(Math.random() * 600);
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), "scroll-shots-chrome-"));
@@ -234,10 +240,66 @@ const PROBE_JS = `(() => {
   return out;
 })()`;
 
+// Each text node's LINE boxes (a Range per node), grouped by the page face
+// that is topmost at its centre. Faces: [data-face] and [data-left-page].
+const AUDIT_JS = `(() => {
+  const vw = innerWidth, vh = innerHeight, issues = [];
+  const faceOf = (el) => el && el.closest && el.closest("[data-face='front'], [data-face='back'], [data-left-page]");
+  const visible = (el) => { for (let e = el; e && e !== document.body; e = e.parentElement) { const cs = getComputedStyle(e); if (cs.display === "none" || cs.visibility === "hidden" || +cs.opacity < 0.05) return false; } return true; };
+  const walker = document.createTreeWalker(document.querySelector("section") || document.body, NodeFilter.SHOW_TEXT);
+  const boxes = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const t = n.textContent.trim();
+    if (!t || !n.parentElement || n.parentElement.closest("[aria-hidden='true'], [inert], script, style")) continue;
+    if (!visible(n.parentElement)) continue;
+    const r = document.createRange(); r.selectNodeContents(n);
+    for (const b of r.getClientRects()) {
+      if (b.width < 2 || b.height < 2 || b.right < 0 || b.left > vw || b.bottom < 0 || b.top > vh) continue;
+      const cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+      const hit = document.elementFromPoint(Math.min(vw - 1, Math.max(0, cx)), Math.min(vh - 1, Math.max(0, cy)));
+      const face = faceOf(n.parentElement);
+      if (!face || faceOf(hit) !== face) continue; // covered by another sheet, or not on a page
+      boxes.push({ t: t.slice(0, 28), b, face, el: n.parentElement });
+    }
+  }
+  const folioRe = /^(I|II|III|IV|V|VI|VII)( — .*)?$/;
+  for (const x of boxes) {
+    const f = x.face.getBoundingClientRect();
+    if (x.b.right > Math.min(f.right, vw) + 1.5 || x.b.left < Math.max(f.left, 0) - 1.5 || x.b.bottom > Math.min(f.bottom, vh) + 1.5)
+      issues.push("OUT-OF-PAGE " + JSON.stringify(x.t) + " r=" + Math.round(x.b.right) + " b=" + Math.round(x.b.bottom) + " page=[" + Math.round(f.left) + "," + Math.round(f.right) + "]x" + Math.round(Math.min(f.bottom, vh)));
+  }
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+    const a = boxes[i], c = boxes[j];
+    if (a.face !== c.face || a.el === c.el || a.el.contains(c.el) || c.el.contains(a.el)) continue;
+    const ox = Math.min(a.b.right, c.b.right) - Math.max(a.b.left, c.b.left);
+    const oy = Math.min(a.b.bottom, c.b.bottom) - Math.max(a.b.top, c.b.top);
+    if (ox > 2 && oy > 2) {
+      const kind = folioRe.test(a.t) || folioRe.test(c.t) ? "INTO-FOLIO" : "OVERLAP";
+      issues.push(kind + " " + JSON.stringify(a.t) + " x " + JSON.stringify(c.t) + " (" + Math.round(ox) + "x" + Math.round(oy) + "px at y=" + Math.round(Math.max(a.b.top, c.b.top)) + ")");
+    }
+  }
+  const head = document.querySelector("[data-book-index] [data-current=true]")?.getAttribute("aria-label") || "cover";
+  return { head, n: boxes.length, issues: [...new Set(issues)] };
+})()`;
+let auditFailures = 0;
+const seenPages = new Set();
+
 for (let i = 0; i < SHOTS; i++) {
   const y = Math.round(lo + (hi - lo) * (SHOTS === 1 ? 0 : i / (SHOTS - 1)));
   await evaluate(`${SCROLLER}.scrollTop = ${y}`);
   await sleep(SETTLE);
+
+  if (AUDIT) {
+    const a = await evaluate(AUDIT_JS);
+    const at = await evaluate(`Math.round(${SCROLLER}.scrollTop)`);
+    const key = a.head + "@" + at;
+    if (seenPages.has(key)) continue;
+    seenPages.add(key);
+    console.log(`${String(at).padStart(6)}  ${a.head.padEnd(16)} ${String(a.n).padStart(3)} lines  ${a.issues.length ? "ISSUES" : "ok"}`);
+    for (const m of a.issues) console.log("          " + m);
+    auditFailures += a.issues.length;
+    continue;
+  }
 
   if (PROBE) {
     console.log(`\n--- y=${y} ---`);
@@ -266,7 +328,10 @@ if (runtimeErrors.length) {
   process.exitCode = 1;
 }
 
-if (!PROBE) {
+if (AUDIT) {
+  console.log(`\naudit: ${seenPages.size} page stops, ${auditFailures} issue(s)`);
+  if (auditFailures) process.exitCode = 1;
+} else if (!PROBE) {
   console.log(`\n${SHOTS} frames -> ${OUT}`);
   console.log(`contact sheet:\n  magick montage ${OUT}/*.png -tile 4x4 -geometry 360x225+3+3 -background '#111' ${OUT}/sheet.png`);
 }

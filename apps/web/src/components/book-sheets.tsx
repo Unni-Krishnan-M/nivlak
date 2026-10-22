@@ -855,7 +855,16 @@ function Figure({
     // footnote alone hung off the foot, every spare pixel on the phone page
     // collected in ONE gap above it -- 154px at 393x851. Two auto margins
     // divide it, which is air rather than a hole.
-    <figure data-ink className="mt-[2.2em] max-w-[42ch] portrait:mt-auto lg:mt-auto lg:max-w-none">
+    //
+    // SHORT PORTRAIT PHONES (under 620px tall: iPhone SE 1st gen, old
+    // Androids) drop four lines that another element on the same page
+    // already says -- this figure (the paragraph above describes the steps),
+    // 03/05's opening sentence (the headline), 04's project sentence (plate
+    // and title), 07's "email or call" line (the two buttons). `--audit` at
+    // 320x568 found the footnote 6px off this page, 04's colophon printed on
+    // its PLATFORM/ACTION rows, 05's rows touching by 2px and 07's address
+    // row 10px off the foot; 360x740 and 393x851 were clean and are untouched.
+    <figure data-ink className="mt-[2.2em] max-w-[42ch] portrait:mt-auto lg:mt-auto lg:max-w-none [@media(orientation:portrait)_and_(max-height:620px)]:hidden">
       <svg
         viewBox="0 0 320 30"
         aria-hidden="true"
@@ -1136,7 +1145,7 @@ function FacingCopy({ page }: { page: BookPage | BookSpread }) {
                 // the head that overflows first because a chapter opening
                 // cannot be made shorter -- the numeral, the title and the
                 // rule are what say which chapter this is.
-                className="mt-[0.9em] max-w-[42ch] text-[length:clamp(0.68rem,calc(1.185*var(--pu)),1.085rem)] leading-relaxed text-balance text-slate-300/80 xl:text-[length:clamp(0.68rem,calc(1.28*var(--pu)),1.172rem)] [@media(max-height:480px)]:hidden"
+                className="mt-[0.9em] max-w-[42ch] text-[length:clamp(0.68rem,calc(1.185*var(--pu)),1.085rem)] leading-relaxed text-balance text-slate-300/80 xl:text-[length:clamp(0.68rem,calc(1.28*var(--pu)),1.172rem)] [@media(max-height:480px)]:hidden [@media(orientation:portrait)_and_(max-height:620px)]:hidden"
               >
                 {subtitle}
               </p>
@@ -1604,10 +1613,15 @@ function StageRow({ service, index }: StageSlot) {
         // third and fourth line, and the six plates come out four different
         // heights, which is the one thing they may not be.
         style={{ aspectRatio: service.image!.ratio }}
-        className="col-start-1 row-span-2 row-start-2 h-full w-[70px] self-stretch object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-2 lg:row-start-1 lg:h-auto lg:w-[clamp(80px,calc(7*var(--page-vw)),108px)] lg:self-start motion-reduce:transition-none"
+        className="col-start-1 row-span-2 row-start-2 h-full w-[70px] self-stretch object-cover object-center opacity-90 transition-opacity duration-300 ease-out select-none hover:opacity-100 lg:row-span-2 lg:row-start-1 lg:h-auto lg:w-[clamp(80px,calc(7*var(--page-vw)),108px)] lg:self-start motion-reduce:transition-none [@media(orientation:portrait)_and_(max-height:620px)]:hidden"
       />
 
-      <div className="col-start-2 row-start-2 flex min-w-0 flex-col lg:contents">
+      {/* On a short portrait phone the plate goes and the words take both
+          columns: at 320x568 the text beside a 70px plate was ~120px wide,
+          every outcome ran to four or five lines, and stage III was cut off
+          at the foot (--audit). The plates are a texture at that size anyway
+          (CLAUDE.md, 03). */}
+      <div className="col-start-2 row-start-2 flex min-w-0 flex-col lg:contents [@media(orientation:portrait)_and_(max-height:620px)]:col-span-2 [@media(orientation:portrait)_and_(max-height:620px)]:col-start-1">
         <h4 className="shrink-0 font-[family-name:var(--font-display)] text-[length:clamp(0.8rem,calc(1.434*var(--page-vw)*var(--stage-type,1)),calc(1.299rem*var(--stage-type,1)))] leading-tight font-light lg:col-start-2 lg:row-start-2 lg:leading-snug text-balance text-[#dce7f7]">
           {stage.headline}
         </h4>
@@ -3022,7 +3036,7 @@ function ProjectStage({
                   ~100px short of the sheet with this paragraph in.
                   Everything that is a FACT -- status, the work, the platform
                   -- stays at every size. */}
-              <p className="mt-[0.55em] max-w-[46ch] shrink-0 text-[length:clamp(0.74rem,calc(1.196*var(--pu)),1.083rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden">
+              <p className="mt-[0.55em] max-w-[46ch] shrink-0 text-[length:clamp(0.74rem,calc(1.196*var(--pu)),1.083rem)] leading-relaxed text-slate-300/80 [@media(max-height:480px)]:hidden [@media(orientation:portrait)_and_(max-height:620px)]:hidden">
                 {service.body}
               </p>
               {/* What the work is. A `ul` because it is a list and a screen
@@ -3805,7 +3819,7 @@ function ContactPage({ page }: { page: BookPage }) {
       </h3>
       {/* Gone below 480px of viewport height: at 844x390 the recto has ~330px
           and the details table is what must not be clipped. */}
-      <p className="mt-[0.7em] max-w-[38ch] text-[length:clamp(0.7rem,calc(1.06*var(--pu)),0.96rem)] leading-relaxed text-slate-300/80 lg:mt-[1.5em] lg:leading-[1.85] [@media(max-height:480px)]:hidden">
+      <p className="mt-[0.7em] max-w-[38ch] text-[length:clamp(0.7rem,calc(1.06*var(--pu)),0.96rem)] leading-relaxed text-slate-300/80 lg:mt-[1.5em] lg:leading-[1.85] [@media(max-height:480px)]:hidden [@media(orientation:portrait)_and_(max-height:620px)]:hidden">
         {contact.directBody}
       </p>
 

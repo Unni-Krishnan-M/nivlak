@@ -273,7 +273,9 @@ const AUDIT_JS = `(() => {
     if (a.face !== c.face || a.el === c.el || a.el.contains(c.el) || c.el.contains(a.el)) continue;
     const ox = Math.min(a.b.right, c.b.right) - Math.max(a.b.left, c.b.left);
     const oy = Math.min(a.b.bottom, c.b.bottom) - Math.max(a.b.top, c.b.top);
-    if (ox > 2 && oy > 2) {
+    // Line BOXES of tightly-leaded text touch by a pixel or two by design
+    // (and a footnote marker sits in its own line's box); the glyphs do not.
+    if (ox > 2 && oy > 3) {
       const kind = folioRe.test(a.t) || folioRe.test(c.t) ? "INTO-FOLIO" : "OVERLAP";
       issues.push(kind + " " + JSON.stringify(a.t) + " x " + JSON.stringify(c.t) + " (" + Math.round(ox) + "x" + Math.round(oy) + "px at y=" + Math.round(Math.max(a.b.top, c.b.top)) + ")");
     }

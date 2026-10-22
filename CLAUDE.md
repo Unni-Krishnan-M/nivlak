@@ -1381,7 +1381,7 @@ of its WIDTH, so the two overlap and 02 ended 4px inside the folio. It is
 does not work: 02's entries fill the face as a grid of equal rows, so 15px off
 `PAGE_SINKAGE` only makes the rows taller and returns 2 of the 15.
 
-### The ink arrives with the page -- REMOVED (a scrubbed version replaced it, see "Text that arrives with its page")
+### The ink arrives with the page -- REMOVED (a scrubbed version replaced it and was removed too, see "Text on a turn")
 
 It was the phone's "blink". `syncNav` faded a turned page's `[data-ink]` in
 from 0, but `current` flips at MID-TURN, when the incoming page has already

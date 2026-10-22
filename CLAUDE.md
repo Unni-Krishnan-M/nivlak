@@ -1001,19 +1001,25 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   runs `content-between`; 06's rows centre photo + words as one block with
   their tops aligned (`flex-wrap content-center items-start`, words `flex-1`).
 
-### Text that arrives with its page, and 04 on a phone
+### Text on a turn (removed), and 04 on a phone
 
-- **Text rises as its page is uncovered, SCRUBBED with the turn** (asked for:
-  "smooth GSAP animation for the text"). Each incoming page's outermost
-  `[data-ink]` blocks rise 16px from 0 opacity, and every `h2`/`h3` is split
-  into words with GSAP **SplitText** (`mask: "words"`, each clip box padded
-  0.18em below so descenders survive) that rise from behind their baseline.
-  It starts as the turn STARTS, while the page is still wholly covered, and
-  ends at 97% of it -- which is why it is not the removed "ink arrives" fade:
-  that one was timed, fired at mid-turn on a page already printed, and
-  blinked. Words, not lines, because words reflow on resize. The opening
-  spread gets the same word rise over LEAD_IN. Never on a sheet, never on a
-  back face, never under reduced motion; SplitText reverts with the context.
+- **Text does NOT animate on a turn (removed after it blinked).** For one
+  revision each incoming page's `[data-ink]` faded up and its `h2`/`h3`
+  words rose (SplitText), scrubbed with the turn. Recorded on a Pixel 5
+  (`adb shell screenrecord`, frames diffed): a rotating sheet shows the page
+  under it from the first degrees of the turn, so that page sat blank and
+  then filled in, and swiping BACK emptied 07's headline while the page was
+  still in full view. Only the OPENING spread's headings still rise, over
+  LEAD_IN, because nothing is lying on top of them. The turn is the
+  entrance; do not add a per-page fade or rise again.
+- **Phone scrub is 0.7, not 0.3.** A thumb swipe's momentum crosses a whole
+  turn in ~130ms and at 0.3 the leaf followed it: four frames, a cut. At
+  0.7 the same swipe is ~8 frames of visible turn.
+- **The snap counts a swipe from a PAGE, never from the trail.** Past the last
+  page the scroll runs into the trail unsnapped; a swipe back counted from
+  there found the last page one page back -- the one on screen -- and the
+  leaf lifted and fell back. `gestureFrom` is clamped to the first and last
+  rest.
 - **A project tapped on 04's first page turns to it on a phone.** The index
   changes the plate on the NEXT page, so a tap lit a row and visibly did
   nothing. Phone-only (`single`); the carousel's own dots are excluded. The

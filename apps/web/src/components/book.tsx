@@ -1154,8 +1154,11 @@ export function Book() {
           end: scrollLength(turns, single),
           // Shorter in portrait: the catch-up that reads as weight under a
           // wheel reads as lag under a finger, and a dragged page that
-          // arrives a second late is not the page you are dragging.
-          scrub: single ? 0.3 : SCRUB,
+          // arrives a second late is not the page you are dragging. Not as
+          // short as 0.3, which was tried: a thumb swipe's momentum crosses
+          // a whole turn in ~130ms, and at 0.3 the leaf followed it -- a
+          // recorded Pixel 5 turn was four frames, which reads as a cut.
+          scrub: single ? 0.7 : SCRUB,
           // In the touch box the book is held by CSS `position: sticky` (see
           // index.css) over a spacer of exactly this trigger's length, and
           // NOT pinned. Both of GSAP's pins were wrong there, and measured on
@@ -1211,7 +1214,13 @@ export function Book() {
               // 1219 -> 1896 and skipped 01's first page, the chapter's
               // headline, entirely. Only a real fling -- over 1.5 pages of
               // travel -- is taken at its word and settles past.
-              const from = gestureFrom ?? time;
+              // Clamped to the pages: at the end the scroll runs on into the
+              // trail, and a swipe back counted from there found the LAST page
+              // one page back -- the page already on screen -- so the leaf
+              // lifted and fell back where it was.
+              const first = rests[0] ?? time;
+              const last = rests[rests.length - 1] ?? time;
+              const from = Math.min(Math.max(gestureFrom ?? time, first), last);
               const forward = (self?.direction ?? 1) > 0;
               if (forward) {
                 if (time - from <= PAGE * 1.5) {
@@ -1429,33 +1438,14 @@ export function Book() {
         LEAD_IN,
       );
 
-      const pagesStart = OPEN + LEAD_IN;
-      sheets.forEach((sheet, k) => {
-        // Turn k-1 uncovers sheet k; sheet 0 arrives with the opening.
-        if (k === 0 || k > turns) return;
-        const face = sheet.querySelector<HTMLElement>("[data-face='front']");
-        const ink = face
-          ? [...face.querySelectorAll<HTMLElement>("[data-ink]")].filter(
-              (el) => !el.parentElement?.closest("[data-ink]"),
-            )
-          : [];
-        const start = pagesStart + (k - 1) * (TURN + GAP);
-        if (ink.length) {
-          tl.fromTo(
-            ink,
-            { opacity: 0, y: 16 },
-            {
-              opacity: 1,
-              y: 0,
-              ease: "power2.out",
-              duration: TURN * 0.8,
-              stagger: (TURN * 0.12) / Math.max(1, ink.length - 1),
-            },
-            start + TURN * 0.05,
-          );
-        }
-        riseWords(headingsOf(face), start + TURN * 0.1, TURN * 0.85);
-      });
+      // NOT on the turns. Each page's ink used to fade and its headings rise
+      // as the leaf lifted off it, and on a Pixel 5 that was the "blinking"
+      // reported twice: a rotating sheet shows the page under it from the
+      // first degrees of the turn, so the incoming page sat there blank and
+      // then filled in, and scrolling BACK emptied a page that was still in
+      // full view ("Let's talk about your project" lost its words before the
+      // leaf had covered a tenth of it). Paper is printed before it is
+      // turned to; the turn is the entrance.
 
       // Hold on the last page before the pin releases, so it is readable
       // rather than a thing you scroll past.

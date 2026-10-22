@@ -122,6 +122,61 @@ const scrollPercent = (turns: number, single = false) =>
 const scrollLength = (turns: number, single = false) =>
   `+=${scrollPercent(turns, single)}%`;
 
+// Whether the text on the pages animates at all: on a MODERATE OR BETTER
+// connection, and not on a poor one (asked for: "bring back that animation if
+// the network is moderate or good, if not no animation").
+//
+// Poor is Data Saver, a 2G-class estimate, or under 1 Mbps MEASURED. Measured,
+// because Chrome's own `downlink` is not evidence: the Android emulator on a
+// fast LAN reported "3g, 1.35 Mbps" and kept reporting it under DevTools'
+// Slow 3G. The page has just downloaded its scripts and fonts, so it knows
+// its real speed: every same-origin file that came over the wire, bytes over
+// the UNION of their transfer windows -- a union and not a sum, because
+// parallel files share one pipe and their per-file rates each understate it.
+// Under 64KB of evidence (a warm cache) says nothing and counts as fine, and
+// so does a browser with no Network Information API (Safari, Firefox).
+//
+// Decided ONCE per load and cached: a decision that followed the network
+// would rebuild the timeline mid-read.
+let textMotionDecision: boolean | undefined;
+const measuredMbps = () => {
+  const spans: [number, number][] = [];
+  let bytes = 0;
+  for (const e of performance.getEntriesByType("resource") as PerformanceResourceTiming[]) {
+    if (e.transferSize <= 0 || e.responseEnd <= e.responseStart) continue;
+    bytes += e.transferSize;
+    spans.push([e.responseStart, e.responseEnd]);
+  }
+  if (bytes < 64 * 1024) return null;
+  spans.sort((x, y) => x[0] - y[0]);
+  let busy = 0;
+  let [from, to] = spans[0]!;
+  for (const [s, e] of spans.slice(1)) {
+    if (s > to) {
+      busy += to - from;
+      [from, to] = [s, e];
+    } else to = Math.max(to, e);
+  }
+  busy += to - from;
+  return busy > 0 ? (bytes * 8) / (busy * 1000) : null;
+};
+const textMotionAllowed = () => {
+  if (textMotionDecision !== undefined) return textMotionDecision;
+  const c = (
+    navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    }
+  ).connection;
+  const mbps = measuredMbps();
+  textMotionDecision = !(
+    c?.saveData ||
+    c?.effectiveType === "slow-2g" ||
+    c?.effectiveType === "2g" ||
+    (mbps !== null && mbps < 1)
+  );
+  return textMotionDecision;
+};
+
 // Frames requested per batch after the first. Ninety-one at once is ninety-one
 // parallel requests fighting the document for the connection on a cold load; in
 // order and in batches, the playhead's decoded ceiling walks forward steadily
@@ -1382,31 +1437,42 @@ export function Book() {
         `pages+=${LEAD_IN}`,
       );
 
-      // THE TEXT SETTLES AS ITS PAGE IS UNCOVERED -- tied to the turn, never
-      // to a clock. Asked for ("smooth animations for the text"), and built
-      // so it cannot be the old blink: that was a TIMED fade fired at
-      // mid-turn on a page already lying face up and fully printed, so its
-      // type vanished and came back. This one starts the instant the turn
-      // starts, while the incoming page is still wholly under the sheet, and
-      // is SCRUBBED with it -- each block rises 16px into place and comes up
-      // from nothing as the leaf lifts off it, reversing exactly when the
-      // reader scrolls back. At rest it is simply printed. Opacity is on the
-      // INK inside a face, never on a sheet (that flattens the 3D); only the
-      // outermost [data-ink] of each face, so nested blocks do not fade twice;
-      // and it ends at 97% of the turn, inside the timeline it already had.
-      // ...and every HEADING on that page rises word by word from behind its
-      // own baseline (GSAP SplitText, asked for: "the GSAP animation for the
-      // text, smooth"). Words in a clip box each, not lines: words reflow when
-      // the window changes, where split lines would stay broken at the old
-      // width. Each clip box is padded below by 0.18em and pulled back by the
-      // same, so descenders in a tightly-leaded display headline are not
-      // cropped. SplitText instances made here are reverted with the useGSAP
-      // context, so a rotate or a reduced-motion switch restores the text.
-      const riseWords = (heads: HTMLElement[], at: number, span: number) => {
+      // THE TEXT SETTLES AS ITS PAGE IS UNCOVERED, scrubbed with the turn --
+      // and it NEVER DISAPPEARS. The first version faded each page's ink up
+      // from 0 and raised its headings from behind a mask, and on a Pixel 5
+      // that was the "blinking": a rotating sheet shows the page under it
+      // from the first degrees of the turn, so the page sat blank and then
+      // filled in, and swiping BACK emptied 07's headline while the page was
+      // still in full view (screen-recorded, frame by frame). So on a turn
+      // it is MOTION ONLY: every block glides up 18px into place and each
+      // heading's words follow in a cascade, at full opacity and unmasked --
+      // the page is printed the whole time, the type just settles as the
+      // leaf lifts off it, and reverses exactly when the reader scrolls back.
+      // The OPENING spread keeps the masked rise, because nothing is lying
+      // on top of it: its ink is fading up with the pages over LEAD_IN.
+      // Transforms go on the INK inside a face, never on a sheet; only the
+      // outermost [data-ink], so nested blocks do not move twice. Words, not
+      // lines, because words reflow on resize. SplitText reverts with the
+      // useGSAP context. None of it runs on a poor connection
+      // (textMotionAllowed above).
+      const textMotion = textMotionAllowed();
+      if (section) section.dataset.textMotion = String(textMotion);
+      if (section) section.dataset.textMotionMbps = String(measuredMbps()?.toFixed(2));
+      const riseWords = (
+        heads: HTMLElement[],
+        at: number,
+        span: number,
+        masked: boolean,
+      ) => {
         const words: HTMLElement[] = [];
         for (const head of heads) {
-          const split = SplitText.create(head, { type: "words", mask: "words" });
-          for (const m of split.masks as HTMLElement[]) {
+          const split = SplitText.create(
+            head,
+            masked ? { type: "words", mask: "words" } : { type: "words" },
+          );
+          // A mask pads 0.18em below and pulls it back, so descenders in a
+          // tightly-leaded display headline are not cropped.
+          for (const m of (split.masks ?? []) as HTMLElement[]) {
             m.style.paddingBottom = "0.18em";
             m.style.marginBottom = "-0.18em";
           }
@@ -1415,7 +1481,10 @@ export function Book() {
         if (!words.length) return;
         tl.fromTo(
           words,
-          { yPercent: 110 },
+          // Unmasked, a word is visible the whole way, so it travels a third
+          // of a line rather than a whole one -- far enough to read as a
+          // cascade, short of the subtitle under a two-line headline.
+          { yPercent: masked ? 110 : 35 },
           {
             yPercent: 0,
             ease: "power3.out",
@@ -1428,24 +1497,45 @@ export function Book() {
       const headingsOf = (face: Element | null | undefined) =>
         face ? [...face.querySelectorAll<HTMLElement>("h2, h3")] : [];
 
-      // The opening spread: its left page and the first sheet's front.
-      riseWords(
-        [
-          ...headingsOf(facing),
-          ...headingsOf(sheets[0]?.querySelector("[data-face='front']")),
-        ],
-        OPEN,
-        LEAD_IN,
-      );
+      if (textMotion) {
+        // The opening spread: its left page and the first sheet's front.
+        riseWords(
+          [
+            ...headingsOf(facing),
+            ...headingsOf(sheets[0]?.querySelector("[data-face='front']")),
+          ],
+          OPEN,
+          LEAD_IN,
+          true,
+        );
 
-      // NOT on the turns. Each page's ink used to fade and its headings rise
-      // as the leaf lifted off it, and on a Pixel 5 that was the "blinking"
-      // reported twice: a rotating sheet shows the page under it from the
-      // first degrees of the turn, so the incoming page sat there blank and
-      // then filled in, and scrolling BACK emptied a page that was still in
-      // full view ("Let's talk about your project" lost its words before the
-      // leaf had covered a tenth of it). Paper is printed before it is
-      // turned to; the turn is the entrance.
+        const pagesStart = OPEN + LEAD_IN;
+        sheets.forEach((sheet, k) => {
+          // Turn k-1 uncovers sheet k; sheet 0 arrives with the opening.
+          if (k === 0 || k > turns) return;
+          const face = sheet.querySelector<HTMLElement>("[data-face='front']");
+          const ink = face
+            ? [...face.querySelectorAll<HTMLElement>("[data-ink]")].filter(
+                (el) => !el.parentElement?.closest("[data-ink]"),
+              )
+            : [];
+          const start = pagesStart + (k - 1) * (TURN + GAP);
+          if (ink.length) {
+            tl.fromTo(
+              ink,
+              { y: 18 },
+              {
+                y: 0,
+                ease: "power2.out",
+                duration: TURN * 0.8,
+                stagger: (TURN * 0.12) / Math.max(1, ink.length - 1),
+              },
+              start + TURN * 0.05,
+            );
+          }
+          riseWords(headingsOf(face), start + TURN * 0.1, TURN * 0.85, false);
+        });
+      }
 
       // Hold on the last page before the pin releases, so it is readable
       // rather than a thing you scroll past.

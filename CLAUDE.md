@@ -1003,15 +1003,28 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
 
 ### Text on a turn (removed), and 04 on a phone
 
-- **Text does NOT animate on a turn (removed after it blinked).** For one
-  revision each incoming page's `[data-ink]` faded up and its `h2`/`h3`
-  words rose (SplitText), scrubbed with the turn. Recorded on a Pixel 5
-  (`adb shell screenrecord`, frames diffed): a rotating sheet shows the page
-  under it from the first degrees of the turn, so that page sat blank and
-  then filled in, and swiping BACK emptied 07's headline while the page was
-  still in full view. Only the OPENING spread's headings still rise, over
-  LEAD_IN, because nothing is lying on top of them. The turn is the
-  entrance; do not add a per-page fade or rise again.
+- **Text on a turn is MOTION ONLY, and only on a moderate-or-better
+  network.** The first version faded each incoming page's `[data-ink]` up
+  from 0 and raised its `h2`/`h3` words from behind a SplitText mask.
+  Recorded on a Pixel 5 (`adb shell screenrecord`, frames diffed) that was
+  the "blinking": a rotating sheet shows the page under it from the first
+  degrees of the turn, so the page sat blank and then filled in, and
+  swiping BACK emptied 07's headline while the page was in full view. It
+  came back on request as an 18px glide of each block and an UNMASKED word
+  cascade (`yPercent` 35 -> 0) at full opacity: the page is printed the
+  whole time, the type settles as the leaf lifts. Re-recorded forward, back
+  and under a slow drag: no frame shows a page without its text. Only the
+  OPENING spread keeps the masked rise, because nothing lies on top of it.
+  **Never fade or mask the ink of a page that a turn uncovers.**
+- **`textMotionAllowed()` decides once per load.** Off under Data Saver, a
+  2G-class `effectiveType`, or under 1 Mbps MEASURED from Resource Timing
+  (bytes over the union of transfer windows of everything that came over the
+  wire). Chrome's own `downlink` is useless here: the emulator on a fast LAN
+  said "3g, 1.35 Mbps" and said the same under Slow 3G. Measured: Slow 3G
+  0.38 -> off, Fast 3G 1.39 -> on, 4G 3.46 -> on, LAN 44 -> on. The section
+  carries `data-text-motion` and `data-text-motion-mbps` for QA. Cached,
+  because a decision that followed the network would rebuild the timeline
+  mid-read.
 - **Phone scrub is 0.7, not 0.3.** A thumb swipe's momentum crosses a whole
   turn in ~130ms and at 0.3 the leaf followed it: four frames, a cut. At
   0.7 the same swipe is ~8 frames of visible turn.

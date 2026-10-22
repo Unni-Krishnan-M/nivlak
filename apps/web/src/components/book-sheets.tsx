@@ -9,7 +9,14 @@ import {
   spreadAt,
 } from "@/components/book-camera";
 import { Emblem } from "@/components/book-emblems";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  startTransition,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   BOOK_PAGES,
   BOOK_SPREADS,
@@ -389,6 +396,43 @@ function useBookImages() {
 // silver ground would print as a solid rectangle. A transparent gradient
 // masks everything out and fetches nothing.
 const HELD_MASK = "linear-gradient(transparent, transparent)";
+// The mirrored back of every phone page is the whole page built a second
+// time, seen for one turn at 14%. Built at startup it doubled the work in
+// the page's first seconds: on the emulator at 3G and a 6x-throttled CPU the
+// cover sat in ONE 11.5s long task before the book could draw. It now mounts
+// with the book's pictures (releaseBookImages), in a transition -- before the
+// first turn, never during the load.
+function DeferredMirror({ children }: { children: React.ReactNode }) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    // A transition, so the 14 copies are built in slices between frames of
+    // the opening film rather than in one blocking chunk of it.
+    const mount = () => startTransition(() => setOn(true));
+    if (bookImagesReleased) {
+      mount();
+      return;
+    }
+    window.addEventListener("book:images", mount);
+    return () => window.removeEventListener("book:images", mount);
+  }, []);
+  return on ? <>{children}</> : null;
+}
+// A phone or a connection that should not be asked to run a second website
+// inside this one: data saver, a 2G/3G connection, or 2GB of memory or less.
+// Measured at 3G with a 6x-throttled CPU, 04's live site cost 14 frames over
+// 50ms and 12 long tasks where every other chapter had 2-6.
+function isConstrained() {
+  const nav = navigator as Navigator & {
+    connection?: { saveData?: boolean; effectiveType?: string };
+    deviceMemory?: number;
+  };
+  const c = nav.connection;
+  return (
+    !!c?.saveData ||
+    ["slow-2g", "2g", "3g"].includes(c?.effectiveType ?? "") ||
+    (nav.deviceMemory ?? 8) <= 2
+  );
+}
 function BookImg(props: React.ImgHTMLAttributes<HTMLImageElement>) {
   const on = useBookImages();
   return (
@@ -480,11 +524,13 @@ function SinglePageSheets() {
                   className="pointer-events-none absolute inset-0 opacity-[0.14] [transform:scaleX(-1)]"
                 >
                   <MirrorContext.Provider value>
-                    {page.kind === "facing" ? (
-                      <VersoPage page={spread} flush />
-                    ) : (
-                      <PageBody page={spread} />
-                    )}
+                    <DeferredMirror>
+                      {page.kind === "facing" ? (
+                        <VersoPage page={spread} flush />
+                      ) : (
+                        <PageBody page={spread} />
+                      )}
+                    </DeferredMirror>
                   </MirrorContext.Provider>
                 </div>
                 <PageFoot page={spread} />
@@ -2532,6 +2578,7 @@ function LivePlate({
   const [box, setBox] = useState({ w: 0, h: 0 });
   const viewRef = useRef<HTMLDivElement>(null);
   const mirror = useContext(MirrorContext);
+  const [constrained, setConstrained] = useState(false);
 
   // THE LIVE SITE RUNS ONLY WHILE THE BOOK RESTS ON THIS CHAPTER. It used to
   // start on `book:chapter`, which fires at the MIDDLE of the turn into 04,
@@ -2544,6 +2591,10 @@ function LivePlate({
   // is unmounted the moment the book rests anywhere else.
   useEffect(() => {
     if (mirror) return;
+    if (isConstrained()) {
+      setConstrained(true);
+      return;
+    }
     // Reduced motion reads the book as a plain column with no book events.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setActive(true);
@@ -2696,7 +2747,24 @@ function LivePlate({
         {/* No picture behind it: asked for "only the live web, not the
             image". While it loads the window is the plate's own navy with a
             shimmer across it; if it never loads, a link out takes its place. */}
-        {!loaded && !failed ? (
+        {constrained ? (
+          <>
+            <BookImg
+              src={image.src}
+              alt={image.alt}
+              draggable={false}
+              className="absolute inset-0 h-full w-full object-cover object-top select-none"
+            />
+            <a
+              href={live.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute inset-x-0 bottom-[0.8em] m-auto h-fit w-fit rounded-full border border-white/20 bg-[#0b1728]/85 px-[0.9em] py-[0.4em] text-[length:clamp(0.44rem,calc(0.62*var(--pu)),0.56rem)] tracking-[0.22em] text-slate-100 uppercase"
+            >
+              Open {live.host} ↗
+            </a>
+          </>
+        ) : !loaded && !failed ? (
           <>
             <span
               aria-hidden

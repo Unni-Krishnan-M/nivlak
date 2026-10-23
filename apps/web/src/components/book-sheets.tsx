@@ -2599,7 +2599,17 @@ function LivePlate({
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setActive(true);
     }
-    setCoarse(window.matchMedia("(pointer: coarse)").matches);
+    // ON A TOUCH SCREEN IT LOADS ON A TAP, never by itself. Resting on 04
+    // was the one place a phone still froze: measured on the live site in the
+    // Pixel 5 emulator, calioon.com loading in the window cost a 600-850ms
+    // stall the moment the book came to rest there, the only frames over
+    // 300ms in a whole pass through the book. A phone has no hover to show
+    // intent, and the window was behind "Tap to use the live site" anyway --
+    // so the tap that was needed to USE it now LOADS it, and until then the
+    // window shows the project's own plate. Leaving the chapter still
+    // unloads it.
+    const touch = window.matchMedia("(pointer: coarse)").matches;
+    setCoarse(touch);
     let timer = 0;
     const stop = () => {
       setActive(false);
@@ -2625,6 +2635,7 @@ function LivePlate({
         stop();
         return;
       }
+      if (touch) return;
       // On top: load now. Under the chapter's FIRST page (a phone): load
       // after a reader has stayed there 1.2s, so the window is ready by the
       // time they turn to it -- on a Pixel 5 it was still an empty box 3s
@@ -2747,7 +2758,26 @@ function LivePlate({
         {/* No picture behind it: asked for "only the live web, not the
             image". While it loads the window is the plate's own navy with a
             shimmer across it; if it never loads, a link out takes its place. */}
-        {constrained ? (
+        {coarse && !active && !constrained ? (
+          <>
+            <BookImg
+              src={image.src}
+              alt={image.alt}
+              draggable={false}
+              className="absolute inset-0 h-full w-full object-cover object-top select-none"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setArmed(true);
+                setActive(true);
+              }}
+              className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-[0.5em] bg-gradient-to-t from-[#0b1728]/90 to-transparent pt-[2.5em] pb-[0.8em] text-[0.55rem] tracking-[0.24em] text-slate-100 uppercase transition-transform duration-100 active:scale-[0.97] motion-reduce:transition-none"
+            >
+              Tap to load the live site
+            </button>
+          </>
+        ) : mirror || constrained ? (
           <>
             <BookImg
               src={image.src}

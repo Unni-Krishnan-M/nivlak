@@ -1001,7 +1001,7 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   runs `content-between`; 06's rows centre photo + words as one block with
   their tops aligned (`flex-wrap content-center items-start`, words `flex-1`).
 
-### Text on a turn (removed), and 04 on a phone
+### Text on a turn, the phone's load, and 04 on a phone
 
 - **Text on a turn is MOTION ONLY, and only on a moderate-or-better
   network.** The first version faded each incoming page's `[data-ink]` up
@@ -1010,12 +1010,23 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   the "blinking": a rotating sheet shows the page under it from the first
   degrees of the turn, so the page sat blank and then filled in, and
   swiping BACK emptied 07's headline while the page was in full view. It
-  came back on request as an 18px glide of each block and an UNMASKED word
-  cascade (`yPercent` 35 -> 0) at full opacity: the page is printed the
-  whole time, the type settles as the leaf lifts. Re-recorded forward, back
-  and under a slow drag: no frame shows a page without its text. Only the
-  OPENING spread keeps the masked rise, because nothing lies on top of it.
+  came back on request as an 18px glide of each block at full opacity: the
+  page is printed the whole time, the type settles as the leaf lifts.
+  Re-recorded forward, back and under a slow drag: no frame shows a page
+  without its text. Only the OPENING spread's headlines rise word by word
+  (masked), because nothing lies on top of them.
   **Never fade or mask the ink of a page that a turn uncovers.**
+- **No per-word cascade on a turn, and the timeline is built ONCE.**
+  Profiled on the live site (Pixel 5 emulator, CDP): every phone load froze
+  the main thread for ~2.7s. Three causes: `single` started `false`, so the
+  SPREAD timeline was built, reverted and rebuilt as one-page (it is now
+  `null` until a layout effect decides it, and useGSAP waits); SplitText on
+  every page's headings measured every node it split (0.6s of
+  getBoundingClientRect per build); and each `fromTo` read computed style
+  right after the previous one wrote, forcing a recalc each time (1.8s of
+  self time). The blocks' transforms are now read in one pass before any
+  tween is built. After: ~0.35s of long tasks on load. The word cascade
+  also put every moving word on its own layer under a swipe.
 - **`textMotionAllowed()` decides once per load.** Off under Data Saver, a
   2G-class `effectiveType`, or under 1 Mbps MEASURED from Resource Timing
   (bytes over the union of transfer windows of everything that came over the
@@ -1031,15 +1042,27 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
 - **The snap counts a swipe from a PAGE, never from the trail.** Past the last
   page the scroll runs into the trail unsnapped; a swipe back counted from
   there found the last page one page back -- the one on screen -- and the
-  leaf lifted and fell back. `gestureFrom` is clamped to the first and last
-  rest.
+  leaf lifted and fell back. `gestureFrom` is clamped to the LAST rest only:
+  clamped to the first as well, a swipe out of the film counted from page
+  one and skipped 01's opening page on every phone (live: 1191 -> 1896,
+  past its rest at 1497).
+- **On a phone the film snaps too, in the swipe's direction**: forward onto
+  01's first page, back onto the cover -- unless the swipe started past the
+  first page, which lands there (one swipe, one page). Unsnapped, a swipe
+  stopped on the photographed paper with nothing printed on it. Desktop
+  keeps the free film (wheel pauses would yank it). Verified with real
+  vertical and sideways swipes: 0 -> 1497 -> 1896 -> 2331 and back the same
+  way, one page each.
 - **A project tapped on 04's first page turns to it on a phone.** The index
   changes the plate on the NEXT page, so a tap lit a row and visibly did
   nothing. Phone-only (`single`); the carousel's own dots are excluded. The
   touch hint now reads by orientation.
-- **04's live window preloads** under the chapter's first page after a 1.2s
-  rest (300ms when it is itself on top), and says "Loading calioon.com"
-  instead of being an empty navy box.
+- **04's live window loads on a TAP on a touch screen**, and preloads on a
+  rest only with a mouse (1.2s under the chapter's first page, 300ms when on
+  top). On the live site, resting on 04 on a phone was a 600-850ms freeze --
+  the only stalls over 300ms in a whole pass. Until tapped the window shows
+  the project's plate with "Tap to load the live site"; leaving the chapter
+  unloads it. While loading it says "Loading calioon.com".
 - **`tools/scroll-shots.mjs --audit`** measures instead of photographing:
   text out of its page, text over text, text into the folio, per page at
   rest. 1440x900: 18 stops, 0 issues.

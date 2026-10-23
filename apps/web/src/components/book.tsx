@@ -376,7 +376,14 @@ export function Book() {
   // It is state rather than a measurement inside the GSAP block because the
   // SHEETS THEMSELVES differ: React has to render the other list first, and
   // the hook's `dependencies` then rebuild the timeline over it.
-  const [single, setSingle] = useState(false);
+  //
+  // `null` until that layout effect has asked, and the timeline is not built
+  // while it is. It started as `false`, so every phone built the whole SPREAD
+  // timeline first, reverted it and built the one-page timeline over it: on
+  // the live site in the emulator that was a 2.1s frozen main thread on every
+  // load (profiled -- a third of it the revert), the cover's rise stalled
+  // behind it, and a swipe in those seconds did nothing.
+  const [single, setSingle] = useState<boolean | null>(null);
   // The ROOT FONT SIZE for a one-page (portrait) book, in px, or null for a
   // spread. It SCALES with the screen from the one the phone pages were
   // measured on -- 19px at 393x851 -- by the smaller of the width and height
@@ -395,8 +402,10 @@ export function Book() {
   // the cap keeps a 12.9" tablet from setting a phone layout at poster size.
   // The root size itself is now CSS (apps/web/src/index.css), so it is in
   // effect from the FIRST paint -- see the note there. This effect only
-  // decides `single`, one page per sheet or spreads.
-  useEffect(() => {
+  // decides `single`, one page per sheet or spreads -- in the LAYOUT phase,
+  // so the answer is in before the first paint and before useGSAP (declared
+  // below it) has anything to build.
+  useLayoutEffect(() => {
     // Re-decided on a WIDTH change only (a rotation, a resized desktop
     // window), never on a height-only resize. On a phone the address bar
     // hides as you scroll down and comes back as you scroll up, which fires
@@ -541,6 +550,8 @@ export function Book() {
 
   useGSAP(
     (_context, contextSafe) => {
+      // Not until the layout is known: see `single`.
+      if (single === null) return;
       // Deliberately not gated on the first frame having loaded: the pin
       // spacer has to exist before the visitor scrolls, and draw() copes with
       // an empty cache by painting the letterbox colour and returning.
@@ -1252,15 +1263,34 @@ export function Book() {
             snapTo: (progress: number, self?: ScrollTrigger) => {
               const total = tl.duration();
               const time = progress * total;
-              if (seeking || noSnap || time < OPEN) return progress;
+              if (seeking || noSnap) return progress;
               const rests: number[] = [];
               for (let i = 0; i <= turns; i++) rests.push(timeOf(i));
+              const PAGE = TURN + GAP;
+              const STAY = PAGE * 0.06;
+              // ON A PHONE THE FILM SETTLES TOO, in the direction it was
+              // going: forward onto the first page, back onto the cover. A
+              // thumb swipe is about a third of the film, so unsnapped it
+              // left the reader on the photographed paper with nothing
+              // printed on it yet (screenshotted on the live site at 1100
+              // and 1300 of a 1450 scroll) -- a page that reads as broken.
+              // Under a held finger nothing snaps, so the film can still be
+              // scrubbed by hand. A desktop wheel keeps the free film: its
+              // notches pause, and each pause would yank the book shut or
+              // open.
+              // Still one page per swipe: a swipe back that STARTED past the
+              // first page and ran on into the film (a thumb's momentum does,
+              // from 01's second page) lands on the first page, not the cover.
+              if (time < OPEN) {
+                if (!single || time < 0.02) return progress;
+                const first = rests[0] ?? time;
+                if ((self?.direction ?? 1) > 0) return first / total;
+                return (gestureFrom ?? 0) > first + STAY ? first / total : 0;
+              }
               let near = rests[0] ?? time;
               for (const rest of rests) {
                 if (Math.abs(rest - time) < Math.abs(near - time)) near = rest;
               }
-              const PAGE = TURN + GAP;
-              const STAY = PAGE * 0.06;
               if (Math.abs(near - time) <= STAY) return near / total;
               // ONE SWIPE IS ONE PAGE, counted from where the swipe STARTED.
               // Counted from where it stopped, a thumb swipe that ran a
@@ -1269,13 +1299,16 @@ export function Book() {
               // 1219 -> 1896 and skipped 01's first page, the chapter's
               // headline, entirely. Only a real fling -- over 1.5 pages of
               // travel -- is taken at its word and settles past.
-              // Clamped to the pages: at the end the scroll runs on into the
-              // trail, and a swipe back counted from there found the LAST page
-              // one page back -- the page already on screen -- so the leaf
-              // lifted and fell back where it was.
-              const first = rests[0] ?? time;
+              // Clamped to the LAST page: at the end the scroll runs on into
+              // the trail, and a swipe back counted from there found the last
+              // page one page back -- the page already on screen -- so the
+              // leaf lifted and fell back where it was. NOT clamped to the
+              // first: a swipe that starts in the film was then counted from
+              // page one, "one page on" was page two, and 01's opening page
+              // was skipped on every phone (live site: 1191 -> 1896, past
+              // its rest at 1450).
               const last = rests[rests.length - 1] ?? time;
-              const from = Math.min(Math.max(gestureFrom ?? time, first), last);
+              const from = Math.min(gestureFrom ?? time, last);
               const forward = (self?.direction ?? 1) > 0;
               if (forward) {
                 if (time - from <= PAGE * 1.5) {
@@ -1293,8 +1326,11 @@ export function Book() {
               }
               let prev: number | undefined;
               for (const rest of rests) if (rest < time) prev = rest;
-              // Back from page 1 into the lead-in: free, toward the film.
-              return prev === undefined ? progress : prev / total;
+              // Back from page 1 into the lead-in: free, toward the film --
+              // except on a phone, where the film settles (above) and back
+              // from the first page is the cover.
+              if (prev === undefined) return single ? 0 : progress;
+              return prev / total;
             },
             inertia: false,
             duration: { min: 0.3, max: 0.7 },
@@ -1444,32 +1480,23 @@ export function Book() {
       // from the first degrees of the turn, so the page sat blank and then
       // filled in, and swiping BACK emptied 07's headline while the page was
       // still in full view (screen-recorded, frame by frame). So on a turn
-      // it is MOTION ONLY: every block glides up 18px into place and each
-      // heading's words follow in a cascade, at full opacity and unmasked --
-      // the page is printed the whole time, the type just settles as the
-      // leaf lifts off it, and reverses exactly when the reader scrolls back.
-      // The OPENING spread keeps the masked rise, because nothing is lying
-      // on top of it: its ink is fading up with the pages over LEAD_IN.
-      // Transforms go on the INK inside a face, never on a sheet; only the
-      // outermost [data-ink], so nested blocks do not move twice. Words, not
-      // lines, because words reflow on resize. SplitText reverts with the
-      // useGSAP context. None of it runs on a poor connection
-      // (textMotionAllowed above).
+      // it is MOTION ONLY: every block glides up 18px into place at full
+      // opacity -- the page is printed the whole time, the type just settles
+      // as the leaf lifts off it, and reverses exactly when the reader
+      // scrolls back. The OPENING spread's headlines rise word by word from
+      // behind a mask, because nothing is lying on top of them: their ink is
+      // fading up with the pages over LEAD_IN. Transforms go on the INK
+      // inside a face, never on a sheet; only the outermost [data-ink], so
+      // nested blocks do not move twice. SplitText reverts with the useGSAP
+      // context. None of it runs on a poor connection (textMotionAllowed
+      // above).
       const textMotion = textMotionAllowed();
       if (section) section.dataset.textMotion = String(textMotion);
       if (section) section.dataset.textMotionMbps = String(measuredMbps()?.toFixed(2));
-      const riseWords = (
-        heads: HTMLElement[],
-        at: number,
-        span: number,
-        masked: boolean,
-      ) => {
+      const riseWords = (heads: HTMLElement[], at: number, span: number) => {
         const words: HTMLElement[] = [];
         for (const head of heads) {
-          const split = SplitText.create(
-            head,
-            masked ? { type: "words", mask: "words" } : { type: "words" },
-          );
+          const split = SplitText.create(head, { type: "words", mask: "words" });
           // A mask pads 0.18em below and pulls it back, so descenders in a
           // tightly-leaded display headline are not cropped.
           for (const m of (split.masks ?? []) as HTMLElement[]) {
@@ -1481,10 +1508,7 @@ export function Book() {
         if (!words.length) return;
         tl.fromTo(
           words,
-          // Unmasked, a word is visible the whole way, so it travels a third
-          // of a line rather than a whole one -- far enough to read as a
-          // cascade, short of the subtitle under a two-line headline.
-          { yPercent: masked ? 110 : 35 },
+          { yPercent: 110 },
           {
             yPercent: 0,
             ease: "power3.out",
@@ -1506,10 +1530,18 @@ export function Book() {
           ],
           OPEN,
           LEAD_IN,
-          true,
         );
 
+        // On a turn the BLOCKS glide and the words do not. A per-word
+        // cascade on every page was the first version of this, and profiled
+        // on the live site it cost twice over: SplitText measures every node
+        // it splits (0.6s of getBoundingClientRect per build, every heading
+        // in the book, at load), and during a turn each word GSAP moved was
+        // promoted to a layer of its own -- Layerize was the largest single
+        // cost on the main thread under a swipe. A block is a handful of
+        // layers per page and is already the motion the eye follows.
         const pagesStart = OPEN + LEAD_IN;
+        const glides: { ink: HTMLElement[]; at: number }[] = [];
         sheets.forEach((sheet, k) => {
           // Turn k-1 uncovers sheet k; sheet 0 arrives with the opening.
           if (k === 0 || k > turns) return;
@@ -1520,21 +1552,29 @@ export function Book() {
               )
             : [];
           const start = pagesStart + (k - 1) * (TURN + GAP);
-          if (ink.length) {
-            tl.fromTo(
-              ink,
-              { y: 18 },
-              {
-                y: 0,
-                ease: "power2.out",
-                duration: TURN * 0.8,
-                stagger: (TURN * 0.12) / Math.max(1, ink.length - 1),
-              },
-              start + TURN * 0.05,
-            );
-          }
-          riseWords(headingsOf(face), start + TURN * 0.1, TURN * 0.85, false);
+          if (ink.length) glides.push({ ink, at: start + TURN * 0.05 });
         });
+        // Every block's transform is READ before any is written. A fromTo
+        // reads its target's computed style and then (immediateRender)
+        // writes it, so built one after another each read came straight
+        // after a write and forced a full style recalculation of the book:
+        // GSAP's getComputedStyle was 1.8s of self time in the load profile.
+        // Read in one pass, the recalc happens once and GSAP keeps the
+        // parsed transforms for the tweens below.
+        for (const { ink } of glides) for (const el of ink) gsap.getProperty(el, "y");
+        for (const { ink, at } of glides) {
+          tl.fromTo(
+            ink,
+            { y: 18 },
+            {
+              y: 0,
+              ease: "power2.out",
+              duration: TURN * 0.8,
+              stagger: (TURN * 0.12) / Math.max(1, ink.length - 1),
+            },
+            at,
+          );
+        }
       }
 
       // Hold on the last page before the pin releases, so it is readable
@@ -2381,7 +2421,7 @@ export function Book() {
           </div>
         </div>
 
-        {reduced ? null : <BookSheets single={single} />}
+        {reduced ? null : <BookSheets single={single === true} />}
 
         {/* TURN THE PHONE UPRIGHT. A touch phone held sideways (under 500px
             of height) gets a spread whose pages are ~410x390: measured at
@@ -2434,7 +2474,7 @@ export function Book() {
         <div
           data-scroll-spacer
           aria-hidden
-          style={{ height: `${scrollPercent(single ? MOBILE_TURNS : TURNS, single)}svh` }}
+          style={{ height: `${scrollPercent(single ? MOBILE_TURNS : TURNS, single === true)}svh` }}
         />
       )}
       {reduced ? <BookPageColumn /> : null}

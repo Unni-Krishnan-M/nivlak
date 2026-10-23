@@ -2651,7 +2651,16 @@ function LivePlate({
       if (touch && !visibleNow) return;
       timer = window.setTimeout(() => setActive(true), visibleNow ? 300 : 1200);
     };
-    const onTurning = () => window.clearTimeout(timer);
+    // A turn away from the window UNLOADS it on the turn's first frame. Left
+    // until the book rested elsewhere, a site still loading kept running
+    // through the turn: on the live site at phone CPU speed (6x throttle),
+    // leaving 04 two seconds after arriving froze that turn for 0.7-1s. Any
+    // turn from the window's page leaves it (on a phone it loads only on
+    // that page), and a turn that settles back reloads it on rest.
+    const onTurning = () => {
+      window.clearTimeout(timer);
+      stop();
+    };
     window.addEventListener("book:rest", onRest);
     window.addEventListener("book:turning", onTurning);
     return () => {

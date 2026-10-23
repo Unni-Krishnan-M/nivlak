@@ -1098,9 +1098,12 @@ task; after the fixes no turn has a task over ~120ms.
   in its own task. Load task at 6x: 2.0s -> ~1.7s. What is left is about
   four restyles of ~1,300 elements; reordering relayout and inlining sheet
   opacity were tried and measured no better, so they were not kept.
-- **On touch, 04's site loads only once its window page is at rest.**
-  Preloading under the first page was fine on the emulator; at 6x it was
-  still parsing when the reader turned to it, a 900ms freeze in the turn.
+- **On touch, 04's site loads only once its window page is at rest, and
+  any turn unloads it on its FIRST frame** (`book:turning`). Preloading
+  under the first page was fine on the emulator; at 6x it was still parsing
+  when the reader turned to it, a 900ms freeze in the turn. Unloaded only on
+  the next rest, a site still loading ran through the turn away: 0.7-1s
+  frozen on the live site, 333ms max after.
 
 ### Loading on a phone, and four on the team
 

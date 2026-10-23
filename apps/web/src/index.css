@@ -51,12 +51,13 @@
   overflow-x: clip;
 }
 
+/* html and body stop scrolling on touch through a <style> that <Book>
+   renders INSIDE the scroller, so it exists only on the page with the book.
+   It was `html:has([data-scroller])`, and a :has() on the root is re-checked
+   against the whole document on every DOM insertion or removal: measured on
+   a Pixel 5 at phone CPU speed (6x throttle), every page turn paid a 250ms
+   restyle of all 2,149 elements -- "Affected by :has()" in the trace. */
 @media (pointer: coarse) {
-  html:has([data-scroller]),
-  html:has([data-scroller]) body {
-    height: 100%;
-    overflow: hidden;
-  }
   [data-scroller] {
     position: fixed;
     /* ONE PIXEL WIDER THAN THE WINDOW, off its right edge, and that pixel is
@@ -140,4 +141,15 @@
   to {
     translate: 0 0;
   }
+}
+
+/*
+ * A COVER ANIMATION THAT IS HIDDEN STOPS. The ticker band and the ribbon's
+ * sway are infinite CSS animations, and GSAP hides them with autoAlpha
+ * (visibility: hidden) once the book opens -- which does not stop a CSS
+ * animation. They kept every frame of every page turn restyling and
+ * re-layerizing for elements nobody could see.
+ */
+[data-pause-hidden][style*="visibility: hidden"] * {
+  animation-play-state: paused;
 }

@@ -596,10 +596,33 @@ export function Book() {
 
       const scroll = { u: 0 };
 
-      const draw = () => {
+      // The canvas's size is OBSERVED, not measured per draw. draw() runs on
+      // every scrubbed frame, right after GSAP has written transforms, so a
+      // getBoundingClientRect() here forced a synchronous layout of the whole
+      // document each time -- 0.6s of the phone's load at phone CPU speed
+      // (6x throttle), on top of the film's own frames.
+      // Re-measured on a relayout (resize, ScrollTrigger refresh), which is
+      // rare; the observer catches a size change between them and redraws.
+      const canvasSize = { width: 0, height: 0 };
+      const measureCanvas = () => {
         const rect = canvas.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
+        canvasSize.width = rect.width;
+        canvasSize.height = rect.height;
+      };
+      measureCanvas();
+      const canvasObserver = new ResizeObserver(([entry]) => {
+        const box = entry!.borderBoxSize?.[0];
+        const width = box ? box.inlineSize : entry!.contentRect.width;
+        const height = box ? box.blockSize : entry!.contentRect.height;
+        if (width === canvasSize.width && height === canvasSize.height) return;
+        canvasSize.width = width;
+        canvasSize.height = height;
+        requestAnimationFrame(() => redrawRef.current());
+      });
+      canvasObserver.observe(canvas);
+
+      const draw = () => {
+        const { width, height } = canvasSize;
         if (!width || !height) return;
 
         // Never allocate more device pixels than the source can actually fill.
@@ -820,6 +843,7 @@ export function Book() {
       };
 
       const relayout = () => {
+        measureCanvas();
         draw();
         layoutSheets(section, tierRef.current);
       };
@@ -842,12 +866,14 @@ export function Book() {
         });
       });
       observer.observe(section);
-      if (document.fonts?.ready) {
-        document.fonts.ready.then(() => {
+      // Reading `document.fonts.ready` flushes style, so it is asked in a
+      // task of its own rather than in the middle of the timeline's build.
+      if (document.fonts) {
+        setTimeout(() => document.fonts.ready.then(() => {
           // A stray global refresh landing inside the next mount's setup is
           // worse than a missed one.
           if (!disposed) ScrollTrigger.refresh();
-        });
+        }), 0);
       }
 
       const teardown = () => {
@@ -855,6 +881,7 @@ export function Book() {
         cancelAnimationFrame(rafId);
         ScrollTrigger.removeEventListener("refresh", onRefresh);
         observer.disconnect();
+        canvasObserver.disconnect();
         redrawRef.current = () => {};
       };
 
@@ -1196,6 +1223,12 @@ export function Book() {
       // revealed on the same beat as the sheets, so it rides along with them.
       const facing = section.querySelector<HTMLElement>("[data-left-page]");
       const curtain = facing ? [...sheets, facing] : sheets;
+      // Parse every sheet's transform NOW, in one pass. GSAP parses an
+      // element's transform from computed style the first time it touches it;
+      // left to the tweens below, each parse came after the previous tween's
+      // write and forced its own restyle of the whole book -- one of the
+      // phone's load stalls at phone CPU speed (6x throttle).
+      for (const el of curtain) gsap.getProperty(el, "rotationY");
       const paint = () =>
         paintSheets(sheets, (sheet) =>
           Number(gsap.getProperty(sheet, "rotationY")),
@@ -2044,6 +2077,10 @@ export function Book() {
 
   return (
     <div ref={scrollerRef} data-scroller>
+      {/* Touch only: the document does not scroll, the box does (index.css
+          says why this is not a :has() rule). In the markup, so it holds
+          from the first paint, and gone with the page. */}
+      <style>{"@media (pointer: coarse){html,body{height:100%;overflow:hidden}}"}</style>
       {/* This wrapper exists for ScrollTrigger, and removing it breaks the
           page at runtime. (On a touch screen it is also the box the book
           scrolls in -- `data-scroller`, see index.css.) pin:true does not style the section in place -- it
@@ -2316,6 +2353,7 @@ export function Book() {
         <div
           ref={bandRef}
           data-hero-band
+          data-pause-hidden
           className="group/band pointer-events-auto absolute inset-x-0 bottom-[clamp(20px,6vh,64px)] z-[2] border-y border-white/10 bg-[linear-gradient(to_top,rgba(5,11,20,0.78),rgba(5,11,20,0.25))] py-[clamp(0.55rem,1.3vh,0.9rem)] [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)] [text-shadow:none]"
         >
           <div className="flex w-max motion-safe:animate-marquee motion-safe:group-hover/band:[animation-play-state:paused] motion-reduce:mx-auto">
@@ -2389,6 +2427,7 @@ export function Book() {
         <div
           ref={cueRef}
           data-scroll-cue
+          data-pause-hidden
           aria-hidden
           className="pointer-events-none absolute top-[var(--head-rule-y,calc(5.1vh+clamp(17px,1.5vw,22px)))] right-[6vw] overflow-hidden px-[10px] pb-[10px] portrait:right-[5vw]"
         >

@@ -1059,15 +1059,48 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   touch hint now reads by orientation.
 - **04's live window loads BY ITSELF on every device, phones included.** A
   tap-to-load picture was shipped for one revision and refused ("show the
-  web not that image"). It starts only at REST: 1.2s under the chapter's
-  first page, 300ms when on top, so the 600-850ms stall it costs on a Pixel
-  5 lands while nothing is moving. Until tapped it takes no touches (a swipe
+  web not that image"). It starts only at REST, 300ms after its window
+  page settles (a mouse also preloads 1.2s under the chapter's first page),
+  so the 600-850ms stall it costs on a Pixel 5 lands while nothing moves. Until tapped it takes no touches (a swipe
   across it still turns the page); a small "Tap to use" chip in its corner
   arms it. `isConstrained()` is Data Saver ONLY -- `effectiveType` reported
   "3g" on fast networks and put the picture on ordinary phones.
 - **`tools/scroll-shots.mjs --audit`** measures instead of photographing:
   text out of its page, text over text, text into the folio, per page at
   rest. 1440x900: 18 stops, 0 issues.
+
+### A real phone is not the emulator: measure at 6x CPU
+
+"Good in the emulator, poor on the real mobile". The emulator runs Chrome on
+the desktop's x86 CPU, so a 40ms main-thread task there is 250ms on a
+mid-range phone. Measure with `Emulation.setCPUThrottlingRate` at 6 (the
+session must stay open: throttling ends with it) while driving real
+`adb shell input swipe` gestures. At 6x every page turn had ONE 250-400ms
+task; after the fixes no turn has a task over ~120ms.
+
+- **No `:has()` on html or body.** `html:has([data-scroller])` (touch:
+  stop the document scrolling) made Chrome re-check the whole document on
+  every DOM insertion or removal -- a 2,149-element restyle mid-turn, the
+  whole per-turn freeze ("Affected by :has()" in a trace with
+  `disabled-by-default-devtools.timeline.invalidationTracking`). The rule
+  is a `<style>` rendered inside `[data-scroller]` now.
+- **Hidden infinite animations are paused.** GSAP's autoAlpha hides the
+  cover's ticker and ribbon with `visibility: hidden`, which does not stop
+  a CSS animation; `[data-pause-hidden]` pauses them. 04's loading shimmer
+  ran whenever the frame was not loaded -- i.e. forever, behind every page
+  -- and is gated on `active` now.
+- **draw() does not measure.** The canvas size is observed
+  (`canvasSize`, a ResizeObserver, re-measured on relayout). A
+  getBoundingClientRect per scrubbed frame forced a full layout each time.
+- **Reads before writes at build.** `paintSheets` reads every angle, then
+  writes; `<Book>` parses every sheet's transform in one pass before the
+  timeline is built; `document.fonts.ready` (which flushes style) is read
+  in its own task. Load task at 6x: 2.0s -> ~1.7s. What is left is about
+  four restyles of ~1,300 elements; reordering relayout and inlining sheet
+  opacity were tried and measured no better, so they were not kept.
+- **On touch, 04's site loads only once its window page is at rest.**
+  Preloading under the first page was fine on the emulator; at 6x it was
+  still parsing when the reader turned to it, a 900ms freeze in the turn.
 
 ### Loading on a phone, and four on the team
 

@@ -325,8 +325,13 @@ export function paintSheets(
   sheets: HTMLElement[],
   angleOf: (sheet: HTMLElement) => number,
 ) {
+  // Every angle is read BEFORE anything is written. Read and written in one
+  // loop, each read after the previous sheet's write forced a style recalc
+  // of the whole book -- GSAP parses an untouched transform from computed
+  // style -- which was most of the phone's 1.9s load task at 6x throttle.
+  const angles = sheets.map(angleOf);
   sheets.forEach((sheet, index) => {
-    const angle = angleOf(sheet);
+    const angle = angles[index]!;
     const turning = angle < -0.5 && angle > -179.5;
     sheet.style.zIndex = String(
       turning ? 90 : angle <= -90 ? 50 + index : 40 - index,
@@ -2603,8 +2608,7 @@ function LivePlate({
     // A touch screen loads it by itself too -- a tap-to-load picture was
     // tried and refused ("show the web not that image"). The site costs a
     // 600-850ms stall on a Pixel 5 when it starts, so on a phone it starts
-    // while the reader RESTS on 04's first page (the window is on the
-    // second), where nothing is moving; never inside a turn.
+    // only once the page with the window is at rest; never inside a turn.
     const touch = window.matchMedia("(pointer: coarse)").matches;
     setCoarse(touch);
     let timer = 0;
@@ -2638,7 +2642,13 @@ function LivePlate({
       // after arriving. Measured against waiting for the window to be on
       // top, the turn costs the same (17 vs 16 frames over 33ms in 04): the
       // stutter came from loading INSIDE a turn, which this still never does.
+      // A TOUCH SCREEN WAITS FOR THE WINDOW ITSELF. Preloading under the
+      // first page was fine on the emulator's desktop CPU and not on a phone:
+      // at a phone's speed (6x throttle) the site was still parsing when the
+      // reader turned to it, and the turn into the window froze for 900ms.
+      // On top, its load lands while the page is still.
       const visibleNow = onTop();
+      if (touch && !visibleNow) return;
       timer = window.setTimeout(() => setActive(true), visibleNow ? 300 : 1200);
     };
     const onTurning = () => window.clearTimeout(timer);
@@ -2753,7 +2763,9 @@ function LivePlate({
       <div ref={viewRef} className="relative min-h-0 flex-1 overflow-hidden">
         {/* No picture behind it: asked for "only the live web, not the
             image". While it loads the window is the plate's own navy with a
-            shimmer across it; if it never loads, a link out takes its place. */}
+            shimmer across it; if it never loads, a link out takes its place.
+            The shimmer runs only while LOADING: shown whenever the frame was
+            not loaded, it animated forever behind every page of the book. */}
         {mirror || constrained ? (
           <>
             <BookImg
@@ -2771,7 +2783,7 @@ function LivePlate({
               Open {live.host} ↗
             </a>
           </>
-        ) : !loaded && !failed ? (
+        ) : active && !loaded && !failed ? (
           <>
             <span
               aria-hidden

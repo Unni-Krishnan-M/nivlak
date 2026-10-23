@@ -1057,12 +1057,14 @@ could fill, because `flex-1` was `lg`-only there and its call to action's
   changes the plate on the NEXT page, so a tap lit a row and visibly did
   nothing. Phone-only (`single`); the carousel's own dots are excluded. The
   touch hint now reads by orientation.
-- **04's live window loads on a TAP on a touch screen**, and preloads on a
-  rest only with a mouse (1.2s under the chapter's first page, 300ms when on
-  top). On the live site, resting on 04 on a phone was a 600-850ms freeze --
-  the only stalls over 300ms in a whole pass. Until tapped the window shows
-  the project's plate with "Tap to load the live site"; leaving the chapter
-  unloads it. While loading it says "Loading calioon.com".
+- **04's live window loads BY ITSELF on every device, phones included.** A
+  tap-to-load picture was shipped for one revision and refused ("show the
+  web not that image"). It starts only at REST: 1.2s under the chapter's
+  first page, 300ms when on top, so the 600-850ms stall it costs on a Pixel
+  5 lands while nothing is moving. Until tapped it takes no touches (a swipe
+  across it still turns the page); a small "Tap to use" chip in its corner
+  arms it. `isConstrained()` is Data Saver ONLY -- `effectiveType` reported
+  "3g" on fast networks and put the picture on ordinary phones.
 - **`tools/scroll-shots.mjs --audit`** measures instead of photographing:
   text out of its page, text over text, text into the folio, per page at
   rest. 1440x900: 18 stops, 0 issues.

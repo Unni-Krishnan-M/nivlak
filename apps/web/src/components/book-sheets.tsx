@@ -417,21 +417,21 @@ function DeferredMirror({ children }: { children: React.ReactNode }) {
   }, []);
   return on ? <>{children}</> : null;
 }
-// A phone or a connection that should not be asked to run a second website
-// inside this one: data saver, a 2G/3G connection, or 2GB of memory or less.
+// A reader who should not be asked to run a second website inside this one.
 // Measured at 3G with a 6x-throttled CPU, 04's live site cost 14 frames over
-// 50ms and 12 long tasks where every other chapter had 2-6.
+// 50ms and 12 long tasks where every other chapter had 2-6 -- a real cost,
+// paid at rest on 04 and never inside a turn (see <LivePlate>).
 function isConstrained() {
   const nav = navigator as Navigator & {
-    connection?: { saveData?: boolean; effectiveType?: string };
-    deviceMemory?: number;
+    connection?: { saveData?: boolean };
   };
   const c = nav.connection;
-  return (
-    !!c?.saveData ||
-    ["slow-2g", "2g", "3g"].includes(c?.effectiveType ?? "") ||
-    (nav.deviceMemory ?? 8) <= 2
-  );
+  // Data Saver only: the reader has asked for less. `effectiveType` and
+  // `deviceMemory` used to gate this too, and they put a PICTURE in 04's
+  // window on ordinary phones -- Chrome reports "3g" on a fast network (the
+  // Pixel 5 emulator on a LAN said "3g, 1.35 Mbps"), and the live site was
+  // asked for ("show the web not that image").
+  return !!c?.saveData;
 }
 function BookImg(props: React.ImgHTMLAttributes<HTMLImageElement>) {
   const on = useBookImages();
@@ -2552,9 +2552,10 @@ const WORK_CHAPTER = BOOK_PAGES.findIndex((page) =>
  *   all in the DOM from the first paint, so a plain `loading="lazy"` would
  *   still fetch it behind the hero. Never in the mirrored back of a phone
  *   sheet (MirrorContext).
- * - On touch screens it sits behind "Tap to use the live site" until tapped,
- *   because a live frame swallows every touch -- the phone carousel could
- *   not be swiped across it, nor the book scrolled.
+ * - On touch screens it loads by itself like everywhere else, but takes no
+ *   touches until tapped ("Tap to use", a chip in the corner), because a live
+ *   frame swallows every touch -- the phone carousel could not be swiped
+ *   across it, nor the book scrolled.
  * - Sandboxed: scripts, forms and popups, but it cannot navigate this page.
  */
 function LivePlate({
@@ -2599,15 +2600,11 @@ function LivePlate({
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setActive(true);
     }
-    // ON A TOUCH SCREEN IT LOADS ON A TAP, never by itself. Resting on 04
-    // was the one place a phone still froze: measured on the live site in the
-    // Pixel 5 emulator, calioon.com loading in the window cost a 600-850ms
-    // stall the moment the book came to rest there, the only frames over
-    // 300ms in a whole pass through the book. A phone has no hover to show
-    // intent, and the window was behind "Tap to use the live site" anyway --
-    // so the tap that was needed to USE it now LOADS it, and until then the
-    // window shows the project's own plate. Leaving the chapter still
-    // unloads it.
+    // A touch screen loads it by itself too -- a tap-to-load picture was
+    // tried and refused ("show the web not that image"). The site costs a
+    // 600-850ms stall on a Pixel 5 when it starts, so on a phone it starts
+    // while the reader RESTS on 04's first page (the window is on the
+    // second), where nothing is moving; never inside a turn.
     const touch = window.matchMedia("(pointer: coarse)").matches;
     setCoarse(touch);
     let timer = 0;
@@ -2635,7 +2632,6 @@ function LivePlate({
         stop();
         return;
       }
-      if (touch) return;
       // On top: load now. Under the chapter's FIRST page (a phone): load
       // after a reader has stayed there 1.2s, so the window is ready by the
       // time they turn to it -- on a Pixel 5 it was still an empty box 3s
@@ -2758,26 +2754,7 @@ function LivePlate({
         {/* No picture behind it: asked for "only the live web, not the
             image". While it loads the window is the plate's own navy with a
             shimmer across it; if it never loads, a link out takes its place. */}
-        {coarse && !active && !constrained ? (
-          <>
-            <BookImg
-              src={image.src}
-              alt={image.alt}
-              draggable={false}
-              className="absolute inset-0 h-full w-full object-cover object-top select-none"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setArmed(true);
-                setActive(true);
-              }}
-              className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-[0.5em] bg-gradient-to-t from-[#0b1728]/90 to-transparent pt-[2.5em] pb-[0.8em] text-[0.55rem] tracking-[0.24em] text-slate-100 uppercase transition-transform duration-100 active:scale-[0.97] motion-reduce:transition-none"
-            >
-              Tap to load the live site
-            </button>
-          </>
-        ) : mirror || constrained ? (
+        {mirror || constrained ? (
           <>
             <BookImg
               src={image.src}
@@ -2846,13 +2823,20 @@ function LivePlate({
             Live preview unavailable · Open {live.host} ↗
           </a>
         ) : null}
+        {/* Until tapped, the frame takes no touches, so a swipe across the
+            window still turns the page. The whole window is the button and
+            the label is one small chip in its corner: the site stays clean,
+            not under a band. */}
         {coarse && !armed && loaded ? (
           <button
             type="button"
+            aria-label={`Use ${live.host}`}
             onClick={() => setArmed(true)}
-            className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-[0.5em] bg-gradient-to-t from-[#0b1728]/90 to-transparent pt-[2.5em] pb-[0.8em] text-[0.55rem] tracking-[0.24em] text-slate-100 uppercase"
+            className="absolute inset-0 flex items-end justify-end p-[0.6em]"
           >
-            Tap to use the live site
+            <span className="rounded-full bg-[#0b1728]/80 px-[0.8em] py-[0.35em] text-[0.5rem] tracking-[0.2em] text-slate-100 uppercase ring-1 ring-white/15 backdrop-blur-sm">
+              Tap to use
+            </span>
           </button>
         ) : null}
       </div>
